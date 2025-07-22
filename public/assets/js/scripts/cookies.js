@@ -1,0 +1,1 @@
+const getCookie=e=>{let t=e+"=",o=decodeURIComponent(document.cookie),i=o.split("; "),n;return i.forEach(e=>{0===e.indexOf(t)&&(n=e.substring(t.length))}),n};

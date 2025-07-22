@@ -1,0 +1,25 @@
+.dataTables_wrapper > .row > .col-sm-12 {
+    overflow-x: auto;
+}
+
+div.dataTables_wrapper div.dataTables_processing {
+    width: 150px;
+    padding: 0;
+}
+
+div.dataTables_processing > div:last-child > div {
+    width: 10px;
+    height: 10px;
+}
+
+table .row-action {
+    min-width: 100px;
+}
+
+.form-group {
+    margin: 6px 0;
+}
+
+.header-profile-user {
+    object-fit: cover;
+}
