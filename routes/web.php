@@ -125,12 +125,4 @@ Route::prefix("/admin")
             "fetch",
         ]);
 
-                // JenisLaporan
-    // Route::resource("jenis_laporan", JenisLaporanController::class);
-    // Route::post("jenis_laporan/fetch", [
-    //     JenisLaporanController::class,
-    //     "fetch",
-    // ]);
-
-
     });
