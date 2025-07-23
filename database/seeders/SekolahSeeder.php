@@ -14,7 +14,11 @@ class SekolahSeeder extends Seeder
      */
     public function run()
     {
-        $data = [["nama" => "Pacitan"]];
+        $data = [
+            ["nama" => "SMKN 1 Pacitan"],
+            ["nama" => "SMKN 2 Pacitan"],
+            ["nama" => "SMKN 3 Pacitan"]
+        ];
 
         Sekolah::insert($data);
     }

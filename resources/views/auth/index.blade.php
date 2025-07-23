@@ -13,9 +13,15 @@
     <link href="{{ asset('assets/icons/fontawesome/css/all.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/plugins/bootstrap.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" />
+
+    <Style>
+        body {
+            background: linear-gradient(0deg, #, #1d5791);
+        }
+    </Style>
 </head>
 
-<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background-color: #f8f9fa;">
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
@@ -66,7 +72,7 @@
                 </div>
             </div>
         </div>
-    </div>S
+    </div>
 
     <!-- Toggle Password Visibility -->
     <script>

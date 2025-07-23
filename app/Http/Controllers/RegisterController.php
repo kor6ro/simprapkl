@@ -40,7 +40,7 @@ class RegisterController extends Controller
         $dataSave = [
             "name" => $request->input("name"),
             "email" => $request->input("email"),
-            "password" => $request->input("password"),
+            "password" => Hash::make($request->input("password")),
             "username" => $request->input("username"),
             "sekolah_id" => $request->input("sekolah_id"),
             "validasi" => $request->input("validasi"),
