@@ -16,17 +16,8 @@ class CreateLaporanTable extends Migration
         Schema::disableForeignKeyConstraints();
         Schema::create("laporan", function (Blueprint $table) {
             $table->id();
-            $table->string("jenis_kegiatan");
-            $table->string("lokasi");
-            $table->string("homepass");
-            $table->integer("jml_orang_ditemui");
-            $table->string("detail_pekerjaan");
-            $table->string("hasil_capaian");
+            $table->string("jenis_laporan");
             $table->foreignId("user_id")->references("id")->on("user");
-            $table
-                ->foreignId("jenis_laporan_id")
-                ->references("id")
-                ->on("jenis_laporan");
             $table
                 ->foreignId("laporan_gambar_id")
                 ->references("id")
