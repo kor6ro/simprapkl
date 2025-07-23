@@ -21,33 +21,37 @@
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow p-4">
                     <div class="text-center mb-4">
-                        <img src="{{ asset('assets/images/logo.png') }}" alt="Logo">
-                        <h5 class="mt-3 text-primary">Login SimpraPKL</h5>
-                        <p class="text-muted">Masukkan email dan password Anda</p>
+                        <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid">
+                        <p class="text-muted">Masukkan Username dan password Anda</p>
                     </div>
 
-                    @if(session('error'))
+                    @if (session('error'))
                         <div class="alert alert-danger">{{ session('error') }}</div>
                     @endif
 
                     <form action="{{ route('authenticate') }}" method="POST">
                         @csrf
                         <div class="mb-3">
-                            <label for="email">Email</label>
-                            <input type="email" name="email" class="form-control" id="email"
-                                value="{{ old('email') }}" required>
-                            @error('email') <small class="text-danger">{{ $message }}</small> @enderror
+                            <label for="username">Username</label>
+                            <input type="text" name="username" class="form-control" id="username"
+                                value="{{ old('username') }}" placeholder="Masukkan username" required>
+                            @error('username')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label for="password">Password</label>
                             <div class="input-group">
-                                <input type="password" name="password" id="password" class="form-control" required>
+                                <input type="password" name="password" id="password" class="form-control"
+                                    placeholder="Masukkan Password" required>
                                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                     <i class="fa fa-eye"></i>
                                 </button>
                             </div>
-                            @error('password') <small class="text-danger">{{ $message }}</small> @enderror
+                            @error('password')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="d-grid mt-3">
@@ -56,7 +60,8 @@
                     </form>
 
                     <div class="text-center mt-3">
-                        <small>Belum punya akun? <a href="{{ route('register.form') }}">Daftar Siswa</a></small>
+                        <span style="font-size: 14px">Belum punya akun? <a
+                                href="{{ route('register.form') }}">Register</a></span>
                     </div>
                 </div>
             </div>
@@ -65,7 +70,7 @@
 
     <!-- Toggle Password Visibility -->
     <script>
-        document.getElementById('togglePassword').addEventListener('click', function () {
+        document.getElementById('togglePassword').addEventListener('click', function() {
             const input = document.getElementById('password');
             const icon = this.querySelector('i');
             if (input.type === "password") {
@@ -80,4 +85,5 @@
         });
     </script>
 </body>
+
 </html>

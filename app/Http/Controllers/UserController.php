@@ -92,7 +92,7 @@ class UserController extends Controller
 
     public function fetch(Request $request)
     {
-        $user = User::with("sekolah", "group");
+        $user = User::where("id", "<>", 1)->with("sekolah", "group");
 
         return DataTables::of($user)->addIndexColumn()->make(true);
     }

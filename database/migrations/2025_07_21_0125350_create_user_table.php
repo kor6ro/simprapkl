@@ -20,8 +20,7 @@ class CreateUserTable extends Migration
             $table->string("username");
             $table->string("email");
             $table->string("password");
-            $table->boolean("validasi");
-            $table->string("role")->default("siswa");
+            $table->boolean("validasi")->default(0);
             $table->string("alamat");
             $table->foreignId("sekolah_id")->references("id")->on("sekolah");
             $table->foreignId("group_id")->references("id")->on("group");

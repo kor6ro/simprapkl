@@ -2,57 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TaskBreakdown;
+use App\Models\TaskBreakDown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
-
 use Yajra\DataTables\Facades\DataTables;
 
-class TaskBreakdownController extends Controller
+class TaskBreakDownController extends Controller
 {
     public function index()
     {
-        return view("administrator.task_breakdown.index");
+        return view("administrator.task_break_down.index");
     }
 
     public function create()
     {
-        return view("administrator.task_breakdown.create");
+        return view("administrator.task_break_down.create");
     }
 
     public function edit($id)
     {
-        $taskBreakdown = TaskBreakdown::where("id", $id)->first();
-        if (!$taskBreakdown) {
+        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
+        if (!$taskBreakDown) {
             return abort(404);
         }
-
-        return view("administrator.task_breakdown.edit", [
-            "task_breakdown" => $taskBreakdown,
+        return view("administrator.task_break_down.edit", [
+            "task_break_down" => $taskBreakDown,
         ]);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), ["file" => "required"]);
-
+        $validator = Validator::make($request->all(), [
+            "nama" => "required",
+            "file_upload" => "required",
+        ]);
         if ($validator->fails()) {
-            return redirect(route("task_breakdown.create"))
+            return redirect(route("task_break_down.create"))
                 ->withErrors($validator)
                 ->withInput();
         }
-
-        $dataSave = ["file" => $request->input("file")];
-
+        $dataSave = ["nama" => $request->input("nama")];
+        if ($request->file("file_upload") != null) {
+            $file = $request->file("file_upload");
+            $fileName = $file->hashName();
+            $file->move("uploads/task_break_down_file_upload", $fileName);
+            $dataSave["file_upload"] = $fileName;
+        }
         try {
-            TaskBreakdown::create($dataSave);
-            return redirect(route("task_breakdown.index"))->with([
+            TaskBreakDown::create($dataSave);
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("task_breakdown.index"))->with([
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
@@ -61,36 +65,46 @@ class TaskBreakdownController extends Controller
 
     public function fetch(Request $request)
     {
-        $taskBreakdown = TaskBreakdown::query();
-
-        return DataTables::of($taskBreakdown)->addIndexColumn()->make(true);
+        $taskBreakDown = TaskBreakDown::query();
+        return DataTables::of($taskBreakDown)->addIndexColumn()->make(true);
     }
 
     public function update(Request $request, $id)
     {
-        $taskBreakdown = TaskBreakdown::where("id", $id)->first();
-        if (!$taskBreakdown) {
+        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
+        if (!$taskBreakDown) {
             return abort(404);
         }
-
-        $validator = Validator::make($request->all(), ["file" => "required"]);
-
+        $validator = Validator::make($request->all(), [
+            "nama" => "required",
+            "file_upload" => "required",
+        ]);
         if ($validator->fails()) {
-            return redirect(route("task_breakdown.edit", $id))
+            return redirect(route("task_break_down.edit", $id))
                 ->withErrors($validator)
                 ->withInput();
         }
-
-        $dataSave = ["file" => $request->input("file")];
-
+        $dataSave = ["nama" => $request->input("nama")];
+        if ($request->file("file_upload") != null) {
+            File::delete(
+                public_path(
+                    "uploads/task_break_down_file_upload/" .
+                        @$taskBreakDown->file_upload
+                )
+            );
+            $file = $request->file("file_upload");
+            $fileName = $file->hashName();
+            $file->move("uploads/task_break_down_file_upload", $fileName);
+            $dataSave["file_upload"] = $fileName;
+        }
         try {
-            $taskBreakdown->update($dataSave);
-            return redirect(route("task_breakdown.index"))->with([
+            $taskBreakDown->update($dataSave);
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil diupdate",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("task_breakdown.index"))->with([
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat mengupdate data",
             ]);
@@ -99,19 +113,24 @@ class TaskBreakdownController extends Controller
 
     public function destroy($id)
     {
-        $taskBreakdown = TaskBreakdown::where("id", $id)->first();
-        if (!$taskBreakdown) {
+        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
+        if (!$taskBreakDown) {
             return abort(404);
         }
-
+        File::delete(
+            public_path(
+                "uploads/task_break_down_file_upload/" .
+                    @$taskBreakDown->file_upload
+            )
+        );
         try {
-            $taskBreakdown->delete();
-            return redirect(route("task_breakdown.index"))->with([
+            $taskBreakDown->delete();
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil dihapus",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("task_breakdown.index"))->with([
+            return redirect(route("task_break_down.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menghapus data",
             ]);

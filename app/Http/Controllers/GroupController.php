@@ -61,7 +61,7 @@ class GroupController extends Controller
 
     public function fetch(Request $request)
     {
-        $group = Group::query();
+        $group = Group::query()->where("id", ">", 1);
 
         return DataTables::of($group)->addIndexColumn()->make(true);
     }

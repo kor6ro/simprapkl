@@ -6,10 +6,11 @@
             <span>Dashboards</span>
         </a>
     </li>
-    <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('user.index') }}" class="waves-effect">
+    <li class="menu-title">Master Data</li>
+    <li class="{{ Route::is('sekolah.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('sekolah.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
-            <span>User</span>
+            <span>Sekolah</span>
         </a>
     </li>
     <li class="{{ Route::is('group.*') ? 'mm-active' : '' }}">
@@ -18,40 +19,32 @@
             <span>Group</span>
         </a>
     </li>
-    <li class="{{ Route::is('sekolah.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('sekolah.index') }}" class="waves-effect">
+    <li class="{{ Route::is('setting_presensi.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('setting_presensi.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
-            <span>Sekolah</span>
+            <span>Setting Presensi</span>
         </a>
     </li>
-    <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('colect_data.index') }}" class="waves-effect">
+
+    <li class="menu-title">Manajement User</li>
+    <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('user.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
-            <span>ColectData</span>
+            <span>User</span>
         </a>
     </li>
-    <li class="{{ Route::is('task_breakdown.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('task_breakdown.index') }}" class="waves-effect">
-            <i class="cil-menu"></i>
-            <span>TaskBreakdown</span>
-        </a>
-    </li>
+
+    <li class="menu-title">Manajement Data</li>
     <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
         <a href="{{ route('presensi.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
             <span>Presensi</span>
         </a>
     </li>
-    <li class="{{ Route::is('setting_presensi.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('setting_presensi.index') }}" class="waves-effect">
+    <li class="{{ Route::is('task_break_down.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('task_break_down.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
-            <span>SettingPresensi</span>
-        </a>
-    </li>
-    <li class="{{ Route::is('presensi_gambar.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('presensi_gambar.index') }}" class="waves-effect">
-            <i class="cil-menu"></i>
-            <span>PresensiGambar</span>
+            <span>Task Breakdown</span>
         </a>
     </li>
     <li class="{{ Route::is('laporan.*') ? 'mm-active' : '' }}">
@@ -60,16 +53,22 @@
             <span>Laporan</span>
         </a>
     </li>
-    <li class="{{ Route::is('laporan_gambar.*') ? 'mm-active' : '' }}">
+    <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('colect_data.index') }}" class="waves-effect">
+            <i class="cil-menu"></i>
+            <span>Colect Data</span>
+        </a>
+    </li>
+    {{-- <li class="{{ Route::is('laporan_gambar.*') ? 'mm-active' : '' }}">
         <a href="{{ route('laporan_gambar.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
             <span>LaporanGambar</span>
         </a>
-    </li>
-    <li class="{{ Route::is('jenis_laporan.*') ? 'mm-active' : '' }}">
-        <a href="{{ route('jenis_laporan.index') }}" class="waves-effect">
+    </li> --}}
+    {{-- <li class="{{ Route::is('presensi_gambar.*') ? 'mm-active' : '' }}">
+        <a href="{{ route('presensi_gambar.index') }}" class="waves-effect">
             <i class="cil-menu"></i>
-            <span>JenisLaporan</span>
+            <span>PresensiGambar</span>
         </a>
-    </li>
+    </li> --}}
 </ul>

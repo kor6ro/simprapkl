@@ -21,44 +21,75 @@
             <div class="col-md-12 col-lg-12 col-xl-8">
                 <div class="card shadow p-4">
                     <div class="text-center mb-4">
-                        <img src="{{ asset('/favicon.svg') }}" style="width: 60px; height:60px;" alt="Logo">
+                        <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid">
                         <h5 class="mt-3 text-primary">Registrasi Siswa PKL</h5>
                         <p class="text-muted">Silakan isi data dengan benar</p>
                     </div>
 
-                    @if(session('success'))
+                    @if (session('success'))
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
                     <form method="POST" action="{{ route('register.siswa') }}">
                         @csrf
+                        <input type="hidden" name="group_id" value="3">
+                        <input type="hidden" name="validasi" value="0">
+
                         <div class="mb-3">
                             <label>Nama</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
-                            @error('name') <small class="text-danger">{{ $message }}</small> @enderror
+                            <input type="text" name="name" class="form-control" value="{{ old('name') }}"
+                                required>
+                            @error('name')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Alamat</label>
+                            <input type="text" name="alamat" class="form-control" value="{{ old('alamat') }}"
+                                required>
+                            @error('alamat')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label>UserName</label>
+                            <input type="text" name="username" class="form-control" value="{{ old('username') }}"
+                                required>
+                            @error('username')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label>Email</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
-                            @error('email') <small class="text-danger">{{ $message }}</small> @enderror
+                            <input type="email" name="email" class="form-control" value="{{ old('email') }}"
+                                required>
+                            @error('email')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label>Password</label>
                             <input type="password" name="password" class="form-control" required>
-                            @error('password') <small class="text-danger">{{ $message }}</small> @enderror
+                            @error('password')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label>Asal Sekolah</label>
                             <select name="sekolah_id" class="form-select" required>
                                 <option disabled selected>-- Pilih Sekolah --</option>
-                                @foreach($sekolahList as $sekolah)
-                                    <option value="{{ $sekolah->id }}">{{ $sekolah->nama_sekolah }}</option>
+                                @foreach ($sekolahList as $val)
+                                    <option value="{{ $val->id }}">{{ $val->nama }}</option>
                                 @endforeach
                             </select>
-                            @error('sekolah_id') <small class="text-danger">{{ $message }}</small> @enderror
+                            @error('sekolah_id')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
                         </div>
 
                         <div class="d-grid">
@@ -67,7 +98,8 @@
                     </form>
 
                     <div class="text-center mt-3">
-                        <small>Sudah punya akun? <a href="{{ route('login') }}">Login di sini</a></small>
+                        <p style="font-size: 14px">Sudah punya akun? <a href="{{ route('login') }}"
+                                class="text-decoration-none">Login di sini</a></p>
                     </div>
                 </div>
             </div>
@@ -77,4 +109,5 @@
     <!-- Script -->
     <script src="{{ asset('assets/js/plugins/bootstrap.bundle.min.js') }}"></script>
 </body>
+
 </html>

@@ -33,7 +33,7 @@ Route::get("/", function () {
     return redirect()->to(route("login"));
 });
 
-        // Register Siswa
+// Register Siswa
 Route::get('/register', [RegisterController::class, 'index'])->name('register.form');
 Route::post('/register/store', [RegisterController::class, 'store'])->name('register.siswa');
 
@@ -83,11 +83,8 @@ Route::prefix("/admin")
         ]);
 
         // TaskBreakdown
-        Route::resource("task_breakdown", TaskBreakdownController::class);
-        Route::post("task_breakdown/fetch", [
-            TaskBreakdownController::class,
-            "fetch",
-        ]);
+        Route::resource("task_break_down", TaskBreakDownController::class);
+        Route::post("task_break_down/fetch", [TaskBreakDownController::class, "fetch"]);
 
         // Presensi
         Route::resource("presensi", PresensiController::class);
@@ -117,5 +114,4 @@ Route::prefix("/admin")
             LaporanGambarController::class,
             "fetch",
         ]);
-
     });

@@ -4,29 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTaskBreakdownTable extends Migration
+class CreateTaskBreakDownTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
-        Schema::create("task_breakdown", function (Blueprint $table) {
+        Schema::create("task_break_down", function (Blueprint $table) {
             $table->id();
-            $table->string("file");
+            $table->string("nama")->nullable();
+            $table->string("file_upload")->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
-        Schema::dropIfExists("task_breakdown");
+        Schema::dropIfExists("task_break_down");
     }
 }

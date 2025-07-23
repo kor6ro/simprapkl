@@ -67,7 +67,7 @@
                 type: "POST"
             },
             order: [
-                [1, 'asc']
+                [2, 'desc']
             ],
             columns: [{
                     data: 'DT_RowIndex',
@@ -85,6 +85,7 @@
                 },
                 {
                     data: 'created_at',
+                    visible: false,
                     render: function(data) {
                         if (!data) return "";
 

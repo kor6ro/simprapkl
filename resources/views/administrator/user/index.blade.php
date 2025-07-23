@@ -37,7 +37,6 @@
                         <th scope="col">Username</th>
                         <th scope="col">Email</th>
                         <th scope="col">Validasi</th>
-                        <th scope="col">Role</th>
                         <th scope="col">Sekolah Id</th>
                         <th scope="col">Group Id</th>
                         <th scope="col">Alamat</th>
@@ -74,7 +73,7 @@
                 type: "POST"
             },
             order: [
-                [1, 'asc']
+                [8, 'desc']
             ],
             columns: [{
                     data: 'DT_RowIndex',
@@ -107,12 +106,12 @@
                     searchable: true,
                     orderable: true,
                     visible: true,
-                },
-                {
-                    data: 'role',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
+                    render: function(data) {
+                        const validasi = data == 1 ? "Validasi" : "Belum Validasi";
+                        const button =
+                            `<button type="button" class="btn btn-${data == 1 ? "success" : "danger"} btn-sm">${validasi}</button>`;
+                        return button;
+                    }
                 },
                 {
                     data: 'sekolah.nama',
@@ -134,6 +133,7 @@
                 },
                 {
                     data: 'created_at',
+                    visible: false,
                     render: function(data) {
                         if (!data) return "";
 
