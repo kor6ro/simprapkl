@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Register Siswa PKL</title>
-    <link rel="shortcut icon" href="{{ asset('/favicon.svg') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('assets/images/logo.png') }}" type="image/x-icon">
 
     <!-- Bootstrap & Icons -->
     <link href="{{ asset('assets/icons/coreui/css/free.min.css') }}" rel="stylesheet">
@@ -54,7 +54,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label>UserName</label>
+                            <label>Username</label>
                             <input type="text" name="username" class="form-control" value="{{ old('username') }}"
                                 required>
                             @error('username')

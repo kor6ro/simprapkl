@@ -6,7 +6,7 @@ use App\Models\Sekolah;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -70,7 +70,7 @@ class ProfileController extends Controller
             "name" => $request->input("name"),
             "username" => $request->input("username"),
             "email" => $request->input("email"),
-            "password" => $request->input("password"),
+            "password" => hash::make($request->input("password")),
             "validasi" => $request->input("validasi"),
             "sekolah_id" => $request->input("sekolah_id"),
             "group_id" => $request->input("group_id"),

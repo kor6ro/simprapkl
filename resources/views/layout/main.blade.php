@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Laravel 11</title>
-        {{-- <link rel="shortcut icon" href="{{ asset('/favicon.svg') }}" type="image/x-icon"> --}}
+    {{-- <link rel="shortcut icon" href="{{ asset('/favicon.svg') }}" type="image/x-icon"> --}}
 
     <!-- Vendors styles-->
     <link href="{{ asset('assets/icons/coreui/css/free.min.css') }}" rel="stylesheet">
@@ -33,13 +33,13 @@
                     <div class="navbar-brand-box">
                         <a href="{{ route('dashboard') }}" class="logo logo-light">
                             <span class="logo-sm">
-                                <img src="{{ asset('/favicon.svg') }}" alt="" height="28"
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="28"
                                     style="filter:grayscale(1)brightness(0)invert(1);">
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('/favicon.svg') }}" alt="" height="32"
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="32"
                                     style="filter:grayscale(1)brightness(0)invert(1);">
-                                <h5 class="d-inline-block text-white ms-2">Laravel 11</h5>
+                                <h5 class="d-inline-block text-white ms-2">SimPraPKL</h5>
                             </span>
                         </a>
                     </div>
