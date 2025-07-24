@@ -32,15 +32,12 @@
                     <!-- LOGO -->
                     <div class="navbar-brand-box">
                         <a href="{{ route('dashboard') }}" class="logo logo-light">
-                            <span class="logo-sm">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="28"
-                                    style="filter:grayscale(1)brightness(0)invert(1);">
-                            </span>
-                            <span class="logo-lg">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="32"
-                                    style="filter:grayscale(1)brightness(0)invert(1);">
-                                <h5 class="d-inline-block text-white ms-2">SimPraPKL</h5>
-                            </span>
+                        <span class="logo-sm">
+                            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid" style="max-width: 40px; height: auto; filter: grayscale(1) brightness(0) invert(1);">
+                        </span>
+                        <span class="logo-lg">
+                            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 40px; filter: grayscale(1) brightness(0) invert(1);">
+                        </span>
                         </a>
                     </div>
 
