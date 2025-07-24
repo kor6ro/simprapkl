@@ -14,16 +14,20 @@
     <link href="{{ asset('assets/css/plugins/bootstrap.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" />
 </head>
+<style>
+    body {
+        background: linear-gradient(180deg, #f8f9fa, #3b589e);
+    }
+</style>
 
-<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background-color: #f8f9fa;">
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-12 col-lg-12 col-xl-8">
+            <div class="col-md-6 col-lg-5">
                 <div class="card shadow p-4">
-                    <div class="text-center mb-4">
+                    <div class="text-center mb-1">
                         <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid">
-                        <h5 class="mt-3 text-primary">Registrasi Siswa PKL</h5>
-                        <p class="text-muted">Silakan isi data dengan benar</p>
+                        <h3 class="mt-2 text-primary">Registrasi SimPraPKL</h3>
                     </div>
 
                     @if (session('success'))
@@ -35,51 +39,52 @@
                         <input type="hidden" name="group_id" value="3">
                         <input type="hidden" name="validasi" value="0">
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Nama</label>
                             <input type="text" name="name" class="form-control" value="{{ old('name') }}"
-                                required>
+                                required placeholder="Masukkan Nama Lengkap">
                             @error('name')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Alamat</label>
                             <input type="text" name="alamat" class="form-control" value="{{ old('alamat') }}"
-                                required>
+                                required placeholder="Masukkan Alamat">
                             @error('alamat')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Username</label>
                             <input type="text" name="username" class="form-control" value="{{ old('username') }}"
-                                required>
+                                required placeholder="Masukkan Username">
                             @error('username')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Email</label>
                             <input type="email" name="email" class="form-control" value="{{ old('email') }}"
-                                required>
+                                required placeholder="Masukkan Email">
                             @error('email')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Password</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <input type="password" name="password" class="form-control" required
+                                placeholder="Masukkan Password">
                             @error('password')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label>Asal Sekolah</label>
                             <select name="sekolah_id" class="form-select" required>
                                 <option disabled selected>-- Pilih Sekolah --</option>
@@ -92,7 +97,7 @@
                             @enderror
                         </div>
 
-                        <div class="d-grid">
+                        <div class="d-grid mt-3">
                             <button type="submit" class="btn btn-primary">Daftar Sekarang</button>
                         </div>
                     </form>

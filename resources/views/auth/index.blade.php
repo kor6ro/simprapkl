@@ -16,7 +16,7 @@
 
     <Style>
         body {
-            background: linear-gradient(0deg, #, #1d5791);
+            background: linear-gradient(180deg, #f8f9fa, #3b589e);
         }
     </Style>
 </head>
