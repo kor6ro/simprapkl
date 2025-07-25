@@ -6,12 +6,18 @@ use App\Models\TaskBreakDown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Carbon;
 use Yajra\DataTables\Facades\DataTables;
 
 class TaskBreakDownController extends Controller
 {
     public function index()
     {
+
+        $tugasHariIni = TaskBreakDown::whereDate('created_at', Carbon::today())->get();
+
+        return view('administrator.task_break_down.index', compact('tugasHariIni'));
+
         return view("administrator.task_break_down.index");
     }
 

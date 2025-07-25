@@ -19,6 +19,7 @@
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/custom.css') }}" rel="stylesheet" />
 
+
     {{-- CSS --}}
     @yield('css')
 </head>
@@ -109,12 +110,14 @@
                     <!-- LOGO -->
                     <div class="navbar-brand-box">
                         <a href="{{ route('dashboard') }}" class="logo logo-light">
-                        <span class="logo-sm">
-                            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid" style="max-width: 40px; height: auto; filter: grayscale(1) brightness(0) invert(1);">
-                        </span>
-                        <span class="logo-lg">
-                            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 40px; filter: grayscale(1) brightness(0) invert(1);">
-                        </span>
+                            <span class="logo-sm">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid"
+                                    style="max-width: 40px; height: auto; filter: grayscale(1) brightness(0) invert(1);">
+                            </span>
+                            <span class="logo-lg">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="img-fluid"
+                                    style="max-height: 40px; filter: grayscale(1) brightness(0) invert(1);">
+                            </span>
                         </a>
                     </div>
 

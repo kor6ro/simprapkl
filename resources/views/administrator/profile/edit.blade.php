@@ -62,7 +62,7 @@
                                 <label for="validasi" class="profile-label d-block">Validasi</label>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="validasi" name="validasi"
-                                        value="1" {{ old('validasi', $profile->validasi) ? 'checked' : '' }}>
+                                        value="Siswa" {{ old('validasi', $profile->validasi) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="validasi">Ya</label>
                                 </div>
                                 @error('validasi')
