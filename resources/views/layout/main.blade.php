@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Laravel 11</title>
+    <title>SimPraPKL</title>
     {{-- <link rel="shortcut icon" href="{{ asset('/favicon.svg') }}" type="image/x-icon"> --}}
 
     <!-- Vendors styles-->
@@ -22,6 +22,83 @@
     {{-- CSS --}}
     @yield('css')
 </head>
+<style>
+    /* Sidebar */
+    .vertical-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 250px;
+        background-color: #2a3042;
+        z-index: 1050;
+        /* overflow-y: auto; */ /* Hapus/komentari baris ini */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Hilangkan scrollbar jika menggunakan simplebar */
+    .vertical-menu [data-simplebar] {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    .sidebar-logo {
+        background-color: #2a3042 !important;
+        padding: 15px 0;
+        margin: 0;
+        text-align: center;
+        border: none;
+        box-shadow: none;
+    }
+    .sidebar-logo img {
+        max-height: 40px;
+        filter: brightness(0) invert(1);
+        background-color: transparent;
+    }
+
+
+    #sidebar-menu {
+        flex-grow: 1;
+    }
+
+    /* Konten utama bergeser */
+    .main-content {
+        margin-left: 250px;
+        transition: margin-left 0.3s ease;
+    }
+    .navbar-brand-box {
+        background-color: #2a3042 !important;
+    }
+    html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+
+    /* Responsive Mobile */
+    @media (max-width: 1024px) {
+        .vertical-menu {
+            left: -250px;
+            transition: left 0.3s ease;
+        }
+
+        body.sidebar-open .vertical-menu {
+            left: 0;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        body.sidebar-open .main-content {
+            margin-left: 250px;
+        }
+    }
+    
+</style>
+
+
 
 <body data-sidebar="colored">
     <!-- Begin page -->
@@ -145,12 +222,20 @@
 
         {{-- Sidebars --}}
         <div class="vertical-menu">
-            <div data-simplebar class="h-100">
-                <div id="sidebar-menu">
-                    @include('layout.sidebar')
-                </div>
-            </div>
+    <!-- Tambahkan logo sidebar -->
+    <div class="sidebar-logo">
+        <a href="{{ route('dashboard') }}">
+            <img src="{{ asset('assets/images/logo.png') }}" alt="Sidebar Logo">
+        </a>
+    </div>
+
+    <div data-simplebar class="h-100">
+        <div id="sidebar-menu">
+            @include('layout.sidebar')
         </div>
+    </div>
+</div>
+
 
         <div class="main-content">
             <div class="page-content">
@@ -194,6 +279,25 @@
         const baseUrl = (path, prefix = "/admin") => "{{ url('/') }}" + prefix + path;
         const assetUrl = (path) => "{{ asset('/') }}" + path;
     </script>
+<script>
+    document.getElementById('vertical-menu-btn').addEventListener('click', function () {
+        document.body.classList.toggle('sidebar-open');
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const openBtn = document.getElementById('vertical-menu-btn');
+        const closeBtn = document.getElementById('close-sidebar-btn');
+
+        openBtn.addEventListener('click', function () {
+            document.body.classList.add('sidebar-open');
+        });
+
+        closeBtn.addEventListener('click', function () {
+            document.body.classList.remove('sidebar-open');
+        });
+    });
+</script>
 
     {{-- JS --}}
     @yield('js')
