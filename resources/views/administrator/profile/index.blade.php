@@ -56,7 +56,13 @@
                         <div class="col-md-6">
                             <div class="mb-2">
                                 <label class="profile-label">Validasi</label>
-                                <div class="profile-value">{{ $profile->validasi }}</div>
+                                <div class="profile-value">
+                                    @if ($profile->validasi == 1)
+                                        <span class="text-success">Sudah Tervalidasi!</span>
+                                    @else
+                                        <span class="text-danger">Belum Tervalidasi!</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
