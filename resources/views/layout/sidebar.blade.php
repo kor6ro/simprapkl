@@ -1,4 +1,3 @@
-<!-- sidebar.blade.php -->
 <div class="vertical-menu position-relative">
     <!-- Tombol X Close Sidebar: hanya tampil di mobile & tablet -->
     <button type="button" id="close-sidebar-btn" class="d-block d-lg-none"
@@ -9,6 +8,8 @@
     <div data-simplebar class="h-100">
         <div id="sidebar-menu">
             <ul class="metismenu list-unstyled" id="side-menu">
+
+                {{-- List Menu dan Dashboard --}}
                 <li class="menu-title">List Menu</li>
                 <li class="{{ Route::is('dashboard') ? 'mm-active' : '' }}">
                     <a href="{{ route('dashboard') }}" class="waves-effect">
@@ -17,65 +18,75 @@
                     </a>
                 </li>
 
-                <li class="menu-title">Master Data</li>
-                <li class="{{ Route::is('sekolah.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('sekolah.index') }}" class="waves-effect">
-                        <i class="cil-school"></i>
-                        <span>Sekolah</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('group.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('group.index') }}" class="waves-effect">
-                        <i class="cil-group"></i>
-                        <span>Group</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('presensi_setting.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('presensi_setting.index') }}" class="waves-effect">
-                        <i class="cil-settings"></i>
-                        <span>Setting Presensi</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('presensi_jenis.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('presensi_jenis.index') }}" class="waves-effect">
-                        <i class="cil-settings"></i>
-                        <span>Jenis Presensi</span>
-                    </a>
-                </li>
+                {{-- Master Data (Admin Saja) --}}
+                @if (isRole('Admin'))
+                    <li class="menu-title">Master Data</li>
+                    <li class="{{ Route::is('sekolah.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('sekolah.index') }}" class="waves-effect">
+                            <i class="cil-school"></i>
+                            <span>Sekolah</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('group.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('group.index') }}" class="waves-effect">
+                            <i class="cil-group"></i>
+                            <span>Group</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('presensi_setting.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi_setting.index') }}" class="waves-effect">
+                            <i class="cil-settings"></i>
+                            <span>Setting Presensi</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('presensi_jenis.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi_jenis.index') }}" class="waves-effect">
+                            <i class="cil-settings"></i>
+                            <span>Jenis Presensi</span>
+                        </a>
+                    </li>
+                @endif
 
-                <li class="menu-title">Manajement User</li>
-                <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('user.index') }}" class="waves-effect">
-                        <i class="cil-user"></i>
-                        <span>User</span>
-                    </a>
-                </li>
+                {{-- Manajemen User (Admin & Guru) --}}
+                @if (isRole('Admin') || isRole('Guru'))
+                    <li class="menu-title">Manajement User</li>
+                    <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('user.index') }}" class="waves-effect">
+                            <i class="cil-user"></i>
+                            <span>User</span>
+                        </a>
+                    </li>
+                @endif
 
-                <li class="menu-title">Manajement Data</li>
-                <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('presensi.index') }}" class="waves-effect">
-                        <i class="cil-calendar"></i>
-                        <span>Presensi</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('task_break_down.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('task_break_down.index') }}" class="waves-effect">
-                        <i class="cil-task"></i>
-                        <span>Task Breakdown</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('laporan.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('laporan.index') }}" class="waves-effect">
-                        <i class="cil-chart"></i>
-                        <span>Laporan</span>
-                    </a>
-                </li>
-                <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('colect_data.index') }}" class="waves-effect">
-                        <i class="cil-pen"></i>
-                        <span>Colect Data</span>
-                    </a>
-                </li>
+                {{-- Manajemen Data (Semua Role) --}}
+                @if (isRole('Admin') || isRole('Guru') || isRole('Siswa'))
+                    <li class="menu-title">Manajement Data</li>
+                    <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi.index') }}" class="waves-effect">
+                            <i class="cil-calendar"></i>
+                            <span>Presensi</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('task_break_down.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('task_break_down.index') }}" class="waves-effect">
+                            <i class="cil-task"></i>
+                            <span>Task Breakdown</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('laporan.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('laporan.index') }}" class="waves-effect">
+                            <i class="cil-chart"></i>
+                            <span>Laporan</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('colect_data.index') }}" class="waves-effect">
+                            <i class="cil-pen"></i>
+                            <span>Colect Data</span>
+                        </a>
+                    </li>
+                @endif
+
             </ul>
         </div>
     </div>
@@ -125,6 +136,7 @@
         background: #3b589e;
     }
 </style>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const closeBtn = document.getElementById('close-sidebar-btn');
