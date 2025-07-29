@@ -72,12 +72,18 @@ class ColectDataController extends Controller
             "kelebihan" => $request->input("kelebihan"),
             "kekurangan" => $request->input("kekurangan"),
             "serlok" => $request->input("serlok"),
-            "gambar_foto" => $request->input("gambar_foto"),
             "user_id" => auth()->id(),
         ];
 
-        dd($dataSave);
-        die;
+        if ($request->file("gambar_foto") != null) {
+            $file = $request->file("gambar_foto");
+            $fileName = $file->hashName();
+            $file->move("uploads/colect_data_gambar_foto", $fileName);
+            $dataSave["gambar_foto"] = $fileName;
+        }
+
+        // dd($dataSave);
+        // die;
 
         ColectData::create($dataSave);
         return redirect(route("colect_data.index"))->with([
