@@ -8,11 +8,11 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Setting Presensi</h4>
+                <h4 class="mb-sm-0 font-size-18">Presensi Saya</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active">Setting Presensi</li>
+                        <li class="breadcrumb-item active">Presensi</li>
                     </ol>
                 </div>
             </div>
@@ -21,8 +21,8 @@
 
     <div class="row mb-3">
         <div class="col-auto">
-            <a href="{{ route('presensi_setting.create') }}" class="btn btn-success">
-                <i class="fa fa-plus me-1"></i> Tambah
+            <a href="{{ route('presensi.create') }}" class="btn btn-success">
+                <i class="fa fa-plus me-1"></i> Input Presensi
             </a>
         </div>
     </div>
@@ -33,14 +33,11 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Pagi Mulai</th>
-                        <th>Pagi Selesai</th>
-                        <th>Sore Mulai</th>
-                        <th>Sore Selesai</th>
-                        <th>Durasi Pagi</th>
-                        <th>Durasi Sore</th>
-                        <th>Status</th>
-                        <th>Created At</th>
+                        <th>Jenis Presensi</th>
+                        <th>Sesi</th>
+                        <th>Jam Presensi</th>
+                        <th>Tanggal</th>
+                        <th>Status Verifikasi</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -50,7 +47,7 @@
     </div>
 
     <div class="d-none">
-        <form id="form-destroy" action="{{ route('presensi_setting.store') }}" method="post">
+        <form id="form-destroy" action="{{ route('presensi.store') }}" method="post">
             @csrf
             @method('DELETE')
         </form>
@@ -65,7 +62,7 @@
             serverSide: true,
             autoWidth: false,
             ajax: {
-                url: baseUrl('/presensi_setting/fetch'),
+                url: baseUrl('/presensi/fetch'),
                 headers: {
                     'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
                 },
@@ -73,7 +70,7 @@
                 type: "POST"
             },
             order: [
-                [8, 'desc']
+                [4, 'desc']
             ],
             columns: [{
                     data: 'DT_RowIndex',
@@ -83,52 +80,34 @@
                     orderable: false,
                 },
                 {
-                    data: 'pagi_mulai',
+                    data: 'presensi_jenis',
                     searchable: true,
                     orderable: true,
                 },
                 {
-                    data: 'pagi_selesai',
+                    data: 'sesi',
                     searchable: true,
                     orderable: true,
                 },
                 {
-                    data: 'sore_mulai',
+                    data: 'jam_presensi',
                     searchable: true,
                     orderable: true,
                 },
                 {
-                    data: 'sore_selesai',
+                    data: 'tanggal_presensi',
                     searchable: true,
                     orderable: true,
                 },
                 {
-                    data: 'durasi_pagi',
-                    searchable: false,
-                    orderable: false,
-                },
-                {
-                    data: 'durasi_sore',
-                    searchable: false,
-                    orderable: false,
-                },
-                {
-                    data: 'status_active',
+                    data: 'status_verifikasi',
                     orderable: false,
                     searchable: false,
-                },
-                {
-                    data: 'created_at',
-                    render: function(data) {
-                        if (!data) return "";
-                        const date = new Date(data);
-                        return date.toLocaleString();
-                    }
                 },
                 {
                     data: 'id',
                     name: 'id',
-                    render: function(data, type, row) {
+                    render: function(data) {
                         var div = document.createElement("div");
                         div.className = "row-action";
 
@@ -138,74 +117,20 @@
                         div.append(btn);
 
                         var btn = document.createElement("button");
-                        btn.className = "btn btn-success btn-action mx-1 action-activate";
-                        btn.innerHTML = '<i class="icon fa fa-check"></i>';
-                        div.append(btn);
-
-                        var btn = document.createElement("button");
                         btn.className = "btn btn-danger btn-action mx-1 action-hapus";
                         btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
                         div.append(btn);
 
                         return div.outerHTML;
                     },
-                    width: "200px",
+                    width: "150px",
                     orderable: false,
                 },
             ],
             createdRow: function(row, data) {
                 $(".action-edit", row).click(function() {
-                    const url = baseUrl('/presensi_setting/' + data.id + '/edit');
+                    const url = baseUrl('/presensi/' + data.id + '/edit');
                     window.location.replace(url);
-                });
-
-                $(".action-activate", row).click(function(e) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: "question",
-                        title: "Aktifkan Setting",
-                        text: "Anda yakin akan mengaktifkan setting ini? Setting lain akan dinonaktifkan.",
-                        showCancelButton: true,
-                        confirmButtonText: "Aktifkan",
-                        cancelButtonText: "Batal",
-                    }).then((result) => {
-                        if (result.value) {
-                            $.ajax({
-                                url: baseUrl('/presensi_setting/' + data.id +
-                                    '/activate'),
-                                type: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                                        'content')
-                                },
-                                success: function(response) {
-                                    if (response.success) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            title: 'Berhasil',
-                                            text: response.message,
-                                        }).then(() => {
-                                            $('table').DataTable().ajax
-                                                .reload();
-                                        });
-                                    } else {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'Gagal',
-                                            text: response.message,
-                                        });
-                                    }
-                                },
-                                error: function() {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Gagal',
-                                        text: 'Terjadi kesalahan saat mengaktifkan setting',
-                                    });
-                                }
-                            });
-                        }
-                    });
                 });
 
                 $(".action-hapus", row).click(function(e) {
@@ -213,7 +138,7 @@
                     Swal.fire({
                         icon: "warning",
                         title: "Warning",
-                        text: "Anda yakin akan menghapus data ini ??",
+                        text: "Anda yakin akan menghapus presensi ini ??",
                         showCancelButton: true,
                         confirmButtonText: "Hapus",
                         cancelButtonText: "Batal",

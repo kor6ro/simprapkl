@@ -45,10 +45,16 @@
                             <span>Jenis Presensi</span>
                         </a>
                     </li>
+                    <li class="{{ Route::is('presensi_gambar.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi_gambar.index') }}" class="waves-effect">
+                            <i class="cil-settings"></i>
+                            <span>Gambar Presensi</span>
+                        </a>
+                    </li>
                 @endif
 
-                {{-- Manajemen User (Admin & Guru) --}}
-                @if (isRole('Admin') || isRole('Guru'))
+                {{-- Manajemen User (Admin & Pembimbing) --}}
+                @if (isRole('Admin') || isRole('Pembimbing'))
                     <li class="menu-title">Manajement User</li>
                     <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('user.index') }}" class="waves-effect">
@@ -56,10 +62,6 @@
                             <span>User</span>
                         </a>
                     </li>
-                @endif
-
-                {{-- Manajemen Data (Semua Role) --}}
-                @if (isRole('Admin') || isRole('Guru') || isRole('Siswa'))
                     <li class="menu-title">Manajement Data</li>
                     <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('presensi.index') }}" class="waves-effect">
@@ -67,6 +69,10 @@
                             <span>Presensi</span>
                         </a>
                     </li>
+                @endif
+
+                {{-- Manajemen Data (Semua Role) --}}
+                @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa'))
                     <li class="{{ Route::is('task_break_down.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('task_break_down.index') }}" class="waves-effect">
                             <i class="cil-task"></i>

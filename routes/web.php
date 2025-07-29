@@ -91,11 +91,13 @@ Route::prefix("/admin")
         // Presensi
         Route::resource("presensi", PresensiController::class);
         Route::post("presensi/fetch", [PresensiController::class, "fetch"]);
+        Route::post("presensi/check-automatic", [PresensiController::class, "runAutomaticCheck"])->name('presensi.check-automatic');
 
         // Presensi Setting
-
         Route::resource('presensi_setting', PresensiSettingController::class);
         Route::post('presensi_setting/fetch', [PresensiSettingController::class, 'fetch']);
+        Route::post('presensi_setting/{id}/activate', [PresensiSettingController::class, 'activate'])->name('presensi_setting.activate');
+        Route::get('presensi_setting/active', [PresensiSettingController::class, 'getActiveSetting'])->name('presensi_setting.active');
 
         // PresensiJenis
         Route::resource("presensi_jenis", PresensiJenisController::class);

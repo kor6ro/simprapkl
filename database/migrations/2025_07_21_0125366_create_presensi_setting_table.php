@@ -15,9 +15,11 @@ class CreatePresensiSettingTable extends Migration
     {
         Schema::create('presensi_setting', function (Blueprint $table) {
             $table->id();
-            $table->time('jam_masuk');
-            $table->time('jam_pulang');
-            $table->boolean('is_active')->default(true); // hanya 1 setting aktif
+            $table->time('pagi_mulai');
+            $table->time('pagi_selesai');
+            $table->time('sore_mulai');
+            $table->time('sore_selesai');
+            $table->boolean('is_active')->default(false); // hanya 1 setting aktif
             $table->timestamps();
         });
     }
