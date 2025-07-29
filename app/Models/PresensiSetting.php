@@ -12,8 +12,10 @@ class PresensiSetting extends Model
     protected $table = "presensi_setting";
 
     protected $fillable = [
-        "jam_masuk",
-        "jam_pulang",
+        "pagi_mulai",
+        "pagi_selesai",
+        "sore_mulai",
+        "sore_selesai",
         "is_active",
     ];
 }

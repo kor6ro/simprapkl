@@ -1,7 +1,6 @@
 @extends('layout.main')
 @section('css')
     <style>
-
     </style>
 @endsection
 
@@ -21,11 +20,20 @@
     </div>
 
     <div class="row mb-3">
-        <div class="col-auto">
-            <a href="{{ route('presensi.create') }}" class="btn btn-success">
-                <i class="fa fa-plus me-1"></i> Tambah
-            </a>
-        </div>
+        @if (canInputPresensi())
+            <div class="col-auto">
+                <a href="{{ route('presensi.create') }}" class="btn btn-success">
+                    <i class="fa fa-plus me-1"></i> Tambah
+                </a>
+            </div>
+        @endif
+        @if (canValidatePresensi())
+            <div class="col-auto">
+                <button type="button" class="btn btn-warning" id="btn-check-automatic">
+                    <i class="fa fa-clock me-1"></i> Cek Presensi Otomatis
+                </button>
+            </div>
+        @endif
     </div>
 
     <div class="card">
@@ -37,7 +45,7 @@
                         <th>Nama</th>
                         <th>Jenis Presensi</th>
                         <th>Sesi</th>
-                        <th>Jam</th>
+                        <th>Jam Presensi</th>
                         <th>Tanggal</th>
                         <th>Status Verifikasi</th>
                         <th>Aksi</th>
@@ -83,39 +91,59 @@
                 },
                 {
                     data: 'nama',
-                    name: 'nama'
+                    searchable: true,
+                    orderable: true,
                 },
                 {
-                    data: 'jenis_presensi',
-                    name: 'jenis_presensi'
+                    data: 'presensi_jenis',
+                    searchable: true,
+                    orderable: true,
                 },
                 {
                     data: 'sesi',
-                    name: 'sesi'
+                    searchable: true,
+                    orderable: true,
                 },
                 {
                     data: 'jam_presensi',
-                    name: 'jam_presensi'
+                    searchable: true,
+                    orderable: true,
                 },
                 {
                     data: 'tanggal_presensi',
-                    name: 'tanggal_presensi'
+                    searchable: true,
+                    orderable: true,
                 },
                 {
                     data: 'status_verifikasi',
-                    name: 'status_verifikasi',
                     orderable: false,
-                    searchable: false
+                    searchable: false,
                 },
                 {
-                    data: 'aksi',
-                    name: 'aksi',
+                    data: 'id',
+                    name: 'id',
+                    render: function(data) {
+                        var div = document.createElement("div");
+                        div.className = "row-action";
+
+                        var btn = document.createElement("button");
+                        btn.className = "btn btn-warning btn-action mx-1 action-edit";
+                        btn.innerHTML = '<i class="icon fa fa-edit"></i>';
+                        div.append(btn);
+
+                        var btn = document.createElement("button");
+                        btn.className = "btn btn-danger btn-action mx-1 action-hapus";
+                        btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
+                        div.append(btn);
+
+                        return div.outerHTML;
+                    },
+                    width: "150px",
                     orderable: false,
-                    searchable: false
-                }
+                },
             ],
             createdRow: function(row, data) {
-                $(".action-edit", row).click(function(e) {
+                $(".action-edit", row).click(function() {
                     const url = baseUrl('/presensi/' + data.id + '/edit');
                     window.location.replace(url);
                 });
@@ -139,6 +167,77 @@
                 });
             },
         });
+
+        // Handle automatic presensi check (only for admin/developer)
+        $('#btn-check-automatic').click(function() {
+            Swal.fire({
+                icon: "warning",
+                title: "⚠️ PERHATIAN - Fitur Admin",
+                html: `
+                    <div class="text-left">
+                        <p><strong>Fitur ini akan:</strong></p>
+                        <ul class="text-left">
+                            <li>✅ Membuat presensi "bolos" untuk sesi yang kosong</li>
+                            <li>✅ Mengubah presensi terlambat menjadi "telat"</li>
+                            <li>⚠️ <strong>Mengubah data presensi yang sudah ada!</strong></li>
+                        </ul>
+                        <p class="text-danger mt-2"><strong>Apakah Anda yakin ingin melanjutkan?</strong></p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: "Ya, Jalankan",
+                cancelButtonText: "Batal",
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+            }).then((result) => {
+                if (result.value) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Menjalankan Pengecekan...',
+                        html: 'Mohon tunggu, sistem sedang memproses...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: baseUrl('/presensi/check-automatic'),
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    html: `
+                                        <p>${response.message}</p>
+                                        <p class="text-info">Data presensi telah diperbarui secara otomatis.</p>
+                                    `,
+                                }).then(() => {
+                                    $('table').DataTable().ajax.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: response.message,
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: 'Terjadi kesalahan saat menjalankan pengecekan otomatis',
+                            });
+                        }
+                    });
+                }
+            });
+        });
     </script>
 
     @if (session()->has('dataSaved') && session()->get('dataSaved') == true)
@@ -150,6 +249,7 @@
             });
         </script>
     @endif
+
     @if (session()->has('dataSaved') && session()->get('dataSaved') == false)
         <script>
             Swal.fire({

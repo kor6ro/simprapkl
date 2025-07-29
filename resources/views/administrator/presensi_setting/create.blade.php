@@ -25,31 +25,62 @@
             <form action="{{ route('presensi_setting.store') }}" method="post">
                 @csrf
                 <div class="row">
-                    <div class="col-xl-4 mb-3">
-                        <label for="jam_masuk" class="form-label">Jam Masuk</label>
-                        <input class="form-control" type="time" name="jam_masuk" id="jam_masuk"
-                            value="{{ old('jam_masuk') }}">
-                        @error('jam_masuk')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                    <div class="col-md-6">
+                        <h5 class="text-primary mb-3">Sesi Pagi</h5>
+                        <div class="row">
+                            <div class="col-xl-6 mb-3">
+                                <label for="pagi_mulai" class="form-label">Jam Mulai Pagi</label>
+                                <input class="form-control" type="time" name="pagi_mulai" id="pagi_mulai"
+                                    value="{{ old('pagi_mulai', '07:00') }}" required>
+                                @error('pagi_mulai')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="col-xl-6 mb-3">
+                                <label for="pagi_selesai" class="form-label">Jam Selesai Pagi</label>
+                                <input class="form-control" type="time" name="pagi_selesai" id="pagi_selesai"
+                                    value="{{ old('pagi_selesai', '08:15') }}" required>
+                                @error('pagi_selesai')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-xl-4 mb-3">
-                        <label for="jam_pulang" class="form-label">Jam Pulang</label>
-                        <input class="form-control" type="time" name="jam_pulang" id="jam_pulang"
-                            value="{{ old('jam_pulang') }}">
-                        @error('jam_pulang')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
+                    <div class="col-md-6">
+                        <h5 class="text-primary mb-3">Sesi Sore</h5>
+                        <div class="row">
+                            <div class="col-xl-6 mb-3">
+                                <label for="sore_mulai" class="form-label">Jam Mulai Sore</label>
+                                <input class="form-control" type="time" name="sore_mulai" id="sore_mulai"
+                                    value="{{ old('sore_mulai', '16:00') }}" required>
+                                @error('sore_mulai')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
 
-                    <div class="col-xl-4 mb-3">
+                            <div class="col-xl-6 mb-3">
+                                <label for="sore_selesai" class="form-label">Jam Selesai Sore</label>
+                                <input class="form-control" type="time" name="sore_selesai" id="sore_selesai"
+                                    value="{{ old('sore_selesai', '17:00') }}" required>
+                                @error('sore_selesai')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
                         <label class="form-label d-block">Status Aktif</label>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1"
-                                checked>
+                                {{ old('is_active') ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">Aktifkan Setting Ini</label>
                         </div>
+                        <small class="text-muted">*Hanya satu setting yang dapat aktif pada satu waktu</small>
                     </div>
                 </div>
 
@@ -67,5 +98,41 @@
 @endsection
 
 @section('js')
-    <script></script>
+    <script>
+        // Add client-side validation for time ranges
+        $(document).ready(function() {
+            // Validate pagi time range
+            $('#pagi_selesai').on('change', function() {
+                var pagiMulai = $('#pagi_mulai').val();
+                var pagiSelesai = $(this).val();
+
+                if (pagiMulai && pagiSelesai && pagiMulai >= pagiSelesai) {
+                    alert('Jam selesai pagi harus lebih besar dari jam mulai pagi');
+                    $(this).val('');
+                }
+            });
+
+            // Validate sore time range
+            $('#sore_selesai').on('change', function() {
+                var soreMulai = $('#sore_mulai').val();
+                var soreSelesai = $(this).val();
+
+                if (soreMulai && soreSelesai && soreMulai >= soreSelesai) {
+                    alert('Jam selesai sore harus lebih besar dari jam mulai sore');
+                    $(this).val('');
+                }
+            });
+
+            // Validate sore must be after pagi
+            $('#sore_mulai').on('change', function() {
+                var pagiSelesai = $('#pagi_selesai').val();
+                var soreMulai = $(this).val();
+
+                if (pagiSelesai && soreMulai && soreMulai <= pagiSelesai) {
+                    alert('Jam mulai sore harus lebih besar dari jam selesai pagi');
+                    $(this).val('');
+                }
+            });
+        });
+    </script>
 @endsection

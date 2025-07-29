@@ -31,8 +31,9 @@ class Presensi extends Model
 
     public function jenisPresensi()
     {
-        return $this->belongsTo(PresensiJenis::class);
+        return $this->belongsTo(PresensiJenis::class, 'presensi_jenis_id');
     }
+
 
     public function gambar()
     {

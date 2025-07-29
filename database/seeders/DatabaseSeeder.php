@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         Schema::disableForeignKeyConstraints();
 
@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             GroupSeeder::class,
             SekolahSeeder::class,
             JenisPresensiSeeder::class,
+            PresensiSettingSeeder::class,
         ]);
 
         Schema::enableForeignKeyConstraints();

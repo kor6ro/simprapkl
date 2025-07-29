@@ -17,8 +17,9 @@ class GroupSeeder extends Seeder
         $data = [
             ["nama" => "Developer"],
             ["nama" => "Admin"],
+            ["nama" => "Pembimbing"],
             ["nama" => "Siswa"],
-            ["nama" => "Guru"],
+
         ];
 
         Group::insert($data);
