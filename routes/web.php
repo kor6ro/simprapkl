@@ -8,7 +8,8 @@ use App\Http\Controllers\SekolahController;
 use App\Http\Controllers\ColectDataController;
 use App\Http\Controllers\TaskBreakdownController;
 use App\Http\Controllers\PresensiController;
-use App\Http\Controllers\SettingPresensiController;
+use App\Http\Controllers\PresensiSettingController;
+use App\Http\Controllers\PresensiJenisController;
 use App\Http\Controllers\PresensiGambarController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaporanGambarController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\JenisLaporanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
+use App\Models\Presensi;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,12 +92,14 @@ Route::prefix("/admin")
         Route::resource("presensi", PresensiController::class);
         Route::post("presensi/fetch", [PresensiController::class, "fetch"]);
 
-        // SettingPresensi
-        Route::resource("setting_presensi", SettingPresensiController::class);
-        Route::post("setting_presensi/fetch", [
-            SettingPresensiController::class,
-            "fetch",
-        ]);
+        // Presensi Setting
+
+        Route::resource('presensi_setting', PresensiSettingController::class);
+        Route::post('presensi_setting/fetch', [PresensiSettingController::class, 'fetch']);
+
+        // PresensiJenis
+        Route::resource("presensi_jenis", PresensiJenisController::class);
+        Route::post("presensi_jenis/fetch", [PresensiJenisController::class, "fetch"]);
 
         // PresensiGambar
         Route::resource("presensi_gambar", PresensiGambarController::class);

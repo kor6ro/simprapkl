@@ -12,16 +12,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The table associated with the model.
-     */
     protected $table = "user";
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         "name",
         "username",
@@ -35,13 +27,21 @@ class User extends Authenticatable
         "updated_at",
     ];
 
+    //Relasi ke sekolah
     public function sekolah()
     {
         return $this->belongsTo(Sekolah::class, "sekolah_id");
     }
 
+    //Relasi ke group
     public function group()
     {
         return $this->belongsTo(Group::class, "group_id");
+    }
+
+    //relasi ke presensi siswa
+    public function presensi()
+    {
+        return $this->hasMany(Presensi::class);
     }
 }

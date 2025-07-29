@@ -4,6 +4,7 @@
 
     </style>
 @endsection
+
 @section('content')
     <div class="row">
         <div class="col-12">
@@ -11,15 +12,14 @@
                 <h4 class="mb-sm-0 font-size-18">Presensi</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item">
-                            <a href="#">Home</a>
-                        </li>
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
                         <li class="breadcrumb-item active">Presensi</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
+
     <div class="row mb-3">
         <div class="col-auto">
             <a href="{{ route('presensi.create') }}" class="btn btn-success">
@@ -27,25 +27,27 @@
             </a>
         </div>
     </div>
+
     <div class="card">
         <div class="card-body">
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Status Presensi</th>
-                        <th scope="col">Tanggal Presensi</th>
-                        <th scope="col">User Id</th>
-                        <th scope="col">Created At</th>
-                        <th scope="col">Aksi</th>
+                        <th>#</th>
+                        <th>Nama</th>
+                        <th>Jenis Presensi</th>
+                        <th>Sesi</th>
+                        <th>Jam</th>
+                        <th>Tanggal</th>
+                        <th>Status Verifikasi</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
-
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
+
     <div class="d-none">
         <form id="form-destroy" action="{{ route('presensi.store') }}" method="post">
             @csrf
@@ -53,6 +55,7 @@
         </form>
     </div>
 @endsection
+
 @section('js')
     <script>
         $('table').DataTable({
@@ -69,7 +72,7 @@
                 type: "POST"
             },
             order: [
-                [1, 'asc']
+                [5, 'desc']
             ],
             columns: [{
                     data: 'DT_RowIndex',
@@ -78,58 +81,38 @@
                     searchable: false,
                     orderable: false,
                 },
-
                 {
-                    data: 'status_presensi',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
+                    data: 'nama',
+                    name: 'nama'
+                },
+                {
+                    data: 'jenis_presensi',
+                    name: 'jenis_presensi'
+                },
+                {
+                    data: 'sesi',
+                    name: 'sesi'
+                },
+                {
+                    data: 'jam_presensi',
+                    name: 'jam_presensi'
                 },
                 {
                     data: 'tanggal_presensi',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
+                    name: 'tanggal_presensi'
                 },
                 {
-                    data: 'user_id',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
-                },
-                {
-                    data: 'created_at',
-                    render: function(data) {
-                        if (!data) return "";
-
-                        const date = new Date(data);
-                        return date.toLocaleString();
-                    }
-                },
-                {
-                    data: 'id',
-                    name: 'id',
-                    render: function(data, i, row) {
-                        var div = document.createElement("div");
-                        div.className = "row-action";
-
-                        // Edit
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-warning btn-action mx-1 action-edit";
-                        btn.innerHTML = '<i class="icon fa fa-edit"></i>';
-                        div.append(btn);
-
-                        // Delete
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-danger btn-action mx-1 action-hapus";
-                        btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
-                        div.append(btn);
-
-                        return div.outerHTML;
-                    },
-                    width: "150px",
+                    data: 'status_verifikasi',
+                    name: 'status_verifikasi',
                     orderable: false,
+                    searchable: false
                 },
+                {
+                    data: 'aksi',
+                    name: 'aksi',
+                    orderable: false,
+                    searchable: false
+                }
             ],
             createdRow: function(row, data) {
                 $(".action-edit", row).click(function(e) {
@@ -149,14 +132,15 @@
                     }).then((result) => {
                         if (result.value) {
                             const url = $('#form-destroy').attr('action');
-                            $('#form-destroy').attr('action', url + '/' + data.id)
-                                .trigger('submit');
+                            $('#form-destroy').attr('action', url + '/' + data.id).trigger(
+                                'submit');
                         }
                     });
                 });
             },
         });
     </script>
+
     @if (session()->has('dataSaved') && session()->get('dataSaved') == true)
         <script>
             Swal.fire({

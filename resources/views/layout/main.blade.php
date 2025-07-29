@@ -33,7 +33,8 @@
         width: 250px;
         background-color: #2a3042;
         z-index: 1050;
-        /* overflow-y: auto; */ /* Hapus/komentari baris ini */
+        /* overflow-y: auto; */
+        /* Hapus/komentari baris ini */
         display: flex;
         flex-direction: column;
     }
@@ -52,6 +53,7 @@
         border: none;
         box-shadow: none;
     }
+
     .sidebar-logo img {
         max-height: 40px;
         filter: brightness(0) invert(1);
@@ -68,13 +70,16 @@
         margin-left: 250px;
         transition: margin-left 0.3s ease;
     }
+
     .navbar-brand-box {
         background-color: #2a3042 !important;
     }
-    html, body {
-    overflow-x: hidden;
-    width: 100%;
-}
+
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+    }
 
 
     /* Responsive Mobile */
@@ -96,7 +101,6 @@
             margin-left: 250px;
         }
     }
-    
 </style>
 
 
@@ -225,19 +229,19 @@
 
         {{-- Sidebars --}}
         <div class="vertical-menu">
-    <!-- Tambahkan logo sidebar -->
-    <div class="sidebar-logo">
-        <a href="{{ route('dashboard') }}">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="Sidebar Logo">
-        </a>
-    </div>
+            <!-- Tambahkan logo sidebar -->
+            <div class="sidebar-logo">
+                <a href="{{ route('dashboard') }}">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="Sidebar Logo">
+                </a>
+            </div>
 
-    <div data-simplebar class="h-100">
-        <div id="sidebar-menu">
-            @include('layout.sidebar')
+            <div data-simplebar class="h-100">
+                <div id="sidebar-menu">
+                    @include('layout.sidebar')
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
 
         <div class="main-content">
@@ -248,17 +252,6 @@
                 </div>
             </div>
 
-            <footer class="footer">
-                <div class="container-fluid">
-                    <div class="row justify-content-end">
-                        <div class="col-auto">
-                            <div class="text-sm-end d-none d-sm-block">
-                                Powered By <b class="text-primary">Cegeh Ngoding</b>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     </div>
 
@@ -282,25 +275,25 @@
         const baseUrl = (path, prefix = "/admin") => "{{ url('/') }}" + prefix + path;
         const assetUrl = (path) => "{{ asset('/') }}" + path;
     </script>
-<script>
-    document.getElementById('vertical-menu-btn').addEventListener('click', function () {
-        document.body.classList.toggle('sidebar-open');
-    });
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const openBtn = document.getElementById('vertical-menu-btn');
-        const closeBtn = document.getElementById('close-sidebar-btn');
-
-        openBtn.addEventListener('click', function () {
-            document.body.classList.add('sidebar-open');
+    <script>
+        document.getElementById('vertical-menu-btn').addEventListener('click', function() {
+            document.body.classList.toggle('sidebar-open');
         });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const openBtn = document.getElementById('vertical-menu-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
 
-        closeBtn.addEventListener('click', function () {
-            document.body.classList.remove('sidebar-open');
+            openBtn.addEventListener('click', function() {
+                document.body.classList.add('sidebar-open');
+            });
+
+            closeBtn.addEventListener('click', function() {
+                document.body.classList.remove('sidebar-open');
+            });
         });
-    });
-</script>
+    </script>
 
     {{-- JS --}}
     @yield('js')

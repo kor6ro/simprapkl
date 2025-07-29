@@ -2,27 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Sekolah extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     */
-    protected $table = "sekolah";
+    protected $table = 'sekolah';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ["nama", "created_at", "updated_at"];
+    protected $fillable = ['nama', 'logo'];
 
-    public function user()
+    public function users()
     {
-        return $this->hasMany(User::class, "sekolah_id");
+        return $this->hasMany(User::class);
     }
 }

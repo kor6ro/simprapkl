@@ -2,28 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Presensi extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     */
-    protected $table = "presensi";
+    protected $table = 'presensi';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        "status_presensi",
-        "tanggal_presensi",
-        "user_id",
-        "created_at",
-        "updated_at",
+        'user_id',
+        'presensi_jenis_id',
+        'sesi',
+        'jam_presensi',
+        'tanggal_presensi',
+        'bukti',
+        'keterangan',
+        'status_verifikasi',
+        'catatan_verifikasi',
     ];
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function jenisPresensi()
+    {
+        return $this->belongsTo(PresensiJenis::class);
+    }
+
+    public function gambar()
+    {
+        return $this->hasMany(PresensiGambar::class);
+    }
 }

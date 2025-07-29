@@ -1,8 +1,7 @@
 <!-- sidebar.blade.php -->
 <div class="vertical-menu position-relative">
     <!-- Tombol X Close Sidebar: hanya tampil di mobile & tablet -->
-    <button type="button" id="close-sidebar-btn"
-        class="d-block d-lg-none"
+    <button type="button" id="close-sidebar-btn" class="d-block d-lg-none"
         style="position: absolute; top: 10px; right: 10px; z-index: 1051; background: none; border: none; padding: 0; cursor: pointer; width: 2.2rem; height: 2.2rem;">
         <span class="x-square"></span>
     </button>
@@ -31,10 +30,16 @@
                         <span>Group</span>
                     </a>
                 </li>
-                <li class="{{ Route::is('setting_presensi.*') ? 'mm-active' : '' }}">
-                    <a href="{{ route('setting_presensi.index') }}" class="waves-effect">
+                <li class="{{ Route::is('presensi_setting.*') ? 'mm-active' : '' }}">
+                    <a href="{{ route('presensi_setting.index') }}" class="waves-effect">
                         <i class="cil-settings"></i>
                         <span>Setting Presensi</span>
+                    </a>
+                </li>
+                <li class="{{ Route::is('presensi_jenis.*') ? 'mm-active' : '' }}">
+                    <a href="{{ route('presensi_jenis.index') }}" class="waves-effect">
+                        <i class="cil-settings"></i>
+                        <span>Jenis Presensi</span>
                     </a>
                 </li>
 
@@ -121,10 +126,10 @@
     }
 </style>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
         const closeBtn = document.getElementById('close-sidebar-btn');
         if (closeBtn) {
-            closeBtn.addEventListener('click', function () {
+            closeBtn.addEventListener('click', function() {
                 document.body.classList.remove('sidebar-open');
             });
         }

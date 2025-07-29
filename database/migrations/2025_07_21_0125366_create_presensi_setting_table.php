@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePresensiTable extends Migration
+class CreatePresensiSettingTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,13 @@ class CreatePresensiTable extends Migration
      */
     public function up()
     {
-        Schema::disableForeignKeyConstraints();
-        Schema::create("presensi", function (Blueprint $table) {
+        Schema::create('presensi_setting', function (Blueprint $table) {
             $table->id();
-            $table->string("status_presensi");
-            $table->string("tanggal_presensi");
-            $table->integer("user_id");
+            $table->time('jam_masuk');
+            $table->time('jam_pulang');
+            $table->boolean('is_active')->default(true); // hanya 1 setting aktif
             $table->timestamps();
         });
-        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -31,6 +29,6 @@ class CreatePresensiTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists("presensi");
+        Schema::dropIfExists("presensi_setting");
     }
 }

@@ -13,15 +13,14 @@ class CreatePresensiGambarTable extends Migration
      */
     public function up()
     {
-        Schema::disableForeignKeyConstraints();
-        Schema::create("presensi_gambar", function (Blueprint $table) {
+        Schema::create('presensi_gambar', function (Blueprint $table) {
             $table->id();
-            $table->string("gmbr_presensi_pagi");
-            $table->string("gmbr_presensi_sore");
-            $table->integer("presensi_id");
+            $table->unsignedBigInteger('presensi_id');
+            $table->string('bukti');
             $table->timestamps();
+
+            $table->foreign('presensi_id')->references('id')->on('presensi')->onDelete('cascade');
         });
-        Schema::enableForeignKeyConstraints();
     }
 
     /**
