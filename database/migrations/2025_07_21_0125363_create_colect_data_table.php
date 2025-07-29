@@ -24,7 +24,7 @@ class CreateColectDataTable extends Migration
             $table->text("kelebihan");
             $table->text("kekurangan");
             $table->string("serlok");
-            $table->string("gambar_foto");
+            $table->string("gambar_foto")->nullable();
             $table->foreignId("user_id")->references("id")->on("user");
             $table->timestamps();
         });

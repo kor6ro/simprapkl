@@ -55,7 +55,6 @@ class ColectDataController extends Controller
             "kekurangan" => "required",
             "serlok" => "required",
             "gambar_foto" => "required",
-            "user_id" => "required",
         ]);
 
         if ($validator->fails()) {
@@ -74,21 +73,30 @@ class ColectDataController extends Controller
             "kekurangan" => $request->input("kekurangan"),
             "serlok" => $request->input("serlok"),
             "gambar_foto" => $request->input("gambar_foto"),
-            "user_id" => $request->input("user_id"),
+            "user_id" => auth()->id(),
         ];
 
-        try {
-            ColectData::create($dataSave);
-            return redirect(route("colect_data.index"))->with([
-                "dataSaved" => true,
-                "message" => "Data berhasil disimpan",
-            ]);
-        } catch (\Throwable $th) {
-            return redirect(route("colect_data.index"))->with([
-                "dataSaved" => false,
-                "message" => "Terjadi kesalahan saat menyimpan data",
-            ]);
-        }
+        dd($dataSave);
+        die;
+
+        ColectData::create($dataSave);
+        return redirect(route("colect_data.index"))->with([
+            "dataSaved" => true,
+            "message" => "Data berhasil disimpan",
+        ]);
+
+        // try {
+        //     ColectData::create($dataSave);
+        //     return redirect(route("colect_data.index"))->with([
+        //         "dataSaved" => true,
+        //         "message" => "Data berhasil disimpan",
+        //     ]);
+        // } catch (\Throwable $th) {
+        //     return redirect(route("colect_data.index"))->with([
+        //         "dataSaved" => false,
+        //         "message" => "Terjadi kesalahan saat menyimpan data",
+        //     ]);
+        // }
     }
 
     public function fetch(Request $request)
