@@ -235,6 +235,8 @@
     <div data-simplebar class="h-100">
         <div id="sidebar-menu">
             @include('layout.sidebar')
+
+            {{-- List Menu --}}
         </div>
     </div>
 </div>
@@ -253,7 +255,7 @@
                     <div class="row justify-content-end">
                         <div class="col-auto">
                             <div class="text-sm-end d-none d-sm-block">
-                                Powered By <b class="text-primary">Cegeh Ngoding</b>
+                                {{-- Powered By <b class="text-primary">Cegeh Ngoding</b> --}}
                             </div>
                         </div>
                     </div>
