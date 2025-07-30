@@ -19,7 +19,7 @@ class PresensiGambarController extends Controller
     public function create()
     {
         return view("administrator.presensi_gambar.create", [
-            "presensi" => Presensi::with(['user', 'jenisPresensi'])->get()
+            "presensi" => Presensi::with(['user', 'PresensiJenis'])->get()
         ]);
     }
 
@@ -69,11 +69,11 @@ class PresensiGambarController extends Controller
 
     public function edit($id)
     {
-        $presensiGambar = PresensiGambar::with('presensi.user', 'presensi.jenisPresensi')->findOrFail($id);
+        $presensiGambar = PresensiGambar::with('presensi.user', 'presensi.PresensiJenis')->findOrFail($id);
 
         return view("administrator.presensi_gambar.edit", [
             "presensiGambar" => $presensiGambar,
-            "presensi" => Presensi::with(['user', 'jenisPresensi'])->get()
+            "presensi" => Presensi::with(['user', 'PresensiJenis'])->get()
         ]);
     }
 
@@ -197,7 +197,7 @@ class PresensiGambarController extends Controller
 
     public function show($id)
     {
-        $presensiGambar = PresensiGambar::with('presensi.user', 'presensi.jenisPresensi')->findOrFail($id);
+        $presensiGambar = PresensiGambar::with('presensi.user', 'presensi.PresensiJenis')->findOrFail($id);
 
         return view("administrator.presensi_gambar.index", [
             "presensiGambar" => $presensiGambar

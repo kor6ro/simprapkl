@@ -12,6 +12,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Riwayat presensi pribadi untuk siswa
+        $riwayatPresensi = Presensi::with('presensiJenis')
+            ->where('user_id', auth()->id())
+            ->orderByDesc('tanggal_presensi')
+            ->limit(5)
+            ->get();
+
         // Get today's presensi statistics
         $today = Carbon::today();
 
@@ -29,7 +36,7 @@ class DashboardController extends Controller
             ->count();
 
         // Get recent presensi
-        $recentPresensi = Presensi::with(['user', 'jenisPresensi'])
+        $recentPresensi = Presensi::with(['user', 'PresensiJenis'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -40,7 +47,8 @@ class DashboardController extends Controller
             'activeSetting',
             'pagiPresensi',
             'sorePresensi',
-            'recentPresensi'
+            'recentPresensi',
+            'riwayatPresensi'
         ));
     }
 }

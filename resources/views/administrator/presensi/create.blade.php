@@ -24,25 +24,6 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    @if ($activeSetting)
-                        <div class="alert alert-info">
-                            <h6><i class="fa fa-info-circle"></i> Setting Presensi Aktif:</h6>
-                            <p class="mb-0">
-                                <strong>Pagi:</strong>
-                                {{ \Carbon\Carbon::parse($activeSetting->pagi_mulai)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($activeSetting->pagi_selesai)->format('H:i') }}<br>
-                                <strong>Sore:</strong>
-                                {{ \Carbon\Carbon::parse($activeSetting->sore_mulai)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($activeSetting->sore_selesai)->format('H:i') }}
-                            </p>
-                        </div>
-                    @else
-                        <div class="alert alert-warning">
-                            <i class="fa fa-exclamation-triangle"></i> Tidak ada setting presensi yang aktif. Silakan
-                            hubungi admin.
-                        </div>
-                    @endif
-
                     <form action="{{ route('presensi.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
@@ -64,7 +45,7 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <small class="text-muted">Hanya jenis presensi manual yang dapat dipilih. Bolos dan
+                                        <small class="text-muted">Hanya status presensi manual yang dapat dipilih. Bolos dan
                                             Telat otomatis dari sistem</small>
                                     @endif
                                     @error('user_id')
@@ -75,11 +56,11 @@
 
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="presensi_jenis_id" class="form-label">Jenis Presensi <span
+                                    <label for="presensi_jenis_id" class="form-label">Status Presensi <span
                                             class="text-danger">*</span></label>
                                     <select class="form-control" name="presensi_jenis_id" id="presensi_jenis_id" required>
-                                        <option value="">Pilih Jenis Presensi</option>
-                                        @foreach ($jenisPresensi as $jp)
+                                        <option value="">Pilih Status Presensi</option>
+                                        @foreach ($PresensiJenis as $jp)
                                             @if (!in_array(strtolower($jp->nama), ['bolos', 'telat']))
                                                 <option value="{{ $jp->id }}"
                                                     data-butuh-bukti="{{ $jp->butuh_bukti ? 'true' : 'false' }}"

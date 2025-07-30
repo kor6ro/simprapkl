@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\PresensiJenis;
 
-class JenisPresensiSeeder extends Seeder
+class PresensiJenisSeeder extends Seeder
 {
     public function run()
     {

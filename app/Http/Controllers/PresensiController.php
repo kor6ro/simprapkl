@@ -22,7 +22,7 @@ class PresensiController extends Controller
     {
         // Siswa hanya bisa lihat presensi sendiri
         if (isSiswa()) {
-            return view("administrator.presensi.index_siswa");
+            return view("administrator.dashboard.index");
         }
 
         // Admin, Developer, Pembimbing bisa lihat semua
@@ -47,7 +47,7 @@ class PresensiController extends Controller
 
         return view("administrator.presensi.create", [
             "user" => $students,
-            "jenisPresensi" => \App\Models\PresensiJenis::all(),
+            "PresensiJenis" => \App\Models\PresensiJenis::all(),
             "activeSetting" => $activeSetting
         ]);
     }
@@ -71,7 +71,7 @@ class PresensiController extends Controller
         return view("administrator.presensi.edit", [
             "presensi" => $presensi,
             "user" => $students,
-            "jenisPresensi" => \App\Models\PresensiJenis::all(),
+            "PresensiJenis" => \App\Models\PresensiJenis::all(),
         ]);
     }
 
@@ -128,8 +128,8 @@ class PresensiController extends Controller
         }
 
         // 3. Cek apakah jenis presensi membutuhkan bukti
-        $jenisPresensi = PresensiJenis::find($request->presensi_jenis_id);
-        if ($jenisPresensi && $jenisPresensi->butuh_bukti && !$request->hasFile('bukti')) {
+        $PresensiJenis = PresensiJenis::find($request->presensi_jenis_id);
+        if ($PresensiJenis && $PresensiJenis->butuh_bukti && !$request->hasFile('bukti')) {
             return redirect()->route('presensi.index')->with([
                 'dataSaved' => false,
                 'message' => 'Jenis presensi ini membutuhkan bukti. Silakan upload bukti.',

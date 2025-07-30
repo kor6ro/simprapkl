@@ -27,13 +27,6 @@
                 </a>
             </div>
         @endif
-        @if (canValidatePresensi())
-            <div class="col-auto">
-                <button type="button" class="btn btn-warning" id="btn-check-automatic">
-                    <i class="fa fa-clock me-1"></i> Cek Presensi Otomatis
-                </button>
-            </div>
-        @endif
     </div>
 
     <div class="card">
@@ -43,7 +36,7 @@
                     <tr>
                         <th>#</th>
                         <th>Nama</th>
-                        <th>Jenis Presensi</th>
+                        <th>Status Presensi</th>
                         <th>Sesi</th>
                         <th>Jam Presensi</th>
                         <th>Tanggal</th>

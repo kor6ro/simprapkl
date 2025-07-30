@@ -33,7 +33,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Jenis Presensi</th>
+                        <th>Status Presensi</th>
                         <th>Sesi</th>
                         <th>Jam Presensi</th>
                         <th>Tanggal</th>

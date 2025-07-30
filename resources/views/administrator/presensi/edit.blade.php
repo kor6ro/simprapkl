@@ -45,7 +45,7 @@
                             <label for="presensi_jenis_id" class="form-label">Jenis Presensi</label>
                             <select class="form-control" name="presensi_jenis_id" id="presensi_jenis_id" required>
                                 <option value="">Pilih Jenis Presensi</option>
-                                @foreach ($jenisPresensi as $jenis)
+                                @foreach ($PresensiJenis as $jenis)
                                     <option value="{{ $jenis->id }}"
                                         {{ $presensi->presensi_jenis_id == $jenis->id ? 'selected' : '' }}>
                                         {{ ucfirst($jenis->nama) }}

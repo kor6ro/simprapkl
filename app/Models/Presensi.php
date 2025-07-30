@@ -29,7 +29,7 @@ class Presensi extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function jenisPresensi()
+    public function PresensiJenis()
     {
         return $this->belongsTo(PresensiJenis::class, 'presensi_jenis_id');
     }
