@@ -82,27 +82,19 @@ class ColectDataController extends Controller
             $dataSave["gambar_foto"] = $fileName;
         }
 
-        // dd($dataSave);
-        // die;
-
-        ColectData::create($dataSave);
-        return redirect(route("colect_data.index"))->with([
-            "dataSaved" => true,
-            "message" => "Data berhasil disimpan",
-        ]);
-
-        // try {
-        //     ColectData::create($dataSave);
-        //     return redirect(route("colect_data.index"))->with([
-        //         "dataSaved" => true,
-        //         "message" => "Data berhasil disimpan",
-        //     ]);
-        // } catch (\Throwable $th) {
-        //     return redirect(route("colect_data.index"))->with([
-        //         "dataSaved" => false,
-        //         "message" => "Terjadi kesalahan saat menyimpan data",
-        //     ]);
-        // }
+       
+        try {
+            ColectData::create($dataSave);
+            return redirect(route("colect_data.index"))->with([
+                "dataSaved" => true,
+                "message" => "Data berhasil disimpan",
+            ]);
+        } catch (\Throwable $th) {
+            return redirect(route("colect_data.index"))->with([
+                "dataSaved" => false,
+                "message" => "Terjadi kesalahan saat menyimpan data",
+            ]);
+        }
     }
 
     public function fetch(Request $request)
@@ -119,17 +111,17 @@ class ColectDataController extends Controller
             return abort(404);
         }
 
+        // Validation rules - gambar_foto tidak required untuk update
         $validator = Validator::make($request->all(), [
             "tanggal" => "required",
-            "nama_cus" => "required",
+            "nama_cus" => "required", 
             "no_telp" => "required",
             "alamat_cus" => "required",
             "provider_sekarang" => "required",
             "kelebihan" => "required",
             "kekurangan" => "required",
             "serlok" => "required",
-            "gambar_foto" => "required",
-            "user_id" => "required",
+            // Hapus validasi gambar_foto dan user_id karena tidak perlu
         ]);
 
         if ($validator->fails()) {
@@ -147,9 +139,23 @@ class ColectDataController extends Controller
             "kelebihan" => $request->input("kelebihan"),
             "kekurangan" => $request->input("kekurangan"),
             "serlok" => $request->input("serlok"),
-            "gambar_foto" => $request->input("gambar_foto"),
-            "user_id" => $request->input("user_id"),
+            "user_id" => auth()->id(), // Otomatis dari user login
         ];
+
+        // Handle upload foto baru jika ada
+        if ($request->file("gambar_foto") != null) {
+            // Hapus foto lama jika ada
+            if ($colectData->gambar_foto && File::exists("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto)) {
+                File::delete("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto);
+            }
+            
+            // Upload foto baru
+            $file = $request->file("gambar_foto");
+            $fileName = $file->hashName();
+            $file->move("uploads/colect_data_gambar_foto", $fileName);
+            $dataSave["gambar_foto"] = $fileName;
+        }
+        // Jika tidak ada foto baru, foto lama tetap dipertahankan
 
         try {
             $colectData->update($dataSave);
@@ -173,6 +179,11 @@ class ColectDataController extends Controller
         }
 
         try {
+            // Hapus foto jika ada sebelum hapus data
+            if ($colectData->gambar_foto && File::exists("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto)) {
+                File::delete("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto);
+            }
+            
             $colectData->delete();
             return redirect(route("colect_data.index"))->with([
                 "dataSaved" => true,

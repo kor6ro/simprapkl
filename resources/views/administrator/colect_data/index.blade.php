@@ -18,7 +18,6 @@
             gap: 0.25rem;
             justify-content: center;
         }
-
         .card {
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             border: 1px solid rgba(0, 0, 0, 0.125);
@@ -104,11 +103,6 @@
                             <th scope="col">Nama Customer</th>
                             <th scope="col">No. Telepon</th>
                             <th scope="col">Alamat</th>
-                            {{-- <th scope="col">Provider Saat Ini</th>
-                        <th scope="col">Kelebihan</th>
-                        <th scope="col">Kekurangan</th>
-                        <th scope="col">Serial/Lokasi</th>
-                        <th scope="col">Foto</th> --}}
                             <th scope="col" width="120">Aksi</th>
                         </tr>
                     </thead>
@@ -129,6 +123,92 @@
 
 @section('js')
     <script>
+        // Function untuk menampilkan modal foto
+        function showPhotoModal(fotoUrl, customerName, surveyDate, filename) {
+            // Show loading first
+            Swal.fire({
+                title: 'Memuat foto...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Create image element to preload
+            const img = new Image();
+
+            img.onload = function() {
+                // Format tanggal
+                const date = new Date(surveyDate);
+                const formattedDate = date.toLocaleDateString('id-ID');
+                
+                const photoInfo = `
+                    <div class="photo-info">
+                        <strong>Customer:</strong> ${customerName}<br>
+                        <strong>Tanggal Survey:</strong> ${formattedDate}<br>
+                    </div>
+                `;
+
+                Swal.fire({
+                    title: 'Foto Dokumentasi',
+                    html: `
+                        <div class="photo-container">
+                            <img src="${fotoUrl}" 
+                                 alt="Foto Survey ${customerName}" 
+                                 class="photo-main" 
+                                 style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);" />
+                            ${photoInfo}
+                        </div>
+                    `,
+                    showCloseButton: true,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#6c757d',
+                    width: 'auto',
+                    customClass: {
+                        popup: 'photo-modal'
+                    },
+                    didOpen: () => {
+                        // Add click handler to image for full-screen view
+                        const modalImg = Swal.getPopup().querySelector('.photo-main');
+                        modalImg.style.cursor = 'pointer';
+                        modalImg.title = 'Klik untuk melihat ukuran penuh';
+
+                        modalImg.addEventListener('click', function() {
+                            // Open in new tab for full-screen view
+                            window.open(fotoUrl, '_blank');
+                        });
+                    }
+                });
+            };
+
+            img.onerror = function() {
+                Swal.fire({
+                    title: 'Error Loading Photo',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Gagal memuat foto.</strong></p>
+                            <hr>
+                            <p><strong>Info Debug:</strong></p>
+                            <p><small><strong>File:</strong> ${filename}</small></p>
+                            <p><small><strong>URL:</strong> ${fotoUrl}</small></p>
+                            <hr>
+                            <p><small><strong>Pastikan:</strong></p>
+                            <p><small>1. File ada di: public/uploads/colect_data_gambar_foto/</small></p>
+                            <p><small>2. Permission folder 755, file 644</small></p>
+                            <p><small>3. Cek apakah file benar-benar ada</small></p>
+                        </div>
+                    `,
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    width: 600
+                });
+            };
+
+            // Start loading the image
+            img.src = fotoUrl;
+        }
+
         $(document).ready(function() {
             $('#dataTable').DataTable({
                 processing: true,
@@ -160,7 +240,8 @@
                 order: [
                     [2, 'desc']
                 ], // Order by tanggal descending
-                columns: [{
+                columns: [
+                    {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -195,104 +276,11 @@
                         name: 'alamat_cus',
                         render: function(data, type, row) {
                             if (!data) return "";
-                            // Tampilkan tombol Detail saja
                             return `<a href="#" class="alamat-detail" data-alamat="${encodeURIComponent(data)}">
                                 <span class="badge bg-info">Detail</span>
                             </a>`;
                         }
                     },
-                    // {
-                    //     data: 'provider_sekarang',
-                    //     name: 'provider_sekarang'
-                    // },
-                    // {
-                    //     data: 'kelebihan',
-                    //     name: 'kelebihan',
-                    //     render: function(data) {
-                    //         return data && data.length > 30 ?
-                    //             data.substring(0, 30) + '...' : data;
-                    //     }
-                    // },
-                    // {
-                    //     data: 'kekurangan',
-                    //     name: 'kekurangan',
-                    //     render: function(data) {
-                    //         return data && data.length > 30 ?
-                    //             data.substring(0, 30) + '...' : data;
-                    //     }
-                    // },
-                    // {
-                    //     data: 'serlok',
-                    //     name: 'serlok',
-                    //     render: function(data) {
-                    //         if (!data) return "";
-                    //         // Jika data sudah berupa link, langsung pakai
-                    //         // Jika hanya koordinat/link Google Maps, buat link
-                    //         return `<a href="${data}" target="_blank" rel="noopener" class="badge bg-primary">Lihat Lokasi</a>`;
-                    //     }
-                    // },
-                    // {
-                    //     data: 'gambar_foto',
-                    //     name: 'gambar_foto',
-                    //     orderable: false,
-                    //     searchable: false,
-                    //     render: function(data, type, row) {
-                    //         if (data) {
-                    //             // Clean the path - remove any unexpected segments
-                    //             let cleanPath = data;
-
-                    //             // Remove 'document' if exists (seems to be error in path)
-                    //             cleanPath = cleanPath.replace(/^document[\/\\]?/i, '');
-
-                    //             // Ensure we have the right path structure
-                    //             if (!cleanPath.startsWith('dokumentasi/')) {
-                    //                 cleanPath = 'dokumentasi/' + cleanPath;
-                    //             }
-
-                    //             // Build URL - check if we're in admin context
-                    //             const currentPath = window.location.pathname;
-                    //             const isAdminContext = currentPath.includes('/admin/');
-
-                    //             // For admin context, use root storage path
-                    //             const storageBase = isAdminContext ? '/storage/' : baseUrl(
-                    //                 '/storage/');
-                    //             const url = (storageBase + cleanPath).replace(/\/+/g,
-                    //             '/'); // Remove double slashes
-
-                    //             // Fix URL to use absolute path from domain root
-                    //             const finalUrl = url.startsWith('http') ? url :
-                    //                 window.location.origin + (url.startsWith('/') ? url : '/' +
-                    //                 url);
-
-                    //             const customerName = row.nama_cus || 'Customer';
-                    //             const surveyDate = row.tanggal ? new Date(row.tanggal)
-                    //                 .toLocaleDateString('id-ID') : '';
-
-                    //             console.log('Debug Info:', {
-                    //                 originalData: data,
-                    //                 cleanPath: cleanPath,
-                    //                 finalUrl: finalUrl,
-                    //                 isAdminContext: isAdminContext
-                    //             });
-
-                    //             return `<a href="#" class="foto-detail" 
-                //                data-url="${finalUrl}" 
-                //                data-customer="${customerName}"
-                //                data-date="${surveyDate}"
-                //                data-filename="${data}"
-                //                data-clean-path="${cleanPath}"
-                //                title="Klik untuk melihat foto">
-                //                 <img src="${finalUrl}" 
-                //                      alt="Foto Survey ${customerName}" 
-                //                      class="photo-preview"
-                //                      style="max-width:40px;max-height:40px;border-radius:4px;border:1px solid #ccc;"
-                //                      onerror="handleImageError(this)" />
-                //             </a>`;
-                    //         } else {
-                    //             return '<span class="badge bg-secondary">Tidak ada</span>';
-                    //         }
-                    //     }
-                    // },
                     {
                         data: 'id',
                         name: 'actions',
@@ -301,17 +289,21 @@
                         className: 'text-center',
                         render: function(data, type, row) {
                             return `
-                        <div class="row-action">
-                            <button type="button" class="btn btn-warning btn-action action-edit" 
-                                    data-id="${data}" title="Edit">
-                                <i class="fa fa-edit"></i>
-                            </button>
-                            <button type="button" class="btn btn-danger btn-action action-delete" 
-                                    data-id="${data}" title="Hapus">
-                                <i class="fa fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    `;
+                                <div class="row-action">
+                                    <button type="button" class="btn btn-info btn-action action-detail" 
+                                            data-id="${data}" title="Detail">
+                                        <i class="fa fa-info-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-warning btn-action action-edit" 
+                                            data-id="${data}" title="Edit">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-action action-delete" 
+                                            data-id="${data}" title="Hapus">
+                                        <i class="fa fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            `;
                         }
                     }
                 ],
@@ -358,113 +350,38 @@
                         });
                     });
 
-                    // Handler untuk foto detail - UPDATED
-                    $(row).find('.foto-detail').on('click', function(e) {
-                        e.preventDefault();
+                    // Handler untuk detail button
+                    $(row).find('.action-detail').on('click', function() {
+                        // Ambil data dari row
+                        const provider = data.provider_sekarang || '-';
+                        const kelebihan = data.kelebihan || '-';
+                        const kekurangan = data.kekurangan || '-';
+                        const serlok = data.serlok || '-';
+                        const foto = data.gambar_foto ? window.location.origin + '/uploads/colect_data_gambar_foto/' + data.gambar_foto : null;
 
-                        const url = $(this).data('url');
-                        const customerName = $(this).data('customer');
-                        const surveyDate = $(this).data('date');
-                        const filename = $(this).data('filename');
+                        let fotoHtml = foto
+                            ? `<img src="${foto}" alt="Foto" style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #ccc;cursor:pointer;" onclick="showPhotoModal('${foto}', '${data.nama_cus}', '${data.tanggal}', '${data.gambar_foto}')" title="Klik untuk melihat foto lebih besar" />`
+                            : '<span class="badge bg-secondary">Tidak ada foto</span>';
 
-                        // Show loading first
+                        let serlokHtml = serlok.startsWith('http')
+                            ? `<a href="${serlok}" target="_blank" class="badge bg-primary">Lihat Lokasi</a>`
+                            : serlok;
+
                         Swal.fire({
-                            title: 'Memuat foto...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
+                            title: 'Detail Collect Data',
+                            html: `
+                                <div style="text-align:left;">
+                                    <strong>Provider:</strong> ${provider}<br>
+                                    <strong>Kelebihan:</strong> ${kelebihan}<br>
+                                    <strong>Kekurangan:</strong> ${kekurangan}<br>
+                                    <strong>Serial/Lokasi:</strong> ${serlokHtml}<br>
+                                    <strong>Foto Dokumentasi:</strong><br>${fotoHtml}
+                                </div>
+                            `,
+                            width: 600,
+                            showCloseButton: true,
+                            confirmButtonText: 'Tutup'
                         });
-
-                        // Create image element to preload
-                        const img = new Image();
-
-                        img.onload = function() {
-                            // Image loaded successfully
-                            const photoInfo = `
-                        <div class="photo-info">
-                            <strong>Customer:</strong> ${customerName}<br>
-                            <strong>Tanggal Survey:</strong> ${surveyDate}<br>
-                            <strong>File:</strong> ${filename}
-                        </div>
-                    `;
-
-                            Swal.fire({
-                                title: 'Foto Dokumentasi Survey',
-                                html: `
-                            <div class="photo-container">
-                                <img src="${url}" 
-                                     alt="Foto Survey ${customerName}" 
-                                     class="photo-main" />
-                                ${photoInfo}
-                            </div>
-                        `,
-                                showCloseButton: true,
-                                showConfirmButton: true,
-                                confirmButtonText: 'Tutup',
-                                confirmButtonColor: '#6c757d',
-                                width: 'auto',
-                                customClass: {
-                                    popup: 'photo-modal'
-                                },
-                                didOpen: () => {
-                                    // Add click handler to image for full-screen view
-                                    const modalImg = Swal.getPopup()
-                                        .querySelector('.photo-main');
-                                    modalImg.style.cursor = 'pointer';
-                                    modalImg.title =
-                                        'Klik untuk melihat ukuran penuh';
-
-                                    modalImg.addEventListener('click',
-                                        function() {
-                                            // Open in new tab for full-screen view
-                                            window.open(url, '_blank');
-                                        });
-                                }
-                            });
-                        };
-
-                        img.onerror = function() {
-                            // Image failed to load - show detailed error info
-                            const testUrls = [
-                                url,
-                                window.location.origin + '/storage/' + cleanPath,
-                                window.location.origin + '/storage/dokumentasi/' +
-                                filename.replace(/^dokumentasi\//, ''),
-                                baseUrl('/storage/dokumentasi/' + filename.replace(
-                                    /^dokumentasi\//, ''))
-                            ];
-
-                            Swal.fire({
-                                title: 'Error Loading Photo',
-                                html: `
-                            <div style="text-align: left;">
-                                <p><strong>Gagal memuat foto.</strong></p>
-                                <hr>
-                                <p><strong>Info Debug:</strong></p>
-                                <p><small><strong>File Database:</strong> ${filename}</small></p>
-                                <p><small><strong>Clean Path:</strong> ${cleanPath}</small></p>
-                                <p><small><strong>Current URL:</strong> ${url}</small></p>
-                                <hr>
-                                <p><strong>Coba URL berikut di browser:</strong></p>
-                                ${testUrls.map((testUrl, index) => 
-                                    `<p><small>${index + 1}. <a href="${testUrl}" target="_blank">${testUrl}</a></small></p>`
-                                ).join('')}
-                                <hr>
-                                <p><small><strong>Pastikan:</strong></p>
-                                <p><small>1. File ada di: storage/app/public/dokumentasi/</small></p>
-                                <p><small>2. Symlink dibuat: php artisan storage:link</small></p>
-                                <p><small>3. Permission folder 755, file 644</small></p>
-                            </div>
-                        `,
-                                icon: 'error',
-                                confirmButtonText: 'OK',
-                                width: 600
-                            });
-                        };
-
-                        // Start loading the image
-                        img.src = url;
                     });
                 }
             });

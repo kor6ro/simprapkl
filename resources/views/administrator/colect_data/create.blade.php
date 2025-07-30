@@ -55,6 +55,23 @@
         .required {
             color: #dc3545;
         }
+
+        .preview-container {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+        }
     </style>
 @endsection
 
@@ -78,6 +95,34 @@
         </div>
     </div>
 
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>Terdapat kesalahan:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-header">
             <h5 class="card-title mb-0">
@@ -85,8 +130,7 @@
             </h5>
         </div>
         <div class="card-body">
-            <form action="{{ route('colect_data.store') }}" method="post" enctype="multipart/form-data"
-                id="collectDataForm">
+            <form action="{{ route('colect_data.store') }}" method="post" enctype="multipart/form-data">
                 @csrf
 
                 <!-- Informasi Dasar -->
@@ -100,8 +144,12 @@
                             <label for="tanggal" class="form-label">
                                 Tanggal Survey <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('tanggal') is-invalid @enderror" type="date" name="tanggal"
-                                id="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
+                            <input class="form-control @error('tanggal') is-invalid @enderror" 
+                                   type="date" 
+                                   name="tanggal"
+                                   id="tanggal" 
+                                   value="{{ old('tanggal', date('Y-m-d')) }}" 
+                                   required>
                             @error('tanggal')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -113,11 +161,14 @@
                             <label for="user_id" class="form-label">
                                 Surveyor <span class="required">*</span>
                             </label>
-                            <select class="form-select @error('user_id') is-invalid @enderror" name="user_id" id="user_id"
-                                required>
+                            <select class="form-select @error('user_id') is-invalid @enderror" 
+                                    name="user_id" 
+                                    id="user_id"
+                                    required>
                                 <option value="">-- Pilih Surveyor --</option>
                                 @foreach ($user as $val)
-                                    <option value="{{ $val->id }}" {{ old('user_id') == $val->id ? 'selected' : '' }}>
+                                    <option value="{{ $val->id }}" 
+                                            {{ old('user_id') == $val->id ? 'selected' : '' }}>
                                         {{ $val->name }}
                                     </option>
                                 @endforeach
@@ -126,8 +177,8 @@
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-                    </div> --}}
-                </div>
+                    </div>
+                </div> --}}
 
                 <!-- Data Customer -->
                 <div class="section-header mt-4">
@@ -140,9 +191,13 @@
                             <label for="nama_cus" class="form-label">
                                 Nama Customer <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('nama_cus') is-invalid @enderror" type="text"
-                                name="nama_cus" id="nama_cus" value="{{ old('nama_cus') }}"
-                                placeholder="Masukkan nama customer" required>
+                            <input class="form-control @error('nama_cus') is-invalid @enderror" 
+                                   type="text"
+                                   name="nama_cus" 
+                                   id="nama_cus" 
+                                   value="{{ old('nama_cus') }}"
+                                   placeholder="Masukkan nama customer" 
+                                   required>
                             @error('nama_cus')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -154,8 +209,14 @@
                             <label for="no_telp" class="form-label">
                                 No. Telepon <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('no_telp') is-invalid @enderror" type="tel" name="no_telp"
-                                id="no_telp" value="{{ old('no_telp') }}" placeholder="Contoh: 08123456789" required>
+                            <input class="form-control @error('no_telp') is-invalid @enderror" 
+                                   type="tel" 
+                                   name="no_telp"
+                                   id="no_telp" 
+                                   value="{{ old('no_telp') }}" 
+                                   placeholder="Contoh: 08123456789" 
+                                   pattern="[0-9]*"
+                                   required>
                             @error('no_telp')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -169,8 +230,12 @@
                             <label for="alamat_cus" class="form-label">
                                 Alamat Customer <span class="required">*</span>
                             </label>
-                            <textarea class="form-control @error('alamat_cus') is-invalid @enderror" name="alamat_cus" id="alamat_cus"
-                                rows="3" placeholder="Masukkan alamat lengkap customer" required>{{ old('alamat_cus') }}</textarea>
+                            <textarea class="form-control @error('alamat_cus') is-invalid @enderror" 
+                                      name="alamat_cus" 
+                                      id="alamat_cus"
+                                      rows="3" 
+                                      placeholder="Masukkan alamat lengkap customer" 
+                                      required>{{ old('alamat_cus') }}</textarea>
                             @error('alamat_cus')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -189,9 +254,13 @@
                             <label for="provider_sekarang" class="form-label">
                                 Provider Saat Ini <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('provider_sekarang') is-invalid @enderror" type="text"
-                                name="provider_sekarang" id="provider_sekarang" value="{{ old('provider_sekarang') }}"
-                                placeholder="Contoh: Telkom, Indihome, dll" required>
+                            <input class="form-control @error('provider_sekarang') is-invalid @enderror" 
+                                   type="text"
+                                   name="provider_sekarang" 
+                                   id="provider_sekarang" 
+                                   value="{{ old('provider_sekarang') }}"
+                                   placeholder="Contoh: Telkom, Indihome, dll" 
+                                   required>
                             @error('provider_sekarang')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -201,8 +270,12 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="serlok" class="form-label">Serial/Lokasi</label>
-                            <input class="form-control @error('serlok') is-invalid @enderror" type="text" name="serlok"
-                                id="serlok" value="{{ old('serlok') }}" placeholder="Serial number atau kode lokasi">
+                            <input class="form-control @error('serlok') is-invalid @enderror" 
+                                   type="text" 
+                                   name="serlok"
+                                   id="serlok" 
+                                   value="{{ old('serlok') }}" 
+                                   placeholder="Serial number atau kode lokasi">
                             @error('serlok')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -216,8 +289,11 @@
                             <label for="kelebihan" class="form-label">
                                 Kelebihan Provider Saat Ini
                             </label>
-                            <textarea class="form-control @error('kelebihan') is-invalid @enderror" name="kelebihan" id="kelebihan"
-                                rows="3" placeholder="Jelaskan kelebihan provider yang digunakan saat ini">{{ old('kelebihan') }}</textarea>
+                            <textarea class="form-control @error('kelebihan') is-invalid @enderror" 
+                                      name="kelebihan" 
+                                      id="kelebihan"
+                                      rows="3" 
+                                      placeholder="Jelaskan kelebihan provider yang digunakan saat ini">{{ old('kelebihan') }}</textarea>
                             @error('kelebihan')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -229,8 +305,11 @@
                             <label for="kekurangan" class="form-label">
                                 Kekurangan Provider Saat Ini
                             </label>
-                            <textarea class="form-control @error('kekurangan') is-invalid @enderror" name="kekurangan" id="kekurangan"
-                                rows="3" placeholder="Jelaskan kekurangan atau keluhan terhadap provider saat ini">{{ old('kekurangan') }}</textarea>
+                            <textarea class="form-control @error('kekurangan') is-invalid @enderror" 
+                                      name="kekurangan" 
+                                      id="kekurangan"
+                                      rows="3" 
+                                      placeholder="Jelaskan kekurangan atau keluhan terhadap provider saat ini">{{ old('kekurangan') }}</textarea>
                             @error('kekurangan')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -247,8 +326,11 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="gambar_foto" class="form-label">Upload Foto</label>
-                            <input class="form-control @error('gambar_foto') is-invalid @enderror" type="file"
-                                name="gambar_foto" id="gambar_foto" accept="image/*">
+                            <input class="form-control @error('gambar_foto') is-invalid @enderror" 
+                                   type="file"
+                                   name="gambar_foto" 
+                                   id="gambar_foto" 
+                                   accept="image/jpeg,image/png,image/gif">
                             <small class="form-text text-muted">
                                 Format yang didukung: JPG, PNG, GIF. Maksimal 2MB.
                             </small>
@@ -260,11 +342,13 @@
 
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label">Preview Foto</label>
-                            <div id="imagePreview" class="border rounded p-3 text-center"
-                                style="min-height: 150px; background-color: #f8f9fa;">
+                            <label class="form-label">Informasi Upload</label>
+                            <div class="preview-container">
                                 <i class="fa fa-image fa-3x text-muted"></i>
-                                <p class="text-muted mt-2">Preview foto akan muncul di sini</p>
+                                <p class="text-muted mt-2 mb-0">
+                                    Pilih file gambar untuk diupload<br>
+                                    <small>JPG, PNG, GIF - Max 2MB</small>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -282,83 +366,4 @@
             </form>
         </div>
     </div>
-@endsection
-
-@section('js')
-    <script>
-        $(document).ready(function() {
-            // Phone number formatting
-            $('#no_telp').on('input', function() {
-                let value = $(this).val().replace(/\D/g, '');
-                if (value.length > 0 && !value.startsWith('0')) {
-                    value = '0' + value;
-                }
-                $(this).val(value);
-            });
-
-            // Image preview
-            $('#gambar_foto').on('change', function() {
-                const file = this.files[0];
-                const preview = $('#imagePreview');
-
-                if (file) {
-                    // Check file size (2MB = 2097152 bytes)
-                    if (file.size > 2097152) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'File Terlalu Besar',
-                            text: 'Ukuran file maksimal 2MB'
-                        });
-                        $(this).val('');
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.html(`
-                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px;">
-                `);
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    preview.html(`
-                <i class="fa fa-image fa-3x text-muted"></i>
-                <p class="text-muted mt-2">Preview foto akan muncul di sini</p>
-            `);
-                }
-            });
-
-            // Form validation
-            $('#collectDataForm').on('submit', function(e) {
-                const requiredFields = ['tanggal', 'user_id', 'nama_cus', 'no_telp', 'alamat_cus',
-                    'provider_sekarang'
-                ];
-                let isValid = true;
-
-                requiredFields.forEach(function(field) {
-                    const input = $(`#${field}`);
-                    if (!input.val().trim()) {
-                        input.addClass('is-invalid');
-                        isValid = false;
-                    } else {
-                        input.removeClass('is-invalid');
-                    }
-                });
-
-                if (!isValid) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Form Tidak Lengkap',
-                        text: 'Mohon lengkapi semua field yang wajib diisi'
-                    });
-                }
-            });
-
-            // Remove validation error on input
-            $('.form-control, .form-select').on('input change', function() {
-                $(this).removeClass('is-invalid');
-            });
-        });
-    </script>
 @endsection
