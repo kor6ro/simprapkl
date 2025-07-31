@@ -2,64 +2,150 @@
 
 @section('css')
     <style>
-        .table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            border-bottom: 2px solid #dee2e6;
-        }
+       .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+    }
 
-        .btn-action {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
 
-        .row-action {
-            display: flex;
-            gap: 0.25rem;
-            justify-content: center;
-        }
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: 1px solid rgba(0, 0, 0, 0.125);
-        }
+    .row-action {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: center;
+    }
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
 
-        /* Custom style for photo preview */
-        .photo-preview {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
+    /* Custom style for photo preview */
+    .photo-preview {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
 
-        .photo-preview:hover {
-            border-color: #007bff;
-            transform: scale(1.05);
-        }
+    .photo-preview:hover {
+        border-color: #007bff;
+        transform: scale(1.05);
+    }
 
-        /* Custom SweetAlert styles for photo modal */
-        .swal2-popup.photo-modal {
-            padding: 10px !important;
-        }
+    /* Custom SweetAlert styles for photo modal */
+    .swal2-popup.photo-modal {
+        padding: 10px !important;
+    }
 
-        .photo-container {
-            position: relative;
-            text-align: center;
-        }
+    .photo-container {
+        position: relative;
+        text-align: center;
+    }
 
-        .photo-main {
-            max-width: 100%;
-            max-height: 70vh;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+    .photo-main {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
 
-        .photo-info {
-            margin-top: 10px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: #666;
+    .photo-info {
+        margin-top: 10px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    /* Style for scrollable address */
+    .address-cell {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 8px;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+    }
+
+    .address-cell::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .address-cell::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 2px;
+    }
+
+    .address-cell::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+    }
+
+    .address-cell::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* ===== MODAL COMPACT STYLES ===== */
+    /* Compact modal styles */
+    .swal2-popup.detail-modal-compact {
+        padding: 15px !important;
+    }
+
+    .detail-modal-content {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    /* Responsive untuk desktop */
+    @media (min-width: 768px) {
+        .swal2-popup.detail-modal-compact {
+            width: 600px !important;
+            max-width: 90vw !important;
         }
+    }
+
+    /* Responsive untuk tablet */
+    @media (max-width: 767px) and (min-width: 576px) {
+        .swal2-popup.detail-modal-compact {
+            width: 95vw !important;
+            max-width: 500px !important;
+        }
+        
+        .detail-modal-content .col-md-8,
+        .detail-modal-content .col-md-4 {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+    }
+
+    /* Responsive untuk mobile */
+    @media (max-width: 575px) {
+        .swal2-popup.detail-modal-compact {
+            width: 95vw !important;
+            margin: 10px !important;
+        }
+        
+        .detail-modal-content {
+            font-size: 12px !important;
+        }
+        
+        .detail-modal-content .col-md-8,
+        .detail-modal-content .col-md-4 {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .detail-modal-content img {
+            width: 100px !important;
+            height: 100px !important;
+        }
+    }
     </style>
 @endsection
 
@@ -79,15 +165,16 @@
             </div>
         </div>
     </div>
-
-    <div class="row mb-3">
-        <div class="col-auto">
-            <a href="{{ route('colect_data.create') }}" class="btn btn-success">
-                <i class="fa fa-plus me-1"></i> Tambah Data
-            </a>
-        </div>
-    </div>
-
+    @if (isRole('Siswa'))
+        <div class="row mb-3">
+                <div class="col-auto">
+                    <a href="{{ route('colect_data.create') }}" class="btn btn-success">
+                        <i class="fa fa-plus me-1"></i> Tambah Collect Data
+                    </a>
+                </div>
+            </div>
+    @endif
+    
     <div class="card">
         <div class="card-header">
             <h5 class="card-title mb-0">Data Survey</h5>
@@ -102,7 +189,7 @@
                             <th scope="col">Tanggal</th>
                             <th scope="col">Nama Customer</th>
                             <th scope="col">No. Telepon</th>
-                            <th scope="col">Alamat</th>
+                            <th scope="col" width="220">Alamat</th>
                             <th scope="col" width="120">Aksi</th>
                         </tr>
                     </thead>
@@ -276,9 +363,7 @@
                         name: 'alamat_cus',
                         render: function(data, type, row) {
                             if (!data) return "";
-                            return `<a href="#" class="alamat-detail" data-alamat="${encodeURIComponent(data)}">
-                                <span class="badge bg-info">Detail</span>
-                            </a>`;
+                            return `<div class="address-cell" title="${data}">${data}</div>`;
                         }
                     },
                     {
@@ -298,7 +383,7 @@
                                             data-id="${data}" title="Edit">
                                         <i class="fa fa-edit"></i>
                                     </button>
-                                    <button type="button" class="btn btn-danger btn-action action-delete" 
+                                     <button type="button" class="btn btn-danger btn-action action-delete" 
                                             data-id="${data}" title="Hapus">
                                         <i class="fa fa-trash-alt"></i>
                                     </button>
@@ -338,18 +423,6 @@
                         });
                     });
 
-                    // Handler klik alamat detail
-                    $(row).find('.alamat-detail').on('click', function(e) {
-                        e.preventDefault();
-                        const alamat = decodeURIComponent($(this).data('alamat'));
-                        Swal.fire({
-                            title: 'Detail Alamat',
-                            html: `<div style="text-align:left;">${alamat}</div>`,
-                            icon: 'info',
-                            confirmButtonText: 'Tutup'
-                        });
-                    });
-
                     // Handler untuk detail button
                     $(row).find('.action-detail').on('click', function() {
                         // Ambil data dari row
@@ -360,8 +433,8 @@
                         const foto = data.gambar_foto ? window.location.origin + '/uploads/colect_data_gambar_foto/' + data.gambar_foto : null;
 
                         let fotoHtml = foto
-                            ? `<img src="${foto}" alt="Foto" style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #ccc;cursor:pointer;" onclick="showPhotoModal('${foto}', '${data.nama_cus}', '${data.tanggal}', '${data.gambar_foto}')" title="Klik untuk melihat foto lebih besar" />`
-                            : '<span class="badge bg-secondary">Tidak ada foto</span>';
+                            ? `<img src="${foto}" alt="Foto" style="width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #ccc;cursor:pointer;" onclick="showPhotoModal('${foto}', '${data.nama_cus}', '${data.tanggal}', '${data.gambar_foto}')" title="Klik untuk melihat foto lebih besar" />`
+                            : '<div style="width:150px;height:150px;border:1px solid #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;"><span class="badge bg-secondary">Tidak ada foto</span></div>';
 
                         let serlokHtml = serlok.startsWith('http')
                             ? `<a href="${serlok}" target="_blank" class="badge bg-primary">Lihat Lokasi</a>`
@@ -370,17 +443,42 @@
                         Swal.fire({
                             title: 'Detail Collect Data',
                             html: `
-                                <div style="text-align:left;">
-                                    <strong>Provider:</strong> ${provider}<br>
-                                    <strong>Kelebihan:</strong> ${kelebihan}<br>
-                                    <strong>Kekurangan:</strong> ${kekurangan}<br>
-                                    <strong>Serial/Lokasi:</strong> ${serlokHtml}<br>
-                                    <strong>Foto Dokumentasi:</strong><br>${fotoHtml}
+                                <div style="display: flex; gap: 20px; text-align: left;">
+                                    <div style="flex: 1;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 5px;">
+                                            <i class="fa fa-info-circle me-2"></i>Informasi Detail
+                                        </h6>
+                                        <div style="margin-bottom: 12px;">
+                                            <strong style="color: #6c757d;">Provider Saat Ini:</strong><br>
+                                            <span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">${provider}</span>
+                                        </div>
+                                        <div style="margin-bottom: 12px;">
+                                            <strong style="color: #6c757d;">Kelebihan:</strong><br>
+                                            <div style="background: #f1f8e9; padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; font-size: 0.9em;">${kelebihan}</div>
+                                        </div>
+                                        <div style="margin-bottom: 12px;">
+                                            <strong style="color: #6c757d;">Kekurangan:</strong><br>
+                                            <div style="background: #fff3e0; padding: 8px; border-radius: 4px; border-left: 3px solid #ff9800; font-size: 0.9em;">${kekurangan}</div>
+                                        </div>
+                                        <div style="margin-bottom: 12px;">
+                                            <strong style="color: #6c757d;">Share Lokasi:</strong><br>
+                                            ${serlokHtml}
+                                        </div>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <h6 style="margin-bottom: 15px; color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; text-align: center;">
+                                            <i class="fa fa-camera me-2"></i>Foto Dokumentasi
+                                        </h6>
+                                        <div style="text-align: center;">
+                                            ${fotoHtml}
+                                        </div>
+                                    </div>
                                 </div>
                             `,
-                            width: 600,
+                            width: 400,
                             showCloseButton: true,
-                            confirmButtonText: 'Tutup'
+                            confirmButtonText: 'Tutup',
+                            confirmButtonColor: '#6c757d'
                         });
                     });
                 }

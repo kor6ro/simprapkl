@@ -9,8 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use app\Helpers\UserRoles;
-
-
+use Illuminate\Support\Facades\Hash;
 use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
@@ -71,7 +70,7 @@ class UserController extends Controller
             "name" => $request->input("name"),
             "username" => $request->input("username"),
             "email" => $request->input("email"),
-            "password" => $request->input("password"),
+            "password" => Hash::make($request->input("password")),
             "validasi" => $request->input("validasi"),
             "sekolah_id" => $request->input("sekolah_id"),
             "group_id" => $request->input("group_id"),
@@ -127,7 +126,7 @@ class UserController extends Controller
             "name" => $request->input("name"),
             "username" => $request->input("username"),
             "email" => $request->input("email"),
-            "password" => $request->input("password"),
+           "password" => Hash::make($request->input("password")),
             "validasi" => $request->input("validasi"),
             "sekolah_id" => $request->input("sekolah_id"),
             "group_id" => $request->input("group_id"),
