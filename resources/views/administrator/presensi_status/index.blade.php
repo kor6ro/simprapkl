@@ -6,11 +6,11 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Jenis Presensi</h4>
+                <h4 class="mb-sm-0 font-size-18">Status Presensi</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active">Jenis Presensi</li>
+                        <li class="breadcrumb-item active">Status Presensi</li>
                     </ol>
                 </div>
             </div>
@@ -18,7 +18,7 @@
     </div>
     <div class="row mb-3">
         <div class="col-auto">
-            <a href="{{ route('presensi_jenis.create') }}" class="btn btn-success">
+            <a href="{{ route('presensi_status.create') }}" class="btn btn-success">
                 <i class="fa fa-plus me-1"></i> Tambah
             </a>
         </div>
@@ -29,9 +29,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Nama</th>
-                        <th>Butuh Bukti</th>
-                        <th>Otomatis</th>
+                        <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -40,7 +38,7 @@
         </div>
     </div>
     <div class="d-none">
-        <form id="form-destroy" action="{{ route('presensi_jenis.store') }}" method="post">
+        <form id="form-destroy" action="{{ route('presensi_status.store') }}" method="post">
             @csrf
             @method('DELETE')
         </form>
@@ -52,7 +50,7 @@
             processing: true,
             serverSide: true,
             ajax: {
-                url: baseUrl('/presensi_jenis/fetch'),
+                url: baseUrl('/presensi_status/fetch'),
                 type: 'POST',
                 headers: {
                     'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
@@ -65,13 +63,7 @@
                     searchable: false
                 },
                 {
-                    data: 'nama'
-                },
-                {
-                    data: 'butuh_bukti'
-                },
-                {
-                    data: 'otomatis'
+                    data: 'status'
                 },
                 {
                     data: 'id',
@@ -87,7 +79,7 @@
             ],
             createdRow: function(row, data) {
                 $('.action-edit', row).click(function() {
-                    window.location.href = baseUrl(`/presensi_jenis/${data.id}/edit`);
+                    window.location.href = baseUrl(`/presensi_status/${data.id}/edit`);
                 });
                 $('.action-hapus', row).click(function(e) {
                     e.preventDefault();
@@ -101,7 +93,7 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $('#form-destroy').attr('action', baseUrl(
-                                `/presensi_jenis/${data.id}`)).submit();
+                                `/presensi_status/${data.id}`)).submit();
                         }
                     });
                 });

@@ -73,18 +73,6 @@
                     </div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <label class="form-label d-block">Status Aktif</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1"
-                                {{ old('is_active', $presensiSetting->is_active) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="is_active">Aktifkan Setting Ini</label>
-                        </div>
-                        <small class="text-muted">*Hanya satu setting yang dapat aktif pada satu waktu</small>
-                    </div>
-                </div>
-
                 <div class="button-navigate mt-3">
                     <a href="{{ route('presensi_setting.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali

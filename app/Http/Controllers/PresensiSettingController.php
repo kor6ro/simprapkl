@@ -12,8 +12,10 @@ class PresensiSettingController extends Controller
 {
     public function index()
     {
-        return view("administrator.presensi_setting.index");
+        $settings = PresensiSetting::all();
+        return view("administrator.presensi_setting.index", compact('settings'));
     }
+
 
     public function create()
     {
@@ -27,7 +29,6 @@ class PresensiSettingController extends Controller
             'pagi_selesai' => 'required|date_format:H:i|after:pagi_mulai',
             'sore_mulai' => 'required|date_format:H:i|after:pagi_selesai',
             'sore_selesai' => 'required|date_format:H:i|after:sore_mulai',
-            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -37,17 +38,14 @@ class PresensiSettingController extends Controller
         }
 
         try {
-            // Jika setting baru diaktifkan, nonaktifkan yang lain
-            if ($request->is_active) {
-                PresensiSetting::where('is_active', true)->update(['is_active' => false]);
-            }
+            // Hapus semua setting lain sebelum membuat yang baru
+            PresensiSetting::truncate();
 
             PresensiSetting::create([
                 'pagi_mulai' => $request->pagi_mulai . ':00',
                 'pagi_selesai' => $request->pagi_selesai . ':00',
                 'sore_mulai' => $request->sore_mulai . ':00',
                 'sore_selesai' => $request->sore_selesai . ':00',
-                'is_active' => $request->is_active ?? false,
             ]);
 
             return redirect()->route('presensi_setting.index')->with([
@@ -80,7 +78,6 @@ class PresensiSettingController extends Controller
             'pagi_selesai' => 'required|date_format:H:i|after:pagi_mulai',
             'sore_mulai' => 'required|date_format:H:i|after:pagi_selesai',
             'sore_selesai' => 'required|date_format:H:i|after:sore_mulai',
-            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -90,19 +87,11 @@ class PresensiSettingController extends Controller
         }
 
         try {
-            // Jika setting ini diaktifkan, nonaktifkan yang lain
-            if ($request->is_active) {
-                PresensiSetting::where('is_active', true)
-                    ->where('id', '!=', $id)
-                    ->update(['is_active' => false]);
-            }
-
             $presensiSetting->update([
                 'pagi_mulai' => $request->pagi_mulai . ':00',
                 'pagi_selesai' => $request->pagi_selesai . ':00',
                 'sore_mulai' => $request->sore_mulai . ':00',
                 'sore_selesai' => $request->sore_selesai . ':00',
-                'is_active' => $request->is_active ?? false,
             ]);
 
             return redirect()->route('presensi_setting.index')->with([
@@ -135,13 +124,6 @@ class PresensiSettingController extends Controller
             ->addColumn('sore_selesai', function ($row) {
                 return date('H:i', strtotime($row->sore_selesai));
             })
-            ->addColumn('status_active', function ($row) {
-                if ($row->is_active) {
-                    return '<span class="badge badge-success">Aktif</span>';
-                } else {
-                    return '<span class="badge badge-secondary">Tidak Aktif</span>';
-                }
-            })
             ->addColumn('durasi_pagi', function ($row) {
                 $pagiMulai = Carbon::createFromFormat('H:i:s', $row->pagi_mulai);
                 $pagiSelesai = Carbon::createFromFormat('H:i:s', $row->pagi_selesai);
@@ -168,7 +150,6 @@ class PresensiSettingController extends Controller
                     });
                 }
             })
-            ->rawColumns(['status_active'])
             ->make(true);
     }
 
@@ -177,14 +158,6 @@ class PresensiSettingController extends Controller
         $presensiSetting = PresensiSetting::findOrFail($id);
 
         try {
-            // Cek apakah ini setting yang aktif
-            if ($presensiSetting->is_active) {
-                return redirect()->route('presensi_setting.index')->with([
-                    'dataSaved' => false,
-                    'message' => 'Tidak dapat menghapus setting yang sedang aktif',
-                ]);
-            }
-
             $presensiSetting->delete();
 
             return redirect()->route('presensi_setting.index')->with([
@@ -197,44 +170,5 @@ class PresensiSettingController extends Controller
                 'message' => 'Terjadi kesalahan saat menghapus setting',
             ]);
         }
-    }
-
-    public function activate($id)
-    {
-        try {
-            // Nonaktifkan semua setting
-            PresensiSetting::where('is_active', true)->update(['is_active' => false]);
-
-            // Aktifkan setting yang dipilih
-            $presensiSetting = PresensiSetting::findOrFail($id);
-            $presensiSetting->update(['is_active' => true]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Setting berhasil diaktifkan'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengaktifkan setting'
-            ], 500);
-        }
-    }
-
-    public function getActiveSetting()
-    {
-        $activeSetting = PresensiSetting::where('is_active', true)->first();
-
-        if (!$activeSetting) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ada setting aktif'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $activeSetting
-        ]);
     }
 }

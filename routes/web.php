@@ -9,7 +9,7 @@ use App\Http\Controllers\ColectDataController;
 use App\Http\Controllers\TaskBreakdownController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\PresensiSettingController;
-use App\Http\Controllers\PresensiJenisController;
+use App\Http\Controllers\PresensiStatusController;
 use App\Http\Controllers\PresensiGambarController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaporanGambarController;
@@ -90,25 +90,17 @@ Route::prefix("/admin")
 
         // Presensi
         Route::resource("presensi", PresensiController::class);
-        Route::post("presensi/fetch", [PresensiController::class, "fetch"]);
-        Route::post("presensi/check-automatic", [PresensiController::class, "runAutomaticCheck"])->name('presensi.check-automatic');
+        Route::get('/presensi/create', [PresensiController::class, 'create'])->name('presensi.create');
+        Route::get('/presensi/data', [PresensiController::class, 'data'])->name('presensi.data');
+
 
         // Presensi Setting
         Route::resource('presensi_setting', PresensiSettingController::class);
         Route::post('presensi_setting/fetch', [PresensiSettingController::class, 'fetch']);
-        Route::post('presensi_setting/{id}/activate', [PresensiSettingController::class, 'activate'])->name('presensi_setting.activate');
-        Route::get('presensi_setting/active', [PresensiSettingController::class, 'getActiveSetting'])->name('presensi_setting.active');
 
-        // PresensiJenis
-        Route::resource("presensi_jenis", PresensiJenisController::class);
-        Route::post("presensi_jenis/fetch", [PresensiJenisController::class, "fetch"]);
-
-        // PresensiGambar
-        Route::resource("presensi_gambar", PresensiGambarController::class);
-        Route::post("presensi_gambar/fetch", [
-            PresensiGambarController::class,
-            "fetch",
-        ]);
+        // PresensiStatus
+        Route::resource("presensi_status", PresensiStatusController::class);
+        Route::post("presensi_status/fetch", [PresensiStatusController::class, "fetch"]);
 
         // Laporan
         Route::resource("laporan", LaporanController::class);

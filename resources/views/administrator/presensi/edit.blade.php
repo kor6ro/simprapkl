@@ -42,17 +42,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="presensi_jenis_id" class="form-label">Jenis Presensi</label>
-                            <select class="form-control" name="presensi_jenis_id" id="presensi_jenis_id" required>
+                            <label for="presensi_status_id" class="form-label">Jenis Presensi</label>
+                            <select class="form-control" name="presensi_status_id" id="presensi_status_id" required>
                                 <option value="">Pilih Jenis Presensi</option>
-                                @foreach ($PresensiJenis as $jenis)
+                                @foreach ($PresensiStatus as $jenis)
                                     <option value="{{ $jenis->id }}"
-                                        {{ $presensi->presensi_jenis_id == $jenis->id ? 'selected' : '' }}>
+                                        {{ $presensi->presensi_status_id == $jenis->id ? 'selected' : '' }}>
                                         {{ ucfirst($jenis->nama) }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('presensi_jenis_id')
+                            @error('presensi_status_id')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
@@ -103,11 +103,11 @@
                             @enderror
                         </div>
 
-                        @if ($presensi->gambar && $presensi->gambar->bukti)
+                        @if ($presensi->bukti)
                             <div class="mb-3">
                                 <label class="form-label">Bukti Saat Ini:</label><br>
-                                <img src="{{ asset('storage/' . $presensi->gambar->bukti) }}" alt="Bukti"
-                                    class="img-thumbnail" style="max-width: 200px;">
+                                <img src="{{ asset('storage/' . $presensi->bukti) }}" alt="Bukti" class="img-thumbnail"
+                                    style="max-width: 200px;">
                             </div>
                         @endif
 

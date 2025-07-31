@@ -1,6 +1,9 @@
 @extends('layout.main')
 @section('css')
     <style>
+        .button-navigate {
+            display: none;
+        }
     </style>
 @endsection
 
@@ -12,7 +15,7 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active">Tambah Setting Presensi</li>
+                        <li class="breadcrumb-item active">Edit Setting Presensi</li>
                     </ol>
                 </div>
             </div>
@@ -21,9 +24,10 @@
 
     <div class="card card-primary">
         <div class="card-body">
-            <h4 class="card-title text-primary mb-4">Tambah Setting Presensi</h4>
-            <form action="{{ route('presensi_setting.store') }}" method="post">
+            <h4 class="card-title text-primary mb-4">Edit Setting Presensi</h4>
+            <form action="{{ route('presensi_setting.update', $presensiSetting->id) }}" method="post">
                 @csrf
+                @method('PUT')
                 <div class="row">
                     <div class="col-md-6">
                         <h5 class="text-primary mb-3">Sesi Pagi</h5>
@@ -31,7 +35,7 @@
                             <div class="col-xl-6 mb-3">
                                 <label for="pagi_mulai" class="form-label">Jam Mulai Pagi</label>
                                 <input class="form-control" type="time" name="pagi_mulai" id="pagi_mulai"
-                                    value="{{ old('pagi_mulai', '07:00') }}" required>
+                                    value="{{ old('pagi_mulai', $presensiSetting->pagi_mulai) }}" required>
                                 @error('pagi_mulai')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -40,7 +44,7 @@
                             <div class="col-xl-6 mb-3">
                                 <label for="pagi_selesai" class="form-label">Jam Selesai Pagi</label>
                                 <input class="form-control" type="time" name="pagi_selesai" id="pagi_selesai"
-                                    value="{{ old('pagi_selesai', '08:15') }}" required>
+                                    value="{{ old('pagi_selesai', $presensiSetting->pagi_selesai) }}" required>
                                 @error('pagi_selesai')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -54,7 +58,7 @@
                             <div class="col-xl-6 mb-3">
                                 <label for="sore_mulai" class="form-label">Jam Mulai Sore</label>
                                 <input class="form-control" type="time" name="sore_mulai" id="sore_mulai"
-                                    value="{{ old('sore_mulai', '16:00') }}" required>
+                                    value="{{ old('sore_mulai', $presensiSetting->sore_mulai) }}" required>
                                 @error('sore_mulai')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -63,7 +67,7 @@
                             <div class="col-xl-6 mb-3">
                                 <label for="sore_selesai" class="form-label">Jam Selesai Sore</label>
                                 <input class="form-control" type="time" name="sore_selesai" id="sore_selesai"
-                                    value="{{ old('sore_selesai', '17:00') }}" required>
+                                    value="{{ old('sore_selesai', $presensiSetting->sore_selesai) }}" required>
                                 @error('sore_selesai')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
@@ -77,20 +81,19 @@
                         <label class="form-label d-block">Status Aktif</label>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1"
-                                {{ old('is_active') ? 'checked' : '' }}>
+                                {{ $presensiSetting->is_active ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">Aktifkan Setting Ini</label>
                         </div>
                         <small class="text-muted">*Hanya satu setting yang dapat aktif pada satu waktu</small>
                     </div>
                 </div>
 
-                <div class="button-navigate mt-3">
-                    <a href="{{ route('presensi_setting.index') }}" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i> Simpan
-                    </button>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <a href="{{ route('presensi_setting.index') }}" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-1"></i> Kembali
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>

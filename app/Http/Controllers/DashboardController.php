@@ -13,7 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         // Riwayat presensi pribadi untuk siswa
-        $riwayatPresensi = Presensi::with('presensiJenis')
+        $riwayatPresensi = Presensi::with('PresensiStatus')
             ->where('user_id', auth()->id())
             ->orderByDesc('tanggal_presensi')
             ->limit(5)
@@ -24,7 +24,6 @@ class DashboardController extends Controller
 
         $todayPresensi = Presensi::whereDate('tanggal_presensi', $today)->count();
         $totalUsers = User::count();
-        $activeSetting = PresensiSetting::where('is_active', true)->first();
 
         // Get presensi by session today
         $pagiPresensi = Presensi::whereDate('tanggal_presensi', $today)
@@ -36,7 +35,7 @@ class DashboardController extends Controller
             ->count();
 
         // Get recent presensi
-        $recentPresensi = Presensi::with(['user', 'PresensiJenis'])
+        $recentPresensi = Presensi::with(['user', 'PresensiStatus'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -44,7 +43,6 @@ class DashboardController extends Controller
         return view('administrator.dashboard.index', compact(
             'todayPresensi',
             'totalUsers',
-            'activeSetting',
             'pagiPresensi',
             'sorePresensi',
             'recentPresensi',

@@ -33,22 +33,17 @@
                             <span>Group</span>
                         </a>
                     </li>
+                    <li class="menu-title">Presensi</li>
                     <li class="{{ Route::is('presensi_setting.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('presensi_setting.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Setting Presensi</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('presensi_jenis.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('presensi_jenis.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('presensi_status.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi_status.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Jenis Presensi</span>
-                        </a>
-                    </li>
-                    <li class="{{ Route::is('presensi_gambar.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('presensi_gambar.index') }}" class="waves-effect">
-                            <i class="cil-settings"></i>
-                            <span>Gambar Presensi</span>
                         </a>
                     </li>
                 @endif

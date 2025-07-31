@@ -13,30 +13,23 @@ class Presensi extends Model
 
     protected $fillable = [
         'user_id',
-        'presensi_jenis_id',
+        'presensi_status_id',
         'sesi',
         'jam_presensi',
         'tanggal_presensi',
-        'bukti',
+        'bukti_foto',
         'keterangan',
         'status_verifikasi',
         'catatan_verifikasi',
     ];
-
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function PresensiJenis()
+    public function presensiStatus()
     {
-        return $this->belongsTo(PresensiJenis::class, 'presensi_jenis_id');
-    }
-
-
-    public function gambar()
-    {
-        return $this->hasMany(PresensiGambar::class);
+        return $this->belongsTo(PresensiStatus::class, 'presensi_status_id');
     }
 }

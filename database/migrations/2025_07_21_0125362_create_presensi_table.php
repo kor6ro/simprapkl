@@ -18,10 +18,10 @@ class CreatePresensiTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('user')->onDelete('cascade');
 
-            $table->foreignId('presensi_jenis_id')->constrained('presensi_jenis')->onDelete('restrict');
-
+            $table->foreignId('presensi_status_id')->constrained('presensi_status')->onDelete('restrict');
 
             $table->date('tanggal_presensi');
+            $table->string('bukti_foto')->nullable();
             $table->enum('sesi', ['pagi', 'sore']);
             $table->time('jam_presensi')->nullable();
             $table->text('keterangan')->nullable();

@@ -20,13 +20,20 @@
     </div>
 
     <div class="row mb-3">
-        @if (canInputPresensi())
+        @if (auth()->user()?->group->nama === 'Siswa')
             <div class="col-auto">
-                <a href="{{ route('presensi.create') }}" class="btn btn-success">
+                <a href="{{ view('administrator.presensi.create') }}" class="btn btn-success">
                     <i class="fa fa-plus me-1"></i> Tambah
                 </a>
             </div>
         @endif
+        {{-- @if (auth()->user()?->group->nama === 'Admin')
+            <div class="col-auto">
+                <button class="btn btn-danger" id="btn-check-automatic">
+                    <i class="fa fa-cogs me-1"></i> Check Otomatis
+                </button>
+            </div>
+        @endif --}}
     </div>
 
     <div class="card">
@@ -40,6 +47,7 @@
                         <th>Sesi</th>
                         <th>Jam Presensi</th>
                         <th>Tanggal</th>
+                        <th>Bukti Foto</th>
                         <th>Status Verifikasi</th>
                         <th>Aksi</th>
                     </tr>
@@ -65,13 +73,14 @@
             serverSide: true,
             autoWidth: false,
             ajax: {
-                url: baseUrl('/presensi/fetch'),
+                url: '{{ route('presensi.index') }}',
                 headers: {
                     'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
                 },
                 dataSrc: "data",
-                type: "POST"
+                type: "GET"
             },
+
             order: [
                 [5, 'desc']
             ],
@@ -84,28 +93,30 @@
                 },
                 {
                     data: 'nama',
-                    searchable: true,
-                    orderable: true,
                 },
                 {
-                    data: 'presensi_jenis',
-                    searchable: true,
-                    orderable: true,
+                    data: 'status',
                 },
                 {
                     data: 'sesi',
-                    searchable: true,
-                    orderable: true,
                 },
                 {
                     data: 'jam_presensi',
-                    searchable: true,
-                    orderable: true,
                 },
                 {
                     data: 'tanggal_presensi',
-                    searchable: true,
-                    orderable: true,
+                },
+                {
+                    data: 'foto_bukti',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data) {
+                        if (data) {
+                            return `<img src="/storage/${data}" width="70" class="img-thumbnail" />`;
+                        } else {
+                            return '<span class="text-muted">-</span>';
+                        }
+                    }
                 },
                 {
                     data: 'status_verifikasi',
@@ -114,20 +125,19 @@
                 },
                 {
                     data: 'id',
-                    name: 'id',
                     render: function(data) {
                         var div = document.createElement("div");
                         div.className = "row-action";
 
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-warning btn-action mx-1 action-edit";
-                        btn.innerHTML = '<i class="icon fa fa-edit"></i>';
-                        div.append(btn);
+                        var btnEdit = document.createElement("button");
+                        btnEdit.className = "btn btn-warning btn-action mx-1 action-edit";
+                        btnEdit.innerHTML = '<i class="icon fa fa-edit"></i>';
+                        div.append(btnEdit);
 
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-danger btn-action mx-1 action-hapus";
-                        btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
-                        div.append(btn);
+                        var btnHapus = document.createElement("button");
+                        btnHapus.className = "btn btn-danger btn-action mx-1 action-hapus";
+                        btnHapus.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
+                        div.append(btnHapus);
 
                         return div.outerHTML;
                     },
@@ -161,7 +171,6 @@
             },
         });
 
-        // Handle automatic presensi check (only for admin/developer)
         $('#btn-check-automatic').click(function() {
             Swal.fire({
                 icon: "warning",
@@ -184,7 +193,6 @@
                 cancelButtonColor: '#3085d6',
             }).then((result) => {
                 if (result.value) {
-                    // Show loading
                     Swal.fire({
                         title: 'Menjalankan Pengecekan...',
                         html: 'Mohon tunggu, sistem sedang memproses...',

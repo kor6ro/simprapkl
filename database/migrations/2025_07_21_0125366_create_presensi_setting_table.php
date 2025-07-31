@@ -19,7 +19,6 @@ class CreatePresensiSettingTable extends Migration
             $table->time('pagi_selesai');
             $table->time('sore_mulai');
             $table->time('sore_selesai');
-            $table->boolean('is_active')->default(false); // hanya 1 setting aktif
             $table->timestamps();
         });
     }

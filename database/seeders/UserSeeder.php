@@ -56,6 +56,36 @@ class UserSeeder extends Seeder
                 "group_id" => "4",
                 "alamat" => "pacitan",
             ],
+            [
+                "name" => "John Doe",
+                "username" => "john",
+                "email" => "johndoe01@gmail.com",
+                "password" => Hash::make("password"),
+                "validasi" => "1",
+                "sekolah_id" => "1",
+                "group_id" => "4",
+                "alamat" => "pacitan",
+            ],
+            [
+                "name" => "Jane Smith",
+                "username" => "jane",
+                "email" => "janesmith02@gmail.com",
+                "password" => Hash::make("password"),
+                "validasi" => "1",
+                "sekolah_id" => "1",
+                "group_id" => "4",
+                "alamat" => "pacitan",
+            ],
+            [
+                "name" => "Alice Johnson",
+                "username" => "alice",
+                "email" => "alicejohnson03@gmail.com",
+                "password" => Hash::make("password"),
+                "validasi" => "1",
+                "sekolah_id" => "1",
+                "group_id" => "4",
+                "alamat" => "pacitan",
+            ],
         ];
 
         User::insert($data);

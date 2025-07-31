@@ -16,6 +16,5 @@ class PresensiSetting extends Model
         "pagi_selesai",
         "sore_mulai",
         "sore_selesai",
-        "is_active",
     ];
 }

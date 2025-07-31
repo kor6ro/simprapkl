@@ -224,7 +224,7 @@ class CheckPresensiOtomatis implements ShouldQueue
 ```php
 // Saat input presensi
 if ($isTelat) {
-    $presensiJenisId = $jenisTelat->id;
+    $PresensiStatusId = $jenisTelat->id;
     $keterangan .= ' (Otomatis telat)';
     $statusVerifikasi = 'valid';
 }
@@ -240,11 +240,10 @@ if ($isTelat) {
 - pagi_selesai (Time)
 - sore_mulai (Time)
 - sore_selesai (Time)
-- is_active (Boolean)
 - created_at, updated_at
 ```
 
-### Tabel `presensi_jenis`
+### Tabel `presensi_status`
 
 ```sql
 - id (Primary Key)
@@ -259,7 +258,7 @@ if ($isTelat) {
 ```sql
 - id (Primary Key)
 - user_id (Foreign Key)
-- presensi_jenis_id (Foreign Key)
+- presensi_status_id (Foreign Key)
 - tanggal_presensi (Date)
 - sesi (Enum: pagi, sore)
 - jam_presensi (Time)

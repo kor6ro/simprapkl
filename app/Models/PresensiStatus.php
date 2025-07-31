@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class PresensiJenis extends Model
+class PresensiStatus extends Model
 {
     use HasFactory;
 
-    protected $table = 'presensi_jenis';
+    protected $table = 'presensi_status';
 
     protected $fillable = [
-        'nama',
-        'butuh_bukti',
-        'otomatis',
+        'status',
     ];
 
     public function presensi()
