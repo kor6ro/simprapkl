@@ -2,58 +2,29 @@
 
 @section('css')
     <style>
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: 1px solid rgba(0, 0, 0, 0.125);
-        }
-
         .form-group {
             margin-bottom: 1rem;
         }
 
         .form-label {
-            font-weight: 600;
-            color: #495057;
+            font-weight: 500;
             margin-bottom: 0.5rem;
         }
 
-        .form-control,
-        .form-select {
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-
-        .text-danger {
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            display: block;
-        }
-
-        .button-navigate {
-            border-top: 1px solid #dee2e6;
-            padding-top: 1rem;
-            display: flex;
-            gap: 0.5rem;
+        .required {
+            color: #dc3545;
         }
 
         .section-header {
             background-color: #f8f9fa;
             padding: 0.75rem 1rem;
-            margin: 0 -1rem 1rem -1rem;
-            border-bottom: 1px solid #dee2e6;
-            font-weight: 600;
-            color: #495057;
+            margin: 1.5rem -1rem 1rem -1rem;
+            border-left: 3px solid #0d6efd;
+            font-weight: 500;
         }
 
-        .required {
-            color: #dc3545;
+        .section-header:first-of-type {
+            margin-top: 0;
         }
 
         .preview-container {
@@ -62,22 +33,69 @@
             padding: 1rem;
             text-align: center;
             background-color: #f8f9fa;
-            min-height: 150px;
+            min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
         }
 
+        .preview-container.has-image {
+            border-color: #28a745;
+        }
+
         .current-image {
-            max-width: 200px;
-            max-height: 150px;
+            max-width: 100%;
+            max-height: 100px;
             border-radius: 0.375rem;
             border: 1px solid #dee2e6;
         }
 
-        .alert {
-            margin-bottom: 1rem;
+        .preview-image {
+            max-width: 100%;
+            max-height: 100px;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .remove-preview {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .button-navigate {
+            padding-top: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .section-header {
+                margin-left: -1rem;
+                margin-right: -1rem;
+            }
+            
+            .button-navigate {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
         }
     </style>
 @endsection
@@ -141,10 +159,10 @@
                 @csrf
                 @method('PUT')
 
-                <!-- Informasi Dasar -->
+                {{-- <!-- Informasi Dasar -->
                 <div class="section-header">
                     <i class="fa fa-info-circle me-2"></i>Informasi Dasar
-                </div>
+                </div> --}}
 
                 <div class="row">
                     <div class="col-md-6">
@@ -164,32 +182,9 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="user_id" class="form-label">
-                                Surveyor <span class="required">*</span>
-                            </label>
-                            <select class="form-select @error('user_id') is-invalid @enderror" 
-                                    name="user_id" 
-                                    id="user_id"
-                                    required>
-                                <option value="">-- Pilih Surveyor --</option>
-                                @foreach ($user as $val)
-                                    <option value="{{ $val->id }}" 
-                                            {{ old('user_id', $colect_data->user_id) == $val->id ? 'selected' : '' }}>
-                                        {{ $val->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('user_id')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
+                
                 <!-- Data Customer -->
-                <div class="section-header mt-4">
+                <div class="section-header">
                     <i class="fa fa-user me-2"></i>Data Customer
                 </div>
 
@@ -212,25 +207,23 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="no_telp" class="form-label">
-                                No. Telepon <span class="required">*</span>
-                            </label>
-                            <input class="form-control @error('no_telp') is-invalid @enderror" 
-                                   type="tel" 
-                                   name="no_telp"
-                                   id="no_telp" 
-                                   value="{{ old('no_telp', $colect_data->no_telp) }}" 
-                                   placeholder="Contoh: 08123456789" 
-                                   pattern="[0-9]*"
-                                   required>
-                            @error('no_telp')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
-                        </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="no_telp" class="form-label">
+                            No. Telepon <small class="text-muted">(opsional)</small>
+                        </label>
+                        <input class="form-control @error('no_telp') is-invalid @enderror" 
+                            type="text" 
+                            name="no_telp"
+                            id="no_telp" 
+                            value="{{ old('no_telp', $colect_data->no_telp) }}"  
+                            placeholder="Isi nomor atau alasan">
+                        @error('no_telp')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
+
 
                 <div class="row">
                     <div class="col-12">
@@ -252,7 +245,7 @@
                 </div>
 
                 <!-- Informasi Provider -->
-                <div class="section-header mt-4">
+                <div class="section-header">
                     <i class="fa fa-wifi me-2"></i>Informasi Provider
                 </div>
 
@@ -326,7 +319,7 @@
                 </div>
 
                 <!-- Dokumentasi -->
-                <div class="section-header mt-4">
+                <div class="section-header">
                     <i class="fa fa-camera me-2"></i>Dokumentasi
                 </div>
 
@@ -353,20 +346,14 @@
 
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label">
-                                @if($colect_data->gambar_foto)
-                                    Foto Saat Ini
-                                @else
-                                    Informasi Upload
-                                @endif
-                            </label>
-                            <div class="preview-container">
-                                @if($colect_data->gambar_foto && file_exists(public_path('storage/' . $colect_data->gambar_foto)))
-                                    <img src="{{ asset('storage/' . $colect_data->gambar_foto) }}" 
+                            <label class="form-label">Preview Foto</label>
+                            <div class="preview-container" id="preview-container">
+                                @if($colect_data->gambar_foto && file_exists(public_path('uploads/colect_data_gambar_foto/' . $colect_data->gambar_foto)))
+                                    <img src="{{ asset('uploads/colect_data_gambar_foto/' . $colect_data->gambar_foto) }}" 
                                          alt="Foto Survey" 
                                          class="current-image">
                                     <p class="text-muted mt-2 mb-0">
-                                        <small>Upload file baru untuk mengganti foto ini</small>
+                                        <small>Upload file baru untuk mengganti</small>
                                     </p>
                                 @elseif($colect_data->gambar_foto)
                                     <i class="fa fa-exclamation-triangle fa-2x text-warning"></i>
@@ -375,8 +362,8 @@
                                         <small>{{ $colect_data->gambar_foto }}</small>
                                     </p>
                                 @else
-                                    <i class="fa fa-image fa-3x text-muted"></i>
-                                    <p class="text-muted mt-2 mb-0">
+                                    <i class="fa fa-image fa-3x text-muted" id="preview-icon"></i>
+                                    <p class="text-muted mt-2 mb-0" id="preview-text">
                                         Belum ada foto<br>
                                         <small>JPG, PNG, GIF - Max 2MB</small>
                                     </p>
@@ -387,7 +374,7 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="button-navigate mt-4">
+                <div class="button-navigate">
                     <a href="{{ route('colect_data.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali
                     </a>
@@ -398,4 +385,92 @@
             </form>
         </div>
     </div>
+@endsection
+
+@section('js')
+    <script>
+        $(document).ready(function() {
+            // Handle file input change for photo preview
+            $('#gambar_foto').on('change', function(e) {
+                const file = e.target.files[0];
+                const previewContainer = $('#preview-container');
+
+                if (file) {
+                    // Validate file type
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Format file tidak didukung. Gunakan JPG, PNG, atau GIF.');
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Validate file size (2MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Ukuran file terlalu besar. Maksimal 2MB.');
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Create file reader
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Update preview container
+                        previewContainer.addClass('has-image');
+                        previewContainer.html(`
+                            <img src="${e.target.result}" alt="Preview" class="preview-image">
+                            <div class="preview-info">
+                                <strong>${file.name}</strong><br>
+                                <small>${(file.size / 1024).toFixed(1)} KB</small>
+                            </div>
+                            <button type="button" class="remove-preview" onclick="removePreview()">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        `);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // Function to remove preview (called from button)
+        function removePreview() {
+            $('#gambar_foto').val('');
+            const previewContainer = $('#preview-container');
+            previewContainer.removeClass('has-image');
+            previewContainer.html(`
+                <i class="fa fa-image fa-3x text-muted"></i>
+                <p class="text-muted mt-2 mb-0">
+                    Pilih file gambar untuk diupload<br>
+                    <small>JPG, PNG, GIF - Max 2MB</small>
+                </p>
+            `);
+        }
+
+        // Form validation before submit
+        $('form').on('submit', function(e) {
+            let isValid = true;
+            const requiredFields = ['tanggal', 'user_id', 'nama_cus', 'no_telp', 'alamat_cus', 'provider_sekarang'];
+            
+            requiredFields.forEach(function(field) {
+                const input = $(`[name="${field}"]`);
+                if (!input.val().trim()) {
+                    input.addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    input.removeClass('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                alert('Mohon lengkapi semua field yang wajib diisi.');
+                return false;
+            }
+        });
+
+        // Remove validation error on input
+        $('.form-control, .form-select').on('input change', function() {
+            $(this).removeClass('is-invalid');
+        });
+    </script>
 @endsection
