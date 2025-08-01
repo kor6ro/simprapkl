@@ -33,6 +33,11 @@ class ColectDataController extends Controller
             return abort(404);
         }
 
+        // Jika user adalah siswa, cek apakah data ini milik mereka
+        if (isRole('Siswa') && $colectData->user_id != auth()->id()) {
+            return abort(403, 'Anda tidak memiliki akses untuk mengedit data ini.');
+        }
+
         $user = User::all();
 
         $data = ["user" => $user];
@@ -99,7 +104,14 @@ class ColectDataController extends Controller
 
     public function fetch(Request $request)
     {
+        // Modifikasi query berdasarkan role user
         $colectData = ColectData::with("user");
+
+        // Jika user adalah siswa, hanya tampilkan data milik mereka sendiri
+        if (isRole('Siswa')) {
+            $colectData = $colectData->where('user_id', auth()->id());
+        }
+        // Jika admin atau pembimbing, tampilkan semua data (tidak perlu filter tambahan)
 
         return DataTables::of($colectData)->addIndexColumn()->make(true);
     }
@@ -109,6 +121,11 @@ class ColectDataController extends Controller
         $colectData = ColectData::where("id", $id)->first();
         if (!$colectData) {
             return abort(404);
+        }
+
+        // Jika user adalah siswa, cek apakah data ini milik mereka
+        if (isRole('Siswa') && $colectData->user_id != auth()->id()) {
+            return abort(403, 'Anda tidak memiliki akses untuk mengupdate data ini.');
         }
 
         // Validation rules - gambar_foto tidak required untuk update
@@ -121,7 +138,6 @@ class ColectDataController extends Controller
             "kelebihan" => "required",
             "kekurangan" => "required",
             "serlok" => "required",
-            // Hapus validasi gambar_foto dan user_id karena tidak perlu
         ]);
 
         if ($validator->fails()) {
@@ -139,7 +155,7 @@ class ColectDataController extends Controller
             "kelebihan" => $request->input("kelebihan"),
             "kekurangan" => $request->input("kekurangan"),
             "serlok" => $request->input("serlok"),
-            "user_id" => auth()->id(), // Otomatis dari user login
+            "user_id" => auth()->id(),
         ];
 
         // Handle upload foto baru jika ada
@@ -155,7 +171,6 @@ class ColectDataController extends Controller
             $file->move("uploads/colect_data_gambar_foto", $fileName);
             $dataSave["gambar_foto"] = $fileName;
         }
-        // Jika tidak ada foto baru, foto lama tetap dipertahankan
 
         try {
             $colectData->update($dataSave);
@@ -176,6 +191,11 @@ class ColectDataController extends Controller
         $colectData = ColectData::where("id", $id)->first();
         if (!$colectData) {
             return abort(404);
+        }
+
+        // Jika user adalah siswa, cek apakah data ini milik mereka
+        if (isRole('Siswa') && $colectData->user_id != auth()->id()) {
+            return abort(403, 'Anda tidak memiliki akses untuk menghapus data ini.');
         }
 
         try {

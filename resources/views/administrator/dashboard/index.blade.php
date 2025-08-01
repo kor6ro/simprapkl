@@ -32,7 +32,7 @@
         </div>
     @endif
     {{-- Tombol Collect Data Untuk Siswa --}}
-    @if (isRole('Siswa'))
+    {{-- @if (isRole('Siswa'))
         <div class="row mb-3">
             <div class="col-auto">
                 <a href="{{ route('colect_data.create') }}" class="btn btn-success">
@@ -40,7 +40,7 @@
                 </a>
             </div>
         </div>
-    @endif
+    @endif --}}
     {{-- Hanya tampil untuk Admin & Guru --}}
 @endsection
 
