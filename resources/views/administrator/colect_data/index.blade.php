@@ -165,27 +165,37 @@
             </div>
         </div>
     </div>
+    
+    {{-- Tombol tambah hanya untuk Siswa --}}
     @if (isRole('Siswa'))
         <div class="row mb-3">
-                <div class="col-auto">
-                    <a href="{{ route('colect_data.create') }}" class="btn btn-success">
-                        <i class="fa fa-plus me-1"></i> Tambah Collect Data
-                    </a>
-                </div>
+            <div class="col-auto">
+                <a href="{{ route('colect_data.create') }}" class="btn btn-success">
+                    <i class="fa fa-plus me-1"></i> Tambah Collect Data
+                </a>
             </div>
+        </div>
     @endif
     
     <div class="card">
         <div class="card-header">
-            <h5 class="card-title mb-0">Data Survey</h5>
+            <h5 class="card-title mb-0">
+                @if (isRole('Siswa'))
+                    Data Survey Saya
+                @elseif (isRole('Pembimbing'))
+                    Data Survey Siswa
+                @else
+                    Data Survey
+                @endif
+            </h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table id="dataTable" class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th scope="col" width="50">#</th>
-                            <th scope="col">Surveyor</th>
+                            <th scope="col" width="50">No</th>
+                            <th scope="col">Collector</th>
                             <th scope="col">Tanggal</th>
                             <th scope="col">Nama Customer</th>
                             <th scope="col">No. Telepon</th>
@@ -373,22 +383,47 @@
                         searchable: false,
                         className: 'text-center',
                         render: function(data, type, row) {
-                            return `
-                                <div class="row-action">
-                                    <button type="button" class="btn btn-info btn-action action-detail" 
-                                            data-id="${data}" title="Detail">
-                                        <i class="fa fa-info-circle"></i>
-                                    </button>
+                            let buttons = `<div class="row-action">`;
+                            
+                            // Semua role bisa melihat detail
+                            buttons += `
+                                <button type="button" class="btn btn-info btn-action action-detail" 
+                                        data-id="${data}" title="Detail">
+                                    <i class="fa fa-info-circle"></i>
+                                </button>
+                            `;
+                            
+                            // PERMISSION LOGIC BERDASARKAN ROLE:
+                            
+                            @if (isRole('Admin'))
+                                // ADMIN: Bisa edit dan hapus semua data
+                                buttons += `
                                     <button type="button" class="btn btn-warning btn-action action-edit" 
                                             data-id="${data}" title="Edit">
                                         <i class="fa fa-edit"></i>
                                     </button>
-                                     <button type="button" class="btn btn-danger btn-action action-delete" 
+                                    <button type="button" class="btn btn-danger btn-action action-delete" 
                                             data-id="${data}" title="Hapus">
                                         <i class="fa fa-trash-alt"></i>
                                     </button>
-                                </div>
-                            `;
+                                `;
+                            @elseif (isRole('Siswa'))
+                                // SISWA: Hanya bisa edit dan hapus data milik sendiri (TIDAK ADA TOMBOL HAPUS)
+                                if (row.user_id == {{ auth()->id() }}) {
+                                    buttons += `
+                                        <button type="button" class="btn btn-warning btn-action action-edit" 
+                                                data-id="${data}" title="Edit">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                    `;
+                                }
+                            @elseif (isRole('Pembimbing'))
+                                // PEMBIMBING: Hanya bisa melihat detail (tidak ada edit/hapus)
+                                // Tidak menambahkan tombol edit atau hapus
+                            @endif
+                            
+                            buttons += `</div>`;
+                            return buttons;
                         }
                     }
                 ],
@@ -400,7 +435,7 @@
                         window.location.href = url;
                     });
 
-                    // Delete button handler
+                    // Delete button handler (hanya untuk Admin)
                     $(row).find('.action-delete').on('click', function() {
                         const id = $(this).data('id');
 
