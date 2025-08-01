@@ -17,4 +17,17 @@ class PresensiSetting extends Model
         "sore_mulai",
         "sore_selesai",
     ];
+
+    protected $casts = [
+        'pagi_mulai' => 'datetime:H:i:s',
+        'pagi_selesai' => 'datetime:H:i:s',
+        'sore_mulai' => 'datetime:H:i:s',
+        'sore_selesai' => 'datetime:H:i:s',
+    ];
+
+
+    public static function getSetting()
+    {
+        return self::first();
+    }
 }

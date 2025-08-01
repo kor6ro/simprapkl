@@ -23,6 +23,12 @@ class Presensi extends Model
         'catatan_verifikasi',
     ];
 
+    protected $casts = [
+        'tanggal_presensi' => 'date',
+        'jam_presensi' => 'datetime:H:i:s',
+        'status_verifikasi' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

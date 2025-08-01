@@ -94,9 +94,10 @@ Route::prefix("/admin")
         Route::get('/presensi/data', [PresensiController::class, 'data'])->name('presensi.data');
 
 
-        // Presensi Setting
-        Route::resource('presensi_setting', PresensiSettingController::class);
-        Route::post('presensi_setting/fetch', [PresensiSettingController::class, 'fetch']);
+
+        Route::get('/presensisetting', [PresensiSettingController::class, 'index'])->name('presensi-setting.index');
+        Route::post('/presensi_setting/update', [PresensiSettingController::class, 'update'])->name('presensi-setting.update');
+
 
         // PresensiStatus
         Route::resource("presensi_status", PresensiStatusController::class);
