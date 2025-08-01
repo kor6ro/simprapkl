@@ -78,8 +78,17 @@ class PresensiController extends Controller
 
                 if (!$sudah) {
                     $buktiPath = null;
-                    if ($status->butuh_bukti && $request->hasFile('bukti')) {
-                        $buktiPath = $request->file('bukti')->store('uploads/presensi', 'public');
+                    if ($status->butuh_bukti) {
+                        if ($request->filled('image')) {
+                            $base64 = $request->image;
+                            $image = str_replace('data:image/png;base64,', '', $base64);
+                            $image = str_replace(' ', '+', $image);
+                            $imageName = 'uploads/presensi/' . uniqid() . '.png';
+                            Storage::disk('public')->put($imageName, base64_decode($image));
+                            $buktiPath = $imageName;
+                        } elseif ($request->hasFile('bukti')) {
+                            $buktiPath = $request->file('bukti')->store('uploads/presensi', 'public');
+                        }
                     }
 
                     Presensi::create([
