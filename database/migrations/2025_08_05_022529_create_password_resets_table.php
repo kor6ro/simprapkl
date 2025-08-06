@@ -4,16 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePresensiStatusTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('presensi_status', function (Blueprint $table) {
-            $table->id();
-            $table->string('status');
+        Schema::create('password_resets', function (Blueprint $table) {
+            $table->string('email')->index();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
         });
     }
 
@@ -22,6 +23,6 @@ class CreatePresensiStatusTable extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('presensi_status');
+        Schema::dropIfExists('password_resets');
     }
 };

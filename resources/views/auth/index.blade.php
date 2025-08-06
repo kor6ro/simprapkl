@@ -64,10 +64,11 @@
                             <button type="submit" class="btn btn-primary">Login</button>
                         </div>
                     </form>
-
                     <div class="text-center mt-3">
-                        <span style="font-size: 14px">Belum punya akun? <a
-                                href="{{ route('register.form') }}">Register</a></span>
+                        <span style="font-size: 14px">
+                            <a href="{{ route('password_request') }}">Lupa Password?</a></span><br>
+                        <span style="font-size: 14px">Belum punya akun?
+                            <a href="{{ route('register.form') }}">Register</a></span>
                     </div>
                 </div>
             </div>

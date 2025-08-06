@@ -40,12 +40,6 @@
                             <span>Setting Presensi</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('presensi_status.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('presensi_status.index') }}" class="waves-effect">
-                            <i class="cil-settings"></i>
-                            <span>Jenis Presensi</span>
-                        </a>
-                    </li>
                 @endif
 
                 {{-- Manajemen User (Admin & Pembimbing) --}}
@@ -83,7 +77,7 @@
                     <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('colect_data.index') }}" class="waves-effect">
                             <i class="cil-pen"></i>
-                            <span>Colect Data</span>
+                            <span>Collect Data</span>
                         </a>
                     </li>
                 @endif

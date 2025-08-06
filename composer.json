@@ -3,14 +3,18 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "yajra/laravel-datatables-oracle": "*"
+        "yajra/laravel-datatables-oracle": "*",
+        "intervention/image": "^2.7"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -27,10 +31,9 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
-            "files": [
+        "files": [
             "app/Helpers/userview.php"
-    ]
-        
+        ]
     },
     "autoload-dev": {
         "psr-4": {

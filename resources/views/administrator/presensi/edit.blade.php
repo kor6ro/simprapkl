@@ -14,7 +14,6 @@
             </div>
         </div>
     </div>
-
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -23,7 +22,6 @@
                         enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
-
                         <div class="mb-3">
                             <label for="user_id" class="form-label">Siswa</label>
                             <select class="form-control" name="user_id" id="user_id" required>
@@ -40,23 +38,16 @@
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <div class="mb-3">
-                            <label for="presensi_status_id" class="form-label">Jenis Presensi</label>
-                            <select class="form-control" name="presensi_status_id" id="presensi_status_id" required>
                                 <option value="">Pilih Jenis Presensi</option>
-                                @foreach ($PresensiStatus as $jenis)
                                     <option value="{{ $jenis->id }}"
-                                        {{ $presensi->presensi_status_id == $jenis->id ? 'selected' : '' }}>
                                         {{ ucfirst($jenis->nama) }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('presensi_status_id')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -68,7 +59,6 @@
                                     @enderror
                                 </div>
                             </div>
-
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="jam_presensi" class="form-label">Jam Presensi</label>
@@ -80,7 +70,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <label for="sesi" class="form-label">Sesi</label>
                             <select class="form-control" name="sesi" id="sesi" required>
@@ -92,7 +81,6 @@
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <div class="mb-3">
                             <label for="bukti" class="form-label">Upload Bukti (Opsional)</label>
                             <input type="file" name="bukti" class="form-control" accept="image/*">
@@ -102,7 +90,6 @@
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-
                         @if ($presensi->bukti)
                             <div class="mb-3">
                                 <label class="form-label">Bukti Saat Ini:</label><br>
@@ -110,15 +97,10 @@
                                     style="max-width: 200px;">
                             </div>
                         @endif
-
                         <div class="mb-3">
-                            <label for="catatan_verifikasi" class="form-label">Catatan Verifikasi</label>
-                            <textarea name="catatan_verifikasi" class="form-control" rows="3">{{ old('catatan_verifikasi', $presensi->catatan_verifikasi) }}</textarea>
-                            @error('catatan_verifikasi')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <div class="d-flex justify-content-end">
                             <a href="{{ route('presensi.index') }}" class="btn btn-secondary me-2">Batal</a>
                             <button type="submit" class="btn btn-primary">

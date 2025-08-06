@@ -4,6 +4,37 @@
         .profile-label {
             font-weight: 500;
             color: #6c757d;
+            margin-bottom: 0.3rem;
+            display: inline-block;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: none;
+            border-color: #3b589e;
+        }
+
+        .card {
+            border-radius: 1rem;
+        }
+
+        .card-header {
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        .btn {
+            border-radius: 0.5rem;
+        }
+
+        .form-check-input {
+            border-radius: 1rem;
         }
     </style>
 @endsection
@@ -51,25 +82,6 @@
                                 @enderror
                             </div>
                             <div class="col-md-6">
-                                <label for="password" class="profile-label">Password</label>
-                                <input type="password" class="form-control" name="password" id="password"
-                                    value="{{ old('password', $profile->password_plain ?? '') }}">
-                                @error('password')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label for="validasi" class="profile-label d-block">Validasi</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="validasi" name="validasi"
-                                        value="Siswa" {{ old('validasi', $profile->validasi) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="validasi">Ya</label>
-                                </div>
-                                @error('validasi')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="col-md-6">
                                 <label for="sekolah_id" class="profile-label">Sekolah</label>
                                 <select name="sekolah_id" id="sekolah_id" class="form-select">
                                     <option value="">-- Pilih Sekolah --</option>
@@ -81,21 +93,6 @@
                                     @endforeach
                                 </select>
                                 @error('sekolah_id')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label for="group_id" class="profile-label">Group</label>
-                                <select name="group_id" id="group_id" class="form-select">
-                                    <option value="">-- Pilih Group --</option>
-                                    @foreach ($group as $val)
-                                        <option value="{{ $val->id }}"
-                                            {{ old('group_id', $profile->group_id) == $val->id ? 'selected' : '' }}>
-                                            {{ $val->nama }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('group_id')
                                     <small class="text-danger">{{ $message }}</small>
                                 @enderror
                             </div>

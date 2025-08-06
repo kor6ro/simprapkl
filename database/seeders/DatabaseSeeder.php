@@ -20,7 +20,6 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             GroupSeeder::class,
             SekolahSeeder::class,
-            PresensiStatusSeeder::class,
             PresensiSettingSeeder::class,
             PresensiSeeder::class
         ]);

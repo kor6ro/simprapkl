@@ -202,19 +202,19 @@
                             </div>
                         </div>
                     </div>
-                    <div class="dropdown d-inline-block">
+                    <div class="dropdown">
                         <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <img class="rounded-circle header-profile-user"
                                 src="{{ asset('assets/images/placeholder.jpg') }}" alt="Header Avatar">
-                            <span class="d-none d-xl-inline-block ms-1">Profile</span>
+                            <span class="ms-1 text-dark fw-semibold">{{ auth()->user()->name }}</span>
+
                             <i class="fa fa-chevron-down d-none d-xl-inline-block ms-1" style="font-size: 10px;"></i>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <!-- item-->
                             <a class="dropdown-item" href="{{ route('profile.index') }}">
                                 <i class="far fa-user font-size-12 align-middle me-1"></i>
-                                <span key="t-profile">Profile</span>
+                                <span>{{ auth()->user()->name }}</span>
                             </a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-danger" href="{{ route('logout') }}">
@@ -223,6 +223,7 @@
                             </a>
                         </div>
                     </div>
+
                 </div>
             </div>
         </header>
@@ -297,6 +298,7 @@
 
     {{-- JS --}}
     @yield('js')
+    @stack('scripts')
 </body>
 
 </html>

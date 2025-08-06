@@ -18,7 +18,6 @@ class CreatePresensiTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('user')->onDelete('cascade');
 
-            $table->foreignId('presensi_status_id')->constrained('presensi_status')->onDelete('restrict');
 
             $table->date('tanggal_presensi');
             $table->string('bukti_foto')->nullable();
@@ -26,8 +25,6 @@ class CreatePresensiTable extends Migration
             $table->time('jam_presensi')->nullable();
             $table->text('keterangan')->nullable();
 
-            $table->enum('status_verifikasi', ['pending', 'valid', 'tidak valid'])->default('pending');
-            $table->text('catatan_verifikasi')->nullable();
 
             $table->timestamps();
 

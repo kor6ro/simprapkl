@@ -9,7 +9,6 @@ use App\Http\Controllers\ColectDataController;
 use App\Http\Controllers\TaskBreakdownController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\PresensiSettingController;
-use App\Http\Controllers\PresensiStatusController;
 use App\Http\Controllers\PresensiGambarController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaporanGambarController;
@@ -19,7 +18,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
 use App\Models\Presensi;
 use Illuminate\Support\Facades\Route;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -34,26 +32,27 @@ use Illuminate\Support\Facades\Route;
 Route::get("/", function () {
     return redirect()->to(route("login"));
 });
-
 // Register Siswa
 Route::get('/register', [RegisterController::class, 'index'])->name('register.form');
 Route::post('/register/store', [RegisterController::class, 'store'])->name('register.siswa');
-
 Route::get("/login", [AuthController::class, "index"])->name("login");
 Route::get("/logout", [AuthController::class, "logout"])->name("logout");
-Route::post("/authenticate", [AuthController::class, "authenticate"])->name(
-    "authenticate"
-);
+Route::post("/authenticate", [AuthController::class, "authenticate"])->name("authenticate");
+
+Route::get('/forgotpass', [AuthController::class, 'showForgotPasswordForm'])->name('password_request');
+Route::post('/forgotpass', [AuthController::class, 'sendResetLink'])->name('password_email');
+Route::get('/resetpass/{token}', [AuthController::class, 'showResetForm'])->name('password_reset');
+Route::post('/resetpass', [AuthController::class, 'resetPassword'])->name('password_update');
+
+
 
 Route::prefix("/admin")
     ->middleware("auth")
     ->group(function () {
-
         // Dashboard
         Route::get("dashboard", [DashboardController::class, "index"])->name(
             "dashboard"
         );
-
         // Profile
         Route::get("profile", [ProfileController::class, "index"])->name(
             "profile.index"
@@ -64,49 +63,33 @@ Route::prefix("/admin")
         Route::post("profile", [ProfileController::class, "save"])->name(
             "profile.update"
         );
-
         // User
         Route::resource("user", UserController::class);
         Route::post("user/fetch", [UserController::class, "fetch"]);
-
         // Group
         Route::resource("group", GroupController::class);
         Route::post("group/fetch", [GroupController::class, "fetch"]);
-
         // Sekolah
         Route::resource("sekolah", SekolahController::class);
         Route::post("sekolah/fetch", [SekolahController::class, "fetch"]);
-
         // ColectData
         Route::resource("colect_data", ColectDataController::class);
         Route::post("colect_data/fetch", [
             ColectDataController::class,
             "fetch",
         ]);
-
         // TaskBreakdown
         Route::resource("task_break_down", TaskBreakDownController::class);
         Route::post("task_break_down/fetch", [TaskBreakDownController::class, "fetch"]);
-
         // Presensi
         Route::resource("presensi", PresensiController::class);
         Route::get('/presensi/create', [PresensiController::class, 'create'])->name('presensi.create');
         Route::get('/presensi/data', [PresensiController::class, 'data'])->name('presensi.data');
-
-
-
         Route::get('/presensi_setting/index', [PresensiSettingController::class, 'index'])->name('presensi_setting.index');
         Route::post('/presensi_setting/update', [PresensiSettingController::class, 'update'])->name('presensi_setting.update');
-
-
-        // PresensiStatus
-        Route::resource("presensi_status", PresensiStatusController::class);
-        Route::post("presensi_status/fetch", [PresensiStatusController::class, "fetch"]);
-
         // Laporan
         Route::resource("laporan", LaporanController::class);
         Route::post("laporan/fetch", [LaporanController::class, "fetch"]);
-
         // LaporanGambar
         Route::resource("laporan_gambar", LaporanGambarController::class);
         Route::post("laporan_gambar/fetch", [
@@ -114,3 +97,12 @@ Route::prefix("/admin")
             "fetch",
         ]);
     });
+Route::post('/presensi/sakit', [PresensiController::class, 'sakit'])->name('presensi.sakit');
+Route::post('/presensi/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('presensi.generate.alpa');
+Route::middleware(['auth'])->group(function () {
+    Route::resource('presensi', PresensiController::class);
+    Route::post('/presensi/check-in', [PresensiController::class, 'checkIn'])->name('presensi.checkin');
+    Route::post('/presensi/check-out', [PresensiController::class, 'checkOut'])->name('presensi.checkout');
+    Route::post('/presensi/sakit', [PresensiController::class, 'sakit'])->name('presensi.sakit');
+    Route::post('/presensi/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('presensi.generate.alpa');
+});

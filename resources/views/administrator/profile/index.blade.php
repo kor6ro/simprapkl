@@ -9,6 +9,27 @@
         .profile-value {
             font-size: 1rem;
             font-weight: 600;
+            background: #f8f9fa;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+        }
+
+        .card {
+            border-radius: 1rem;
+        }
+
+        .card-header {
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        .btn-outline-primary {
+            border-radius: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.875rem;
         }
     </style>
 @endsection
@@ -50,7 +71,10 @@
                         <div class="col-md-6">
                             <div class="mb-2">
                                 <label class="profile-label">Password</label>
-                                <div class="profile-value text-muted">********</div>
+                                <div class="profile-value">
+                                    <a href="{{ route('password_request') }}" class="btn btn-sm btn-outline-primary">Lupa
+                                        Password?</a>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">

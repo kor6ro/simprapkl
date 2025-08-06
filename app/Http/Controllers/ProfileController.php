@@ -53,10 +53,7 @@ class ProfileController extends Controller
             "name" => "required",
             "username" => "required",
             "email" => "required",
-            "password" => "required",
-            "validasi" => "required",
             "sekolah_id" => "required",
-            "group_id" => "required",
             "alamat" => "required",
         ]);
 
@@ -70,10 +67,7 @@ class ProfileController extends Controller
             "name" => $request->input("name"),
             "username" => $request->input("username"),
             "email" => $request->input("email"),
-            "password" => hash::make($request->input("password")),
-            "validasi" => $request->input("validasi"),
             "sekolah_id" => $request->input("sekolah_id"),
-            "group_id" => $request->input("group_id"),
             "alamat" => $request->input("alamat"),
         ];
 

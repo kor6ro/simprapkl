@@ -25,3 +25,16 @@ Route::get('/presensi-setting/active', [PresensiSettingController::class, 'getAc
 
 // Presensi API
 Route::get('/presensi/statistics', [PresensiController::class, 'getStatistics']);
+
+
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceSettingController;
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
+    Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
+
+    // Middleware tambahan seperti 'can:is-admin' bisa ditambahkan sesuai kebutuhan
+    Route::get('/attendance-setting', [AttendanceSettingController::class, 'show']);
+    Route::post('/attendance-setting', [AttendanceSettingController::class, 'update']);
+});

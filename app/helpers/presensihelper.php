@@ -3,7 +3,6 @@
 namespace App\Helpers;
 
 use App\Models\Presensi;
-use App\Models\PresensiStatus;
 use Illuminate\Support\Carbon;
 
 class PresensiHelper

@@ -36,7 +36,7 @@
 
                     <form method="POST" action="{{ route('register.siswa') }}">
                         @csrf
-                        <input type="hidden" name="group_id" value="3">
+                        <input type="hidden" name="group_id" value="4">
                         <input type="hidden" name="validasi" value="0">
 
                         <div class="mb-1">
