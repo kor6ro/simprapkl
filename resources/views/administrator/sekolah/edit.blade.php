@@ -1,13 +1,7 @@
 @extends('layout.main')
 @section('css')
     <style>
-        .card-primary {
-            border-top: 3px solid #007bff;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
+    
     </style>
 @endsection
 @section('content')
@@ -34,18 +28,32 @@
         <div class="card-body">
             <h4 class="card-title text-primary mb-4">Edit Sekolah</h4>
 
-            <form action="{{ route('admin.sekolah.update', $sekolah->id) }}" method="post">
+            <form action="{{ route('admin.sekolah.update', $sekolah->id) }}" method="post" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="row">
-                    <div class="col-xl-6 col-md-8 col-12">
+                     <!-- Form Nama Sekolah -->
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="nama" class="form-label">Nama Sekolah <span class="text-danger">*</span></label>
-                            <input class="form-control @error('nama') is-invalid @enderror" type="text" name="nama"
-                                id="nama" value="{{ old('nama', $sekolah->nama) }}" placeholder="Masukkan nama sekolah"
-                                required>
-                            @error('nama')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                            <label for="nama_sekolah" class="form-label">Nama Sekolah</label>
+                            <input type="text" name="nama_sekolah" id="nama_sekolah"
+                                class="form-control @error('nama_sekolah') is-invalid @enderror"
+                                value="{{ old('nama_sekolah', $data->nama_sekolah ?? '') }}"
+                                placeholder="Masukkan nama sekolah">
+                                    
+                            @error('nama_sekolah')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <!-- Form Upload Foto -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="logo" class="form-label">Upload Foto</label>
+                            <input class="form-control @error('logo') is-invalid @enderror" type="file"
+                                name="logo" id="logo" accept="image/*" style="margin-bottom: 0.5rem;">
+                            @error('logo')
+                                <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>

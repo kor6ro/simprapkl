@@ -36,8 +36,8 @@
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Nama</th>
-                        <th scope="col">Created At</th>
+                        <th scope="col">Nama Sekolah</th>
+                        <th scope="col">Logo Sekolah</th>
                         <th scope="col">Aksi</th>
                     </tr>
                 </thead>
@@ -91,7 +91,8 @@
                         });
                     }
                 },
-                columns: [{
+                columns: [
+                    {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -106,20 +107,15 @@
                         searchable: true
                     },
                     {
-                        data: 'created_at',
-                        name: 'created_at',
-                        orderable: true,
+                        data: 'logo',
+                        name: 'logo',
+                        orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            if (!data) return '-';
-                            var date = new Date(data);
-                            return date.toLocaleDateString('id-ID', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
+                            if (data) {
+                                return `<img src="/uploads/sekolah_logo/${data}" alt="Logo Sekolah" style="max-width:40px;">`;
+                            }
+                            return '<span class="badge bg-secondary">Tidak ada</span>';
                         }
                     },
                     {

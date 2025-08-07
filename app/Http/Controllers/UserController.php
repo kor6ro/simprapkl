@@ -84,7 +84,7 @@ class UserController extends Controller
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("admiin.user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
