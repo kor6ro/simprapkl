@@ -79,12 +79,12 @@ class UserController extends Controller
 
         try {
             User::create($dataSave);
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
@@ -135,12 +135,12 @@ class UserController extends Controller
 
         try {
             $user->update($dataSave);
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil diupdate",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat mengupdate data",
             ]);
@@ -156,12 +156,12 @@ class UserController extends Controller
 
         try {
             $user->delete();
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil dihapus",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menghapus data",
             ]);

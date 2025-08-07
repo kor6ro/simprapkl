@@ -26,7 +26,7 @@
             <form action="{{ route('admin.user.store') }}" method="post" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
-                    <div class="col-xl-auto">
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="name" class="form-label">Name</label>
                             <input class="form-control" type="text" name="name" id="name"
@@ -36,7 +36,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="username" class="form-label">Username</label>
                             <input class="form-control" type="text" name="username" id="username"
@@ -46,7 +46,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
                             <input class="form-control" type="text" name="email" id="email"
@@ -56,7 +56,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="password" class="form-label">Password</label>
                             <input class="form-control" type="text" name="password" id="password"
@@ -66,7 +66,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
+                    {{-- <div class="col-xl-auto">
                         <div>
                             <label class="form-label">Validasi</label>
                             <div class="form-check">
@@ -78,8 +78,8 @@
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
                         </div>
-                    </div>
-                    <div class="col-xl-auto">
+                    </div> --}}
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="sekolah_id" class="form-label">Sekolah Id</label>
                             <select class="form-select" name="sekolah_id" id="sekolah_id">
@@ -95,7 +95,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
+                    <div class="col-xl-3">
                         <div class="form-group">
                             <label for="group_id" class="form-label">Group Id</label>
                             <select class="form-select" name="group_id" id="group_id">
@@ -111,17 +111,30 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-xl-auto">
-                        <div class="form-group">
-                            <label for="alamat" class="form-label">Alamat</label>
-                            <input class="form-control" type="text" name="alamat" id="alamat"
-                                value="{{ old('alamat') }}">
-                            @error('alamat')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
+                 <div class="col-xl-3">
+                    <div class="form-group">
+                        <label for="alamat" class="form-label">Alamat</label>
+                        <input class="form-control" type="text" name="alamat" id="alamat"
+                            value="{{ old('alamat') }}">
+                        @error('alamat')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
                 </div>
+                <div class="col-xl-3"> <!-- VALIDASI SEKARANG DI DALAM .row -->
+                    <div class="form-group">
+                        <label class="form-label d-block">Validasi</label>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" value="1" id="validasi"
+                                name="validasi" {{ old('validasi') == 1 ? 'checked' : '' }}>
+                            <label for="validasi" class="form-check-label">Validasi</label>
+                        </div>
+                        @error('validasi')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+
                 <div class="button-navigate mt-3">
                     <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali

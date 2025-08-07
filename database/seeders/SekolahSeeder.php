@@ -15,9 +15,9 @@ class SekolahSeeder extends Seeder
     public function run()
     {
         $data = [
-            ["nama" => "SMKN 1 Pacitan"],
-            ["nama" => "SMKN 2 Pacitan"],
-            ["nama" => "SMKN 3 Pacitan"]
+            ["nama" => "SMKN 1 Pacitan", "logo" => "logo-smk1.png"],
+            ["nama" => "SMKN 2 Pacitan", "logo" => "logo-smk2.png"],
+            ["nama" => "SMKN 3 Pacitan", "logo" => "logo-smk3.png"]
         ];
 
         Sekolah::insert($data);

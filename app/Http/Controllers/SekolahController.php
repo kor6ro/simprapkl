@@ -34,18 +34,23 @@ class SekolahController extends Controller
     {
         try {
             $request->validate([
-                'nama' => 'required|string|max:255|unique:sekolah,nama', // PERBAIKAN: Ubah dari sekolahs ke sekolah
-            ], [
-                'nama.required' => 'Nama sekolah wajib diisi.',
-                'nama.string' => 'Nama sekolah harus berupa teks.',
-                'nama.max' => 'Nama sekolah maksimal 255 karakter.',
-                'nama.unique' => 'Nama sekolah sudah ada, silakan gunakan nama lain.',
+                'nama_sekolah' => 'required|string|max:255|unique:sekolah,nama',
+                'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             DB::beginTransaction();
 
+            $logo = null;
+            if ($request->hasFile('logo')) {
+                $file = $request->file('logo');
+                $fileName = $file->hashName();
+                $file->move(public_path('uploads/sekolah_logo'), $fileName);
+                $logo = $fileName;
+            }
+
             Sekolah::create([
-                'nama' => trim($request->nama),
+                'nama' => trim($request->nama_sekolah),
+                'logo' => $logo,
             ]);
 
             DB::commit();
@@ -55,7 +60,6 @@ class SekolahController extends Controller
                 ->with('message', 'Data sekolah berhasil ditambahkan.');
         } catch (Exception $e) {
             DB::rollBack();
-
             return redirect()->back()
                 ->withInput()
                 ->with('dataSaved', false)
@@ -78,18 +82,23 @@ class SekolahController extends Controller
     {
         try {
             $request->validate([
-                'nama' => 'required|string|max:255|unique:sekolah,nama,' . $sekolah->id, // PERBAIKAN: Ubah dari sekolahs ke sekolah
-            ], [
-                'nama.required' => 'Nama sekolah wajib diisi.',
-                'nama.string' => 'Nama sekolah harus berupa teks.',
-                'nama.max' => 'Nama sekolah maksimal 255 karakter.',
-                'nama.unique' => 'Nama sekolah sudah ada, silakan gunakan nama lain.',
+                'nama_sekolah' => 'required|string|max:255|unique:sekolah,nama,' . $sekolah->id,
+                'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             DB::beginTransaction();
 
+            $logo = $sekolah->logo;
+            if ($request->hasFile('logo')) {
+                $file = $request->file('logo');
+                $fileName = $file->hashName();
+                $file->move(public_path('uploads/sekolah_logo'), $fileName);
+                $logo = $fileName;
+            }
+
             $sekolah->update([
-                'nama' => trim($request->nama),
+                'nama' => trim($request->nama_sekolah),
+                'logo' => $logo,
             ]);
 
             DB::commit();
@@ -99,7 +108,6 @@ class SekolahController extends Controller
                 ->with('message', 'Data sekolah berhasil diupdate.');
         } catch (Exception $e) {
             DB::rollBack();
-
             return redirect()->back()
                 ->withInput()
                 ->with('dataSaved', false)
@@ -138,14 +146,10 @@ class SekolahController extends Controller
     public function fetch(Request $request)
     {
         try {
-            // Get the sekolah data with simple select
-            $sekolah = Sekolah::select(['id', 'nama', 'created_at']);
+            $sekolah = Sekolah::select(['id', 'nama', 'logo']);
 
             return DataTables::of($sekolah)
                 ->addIndexColumn()
-                ->editColumn('created_at', function ($row) {
-                    return $row->created_at ? $row->created_at->format('d/m/Y H:i') : '-';
-                })
                 ->make(true);
         } catch (Exception $e) {
             \Log::error('SekolahController fetch error: ' . $e->getMessage());
