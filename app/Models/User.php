@@ -44,4 +44,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Presensi::class);
     }
+
+    public function divisiHarianToday()
+    {
+        return $this->hasOne(SiswaDivisiHarian::class, 'siswa_id')->whereDate('tanggal', today());
+    }
 }

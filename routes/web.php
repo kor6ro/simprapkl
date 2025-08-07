@@ -16,6 +16,8 @@ use App\Http\Controllers\JenisLaporanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\SettingTugasController;
+use App\Http\Controllers\TugasHarianController;
 use App\Models\Presensi;
 use Illuminate\Support\Facades\Route;
 
@@ -75,6 +77,13 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::delete('/{presensi}', 'destroy')->name('destroy');
         Route::post('/generate-alpa', 'generateAlpa')->name('generate.alpa');
     });
+
+    Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
+        Route::get('/', [TugasHarianController::class, 'index'])->name('index');
+        Route::post('/mulai', [TugasHarianController::class, 'mulaiTugas'])->name('mulai');
+        Route::post('/lapor', [TugasHarianController::class, 'laporTugas'])->name('lapor');
+    });
+
 
     // ===== MANAGEMENT ROUTES =====
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -164,5 +173,16 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{colectData}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
+
+        // ===== ADMIN SETTING TUGAS (View Gabungan) =====
+        Route::get('setting-tugas', [SettingTugasController::class, 'index'])->name('setting_tugas.index');
+
+        Route::post('setting-tugas/swap-divisi', [SettingTugasController::class, 'swapDivisi'])->name('setting_tugas.swapDivisi');
+        Route::post('setting-tugas/set-divisi', [SettingTugasController::class, 'setDivisi'])
+            ->name('setting_tugas.setDivisi');
+
+        // Setting Tugas
+        Route::post('setting-tugas', [SettingTugasController::class, 'store'])->name('setting_tugas.store');
+        Route::delete('setting-tugas/{id}', [SettingTugasController::class, 'destroy'])->name('setting_tugas.destroy');
     });
 });

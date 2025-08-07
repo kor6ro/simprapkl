@@ -79,12 +79,12 @@ class UserController extends Controller
 
         try {
             User::create($dataSave);
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admiin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
@@ -126,7 +126,7 @@ class UserController extends Controller
             "name" => $request->input("name"),
             "username" => $request->input("username"),
             "email" => $request->input("email"),
-           "password" => Hash::make($request->input("password")),
+            "password" => Hash::make($request->input("password")),
             "validasi" => $request->input("validasi"),
             "sekolah_id" => $request->input("sekolah_id"),
             "group_id" => $request->input("group_id"),
@@ -135,12 +135,12 @@ class UserController extends Controller
 
         try {
             $user->update($dataSave);
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil diupdate",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat mengupdate data",
             ]);
@@ -156,12 +156,12 @@ class UserController extends Controller
 
         try {
             $user->delete();
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil dihapus",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("user.index"))->with([
+            return redirect(route("admin.user.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menghapus data",
             ]);
