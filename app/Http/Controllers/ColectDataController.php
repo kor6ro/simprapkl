@@ -63,7 +63,7 @@ class ColectDataController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect(route("colect_data.create"))
+            return redirect(route("admin.colect_data.create"))
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -87,15 +87,15 @@ class ColectDataController extends Controller
             $dataSave["gambar_foto"] = $fileName;
         }
 
-       
+
         try {
             ColectData::create($dataSave);
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
@@ -131,7 +131,7 @@ class ColectDataController extends Controller
         // Validation rules - gambar_foto tidak required untuk update
         $validator = Validator::make($request->all(), [
             "tanggal" => "required",
-            "nama_cus" => "required", 
+            "nama_cus" => "required",
             "no_telp" => "required",
             "alamat_cus" => "required",
             "provider_sekarang" => "required",
@@ -141,7 +141,7 @@ class ColectDataController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect(route("colect_data.edit", $id))
+            return redirect(route("admin.colect_data.edit", $id))
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -164,7 +164,7 @@ class ColectDataController extends Controller
             if ($colectData->gambar_foto && File::exists("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto)) {
                 File::delete("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto);
             }
-            
+
             // Upload foto baru
             $file = $request->file("gambar_foto");
             $fileName = $file->hashName();
@@ -174,12 +174,12 @@ class ColectDataController extends Controller
 
         try {
             $colectData->update($dataSave);
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil diupdate",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat mengupdate data",
             ]);
@@ -203,14 +203,14 @@ class ColectDataController extends Controller
             if ($colectData->gambar_foto && File::exists("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto)) {
                 File::delete("uploads/colect_data_gambar_foto/" . $colectData->gambar_foto);
             }
-            
+
             $colectData->delete();
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil dihapus",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("colect_data.index"))->with([
+            return redirect(route("admin.colect_data.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menghapus data",
             ]);

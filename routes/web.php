@@ -18,91 +18,151 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
 use App\Models\Presensi;
 use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
 
 Route::get("/", function () {
-    return redirect()->to(route("login"));
+    return redirect()->route("login");
 });
-// Register Siswa
-Route::get('/register', [RegisterController::class, 'index'])->name('register.form');
-Route::post('/register/store', [RegisterController::class, 'store'])->name('register.siswa');
-Route::get("/login", [AuthController::class, "index"])->name("login");
-Route::get("/logout", [AuthController::class, "logout"])->name("logout");
-Route::post("/authenticate", [AuthController::class, "authenticate"])->name("authenticate");
 
-Route::get('/forgotpass', [AuthController::class, 'showForgotPasswordForm'])->name('password_request');
-Route::post('/forgotpass', [AuthController::class, 'sendResetLink'])->name('password_email');
-Route::get('/resetpass/{token}', [AuthController::class, 'showResetForm'])->name('password_reset');
-Route::post('/resetpass', [AuthController::class, 'resetPassword'])->name('password_update');
+// ===== PUBLIC ROUTES =====
+Route::middleware('guest')->group(function () {
+    // Authentication Routes
+    Route::get('/login', [AuthController::class, 'index'])->name('login');
+    Route::post('/authenticate', [AuthController::class, 'authenticate'])->name('authenticate');
 
+    // Registration Routes
+    Route::get('/register', [RegisterController::class, 'index'])->name('register.form');
+    Route::post('/register/store', [RegisterController::class, 'store'])->name('register.siswa');
 
+    // Password Reset Routes
+    Route::get('/forgotpass', [AuthController::class, 'showForgotPasswordForm'])->name('password_request');
+    Route::post('/forgotpass', [AuthController::class, 'sendResetLink'])->name('password_email');
+    Route::get('/resetpass/{token}', [AuthController::class, 'showResetForm'])->name('password_reset');
+    Route::post('/resetpass', [AuthController::class, 'resetPassword'])->name('password_update');
+});
 
-Route::prefix("/admin")
-    ->middleware("auth")
-    ->group(function () {
-        // Dashboard
-        Route::get("dashboard", [DashboardController::class, "index"])->name(
-            "dashboard"
-        );
-        // Profile
-        Route::get("profile", [ProfileController::class, "index"])->name(
-            "profile.index"
-        );
-        Route::get("profile/edit", [ProfileController::class, "edit"])->name(
-            "profile.edit"
-        );
-        Route::post("profile", [ProfileController::class, "save"])->name(
-            "profile.update"
-        );
-        // User
-        Route::resource("user", UserController::class);
-        Route::post("user/fetch", [UserController::class, "fetch"]);
-        // Group
-        Route::resource("group", GroupController::class);
-        Route::post("group/fetch", [GroupController::class, "fetch"]);
-        // Sekolah
-        Route::resource("sekolah", SekolahController::class);
-        Route::post("sekolah/fetch", [SekolahController::class, "fetch"]);
-        // ColectData
-        Route::resource("colect_data", ColectDataController::class);
-        Route::post("colect_data/fetch", [
-            ColectDataController::class,
-            "fetch",
-        ]);
-        // TaskBreakdown
-        Route::resource("task_break_down", TaskBreakDownController::class);
-        Route::post("task_break_down/fetch", [TaskBreakDownController::class, "fetch"]);
-        // Presensi
-        Route::resource("presensi", PresensiController::class);
-        Route::get('/presensi/create', [PresensiController::class, 'create'])->name('presensi.create');
-        Route::get('/presensi/data', [PresensiController::class, 'data'])->name('presensi.data');
-        Route::get('/presensi_setting/index', [PresensiSettingController::class, 'index'])->name('presensi_setting.index');
-        Route::post('/presensi_setting/update', [PresensiSettingController::class, 'update'])->name('presensi_setting.update');
-        // Laporan
-        Route::resource("laporan", LaporanController::class);
-        Route::post("laporan/fetch", [LaporanController::class, "fetch"]);
-        // LaporanGambar
-        Route::resource("laporan_gambar", LaporanGambarController::class);
-        Route::post("laporan_gambar/fetch", [
-            LaporanGambarController::class,
-            "fetch",
-        ]);
+// Logout Route (accessible when authenticated)
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// ===== AUTHENTICATED ROUTES =====
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
+
+    // ===== DASHBOARD ROUTES =====
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ===== PROFILE ROUTES =====
+    Route::controller(ProfileController::class)->prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/edit', 'edit')->name('edit');
+        Route::post('/update', 'save')->name('update');
     });
-Route::post('/presensi/sakit', [PresensiController::class, 'sakit'])->name('presensi.sakit');
-Route::post('/presensi/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('presensi.generate.alpa');
-Route::middleware(['auth'])->group(function () {
-    Route::resource('presensi', PresensiController::class);
-    Route::post('/presensi/check-in', [PresensiController::class, 'checkIn'])->name('presensi.checkin');
-    Route::post('/presensi/check-out', [PresensiController::class, 'checkOut'])->name('presensi.checkout');
-    Route::post('/presensi/sakit', [PresensiController::class, 'sakit'])->name('presensi.sakit');
-    Route::post('/presensi/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('presensi.generate.alpa');
+
+    // ===== PRESENSI ROUTES =====
+    Route::controller(PresensiController::class)->prefix('presensi')->name('presensi.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/checkin', 'checkin')->name('checkin');
+        Route::post('/checkout', 'checkout')->name('checkout');
+        Route::post('/sakit', 'sakit')->name('sakit');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
+        Route::get('/{presensi}/edit', 'edit')->name('edit');
+        Route::put('/{presensi}', 'update')->name('update');
+        Route::delete('/{presensi}', 'destroy')->name('destroy');
+        Route::post('/generate-alpa', 'generateAlpa')->name('generate.alpa');
+    });
+
+    // ===== MANAGEMENT ROUTES =====
+    Route::prefix('admin')->name('admin.')->group(function () {
+
+        // Admin Dashboard
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // User Management
+        Route::controller(UserController::class)->prefix('user')->name('user.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{user}/edit', 'edit')->name('edit');
+            Route::put('/{user}', 'update')->name('update');
+            Route::delete('/{user}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // Group Management
+        Route::controller(GroupController::class)->prefix('group')->name('group.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{group}/edit', 'edit')->name('edit');
+            Route::put('/{group}', 'update')->name('update');
+            Route::delete('/{group}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // School Management - FIXED
+        Route::controller(SekolahController::class)->prefix('sekolah')->name('sekolah.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{sekolah}/edit', 'edit')->name('edit');
+            Route::put('/{sekolah}', 'update')->name('update');
+            Route::delete('/{sekolah}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // Task Breakdown Management - FIXED Controller Name
+        Route::controller(TaskBreakdownController::class)->prefix('task-breakdown')->name('task_breakdown.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{taskBreakdown}/edit', 'edit')->name('edit');
+            Route::put('/{taskBreakdown}', 'update')->name('update');
+            Route::delete('/{taskBreakdown}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // Presensi Settings
+        Route::controller(PresensiSettingController::class)->prefix('presensi-settings')->name('presensi_setting.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'update')->name('update');
+        });
+
+        // Reports Management
+        Route::controller(LaporanController::class)->prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{laporan}/edit', 'edit')->name('edit');
+            Route::put('/{laporan}', 'update')->name('update');
+            Route::delete('/{laporan}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // Report Images Management
+        Route::controller(LaporanGambarController::class)->prefix('laporan-gambar')->name('laporan_gambar.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{laporanGambar}/edit', 'edit')->name('edit');
+            Route::put('/{laporanGambar}', 'update')->name('update');
+            Route::delete('/{laporanGambar}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+
+        // Data Collection Management
+        Route::controller(ColectDataController::class)->prefix('colect-data')->name('colect_data.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{colectData}/edit', 'edit')->name('edit');
+            Route::put('/{colectData}', 'update')->name('update');
+            Route::delete('/{colectData}', 'destroy')->name('destroy');
+            Route::post('/fetch', 'fetch')->name('fetch');
+        });
+    });
 });

@@ -23,7 +23,7 @@
     <div class="card card-primary">
         <div class="card-body">
             <h4 class="card-title text-primary mb-4">Tambah User</h4>
-            <form action="{{ route('user.store') }}" method="post" enctype="multipart/form-data">
+            <form action="{{ route('admin.user.store') }}" method="post" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
                     <div class="col-xl-auto">
@@ -123,7 +123,7 @@
                     </div>
                 </div>
                 <div class="button-navigate mt-3">
-                    <a href="{{ route('user.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-primary">

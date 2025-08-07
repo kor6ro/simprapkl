@@ -5,7 +5,7 @@
         @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-        <form action="{{ route('presensi_setting.update') }}" method="POST">
+        <form action="{{ route('admin.presensi_setting.update') }}" method="POST">
             @csrf
             <div class="row mb-3">
                 <div class="col-md-3">
@@ -30,10 +30,11 @@
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-    <div class="mb-3">
-        <label for="toleransi_telat" class="form-label">Toleransi Keterlambatan (menit)</label>
-        <input type="number" class="form-control" name="toleransi_telat" id="toleransi_telat" value="{{ old('toleransi_telat', $setting->toleransi_telat ?? 10) }}" required>
-    </div>
-</form>
+            <div class="mb-3">
+                <label for="toleransi_telat" class="form-label">Toleransi Keterlambatan (menit)</label>
+                <input type="number" class="form-control" name="toleransi_telat" id="toleransi_telat"
+                    value="{{ old('toleransi_telat', $setting->toleransi_telat ?? 10) }}" required>
+            </div>
+        </form>
     </div>
 @endsection

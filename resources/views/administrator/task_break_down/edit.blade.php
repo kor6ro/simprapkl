@@ -23,7 +23,7 @@
     <div class="card card-primary">
         <div class="card-body">
             <h4 class="card-title text-primary mb-4">Edit Task Break Down</h4>
-            <form action="{{ route('task_break_down.update', $task_break_down->id) }}" method="post"
+            <form action="{{ route('admin.task_breakdown.update', $task_break_down->id) }}" method="post"
                 enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div class="button-navigate mt-3">
-                    <a href="{{ route('task_break_down.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.task_breakdown.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-save me-1"></i> Simpan </button>

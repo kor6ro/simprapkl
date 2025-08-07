@@ -21,21 +21,21 @@
                 {{-- Master Data (Admin Saja) --}}
                 @if (isRole('Admin'))
                     <li class="menu-title">Master Data</li>
-                    <li class="{{ Route::is('sekolah.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('sekolah.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.sekolah.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.sekolah.index') }}" class="waves-effect">
                             <i class="cil-school"></i>
                             <span>Sekolah</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('group.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('group.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.group.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.group.index') }}" class="waves-effect">
                             <i class="cil-group"></i>
                             <span>Group</span>
                         </a>
                     </li>
                     <li class="menu-title">Presensi</li>
-                    <li class="{{ Route::is('presensi_setting.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('presensi_setting.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.presensi_setting.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.presensi_setting.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Setting Presensi</span>
                         </a>
@@ -45,37 +45,35 @@
                 {{-- Manajemen User (Admin & Pembimbing) --}}
                 @if (isRole('Admin') || isRole('Pembimbing'))
                     <li class="menu-title">Manajement User</li>
-                    <li class="{{ Route::is('user.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('user.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.user.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.user.index') }}" class="waves-effect">
                             <i class="cil-user"></i>
                             <span>User</span>
-                        </a>
-                    </li>
-                    <li class="menu-title">Manajement Data</li>
-                    <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('presensi.index') }}" class="waves-effect">
-                            <i class="cil-calendar"></i>
-                            <span>Presensi</span>
                         </a>
                     </li>
                 @endif
 
                 {{-- Manajemen Data (Semua Role) --}}
                 @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa'))
-                    <li class="{{ Route::is('task_break_down.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('task_break_down.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi.index') }}" class="waves-effect">
+                            <i class="cil-calendar"></i>
+                            <span>Presensi</span>
+                        </a>
+                    <li class="{{ Route::is('admin.task_breakdown.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.task_breakdown.index') }}" class="waves-effect">
                             <i class="cil-task"></i>
                             <span>Task Breakdown</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('laporan.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('laporan.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.laporan.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.laporan.index') }}" class="waves-effect">
                             <i class="cil-chart"></i>
                             <span>Laporan</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('colect_data.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('colect_data.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.colect_data.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.colect_data.index') }}" class="waves-effect">
                             <i class="cil-pen"></i>
                             <span>Collect Data</span>
                         </a>

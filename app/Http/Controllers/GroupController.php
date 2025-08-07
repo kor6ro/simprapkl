@@ -38,7 +38,7 @@ class GroupController extends Controller
         $validator = Validator::make($request->all(), ["nama" => "required"]);
 
         if ($validator->fails()) {
-            return redirect(route("group.create"))
+            return redirect(route("admin.group.create"))
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -47,12 +47,12 @@ class GroupController extends Controller
 
         try {
             Group::create($dataSave);
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil disimpan",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menyimpan data",
             ]);
@@ -76,7 +76,7 @@ class GroupController extends Controller
         $validator = Validator::make($request->all(), ["nama" => "required"]);
 
         if ($validator->fails()) {
-            return redirect(route("group.edit", $id))
+            return redirect(route('admin.group.edit', $id))
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -85,12 +85,12 @@ class GroupController extends Controller
 
         try {
             $group->update($dataSave);
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil diupdate",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat mengupdate data",
             ]);
@@ -106,12 +106,12 @@ class GroupController extends Controller
 
         try {
             $group->delete();
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => true,
                 "message" => "Data berhasil dihapus",
             ]);
         } catch (\Throwable $th) {
-            return redirect(route("group.index"))->with([
+            return redirect(route("admin.group.index"))->with([
                 "dataSaved" => false,
                 "message" => "Terjadi kesalahan saat menghapus data",
             ]);

@@ -1,7 +1,10 @@
 @extends('layout.main')
 @section('css')
     <style>
-
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
     </style>
 @endsection
 @section('content')
@@ -12,7 +15,7 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item">
-                            <a href="#">Home</a>
+                            <a href="{{ route('dashboard') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item active">Sekolah</li>
                     </ol>
@@ -22,14 +25,14 @@
     </div>
     <div class="row mb-3">
         <div class="col-auto">
-            <a href="{{ route('sekolah.create') }}" class="btn btn-success">
+            <a href="{{ route('admin.sekolah.create') }}" class="btn btn-success">
                 <i class="fa fa-plus me-1"></i> Tambah
             </a>
         </div>
     </div>
     <div class="card">
         <div class="card-body">
-            <table class="table table-striped">
+            <table id="sekolah-table" class="table table-striped table-bordered nowrap" style="width:100%">
                 <thead>
                     <tr>
                         <th scope="col">#</th>
@@ -39,13 +42,13 @@
                     </tr>
                 </thead>
                 <tbody>
-
+                    <!-- Data will be loaded via AJAX -->
                 </tbody>
             </table>
         </div>
     </div>
     <div class="d-none">
-        <form id="form-destroy" action="{{ route('sekolah.store') }}" method="post">
+        <form id="form-destroy" action="" method="post">
             @csrf
             @method('DELETE')
         </form>
@@ -53,111 +56,175 @@
 @endsection
 @section('js')
     <script>
-        $('table').DataTable({
-            fixedHeader: true,
-            processing: true,
-            serverSide: true,
-            autoWidth: false,
-            ajax: {
-                url: baseUrl('/sekolah/fetch'),
-                headers: {
-                    'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
-                },
-                dataSrc: "data",
-                type: "POST"
-            },
-            order: [
-                [1, 'asc']
-            ],
-            columns: [{
-                    data: 'DT_RowIndex',
-                    sClass: 'text-center',
-                    width: '50px',
-                    searchable: false,
-                    orderable: false,
-                },
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#sekolah-table').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                ajax: {
+                    url: "{{ route('admin.sekolah.fetch') }}",
+                    type: "POST",
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    // PERBAIKAN: Hapus fungsi data yang duplikat CSRF token
+                    error: function(xhr, error, code) {
+                        console.log('AJAX Error Details:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error,
+                            code: code
+                        });
 
-                {
-                    data: 'nama',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
-                },
-                {
-                    data: 'created_at',
-                    render: function(data) {
-                        if (!data) return "";
+                        let errorMessage = 'Gagal memuat data sekolah.';
+                        if (xhr.status === 419) {
+                            errorMessage = 'Session expired. Silakan refresh halaman dan coba lagi.';
+                        }
 
-                        const date = new Date(data);
-                        return date.toLocaleString();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error ' + xhr.status,
+                            text: errorMessage,
+                            footer: 'Periksa console untuk detail error.'
+                        });
                     }
                 },
-                {
-                    data: 'id',
-                    name: 'id',
-                    render: function(data, i, row) {
-                        var div = document.createElement("div");
-                        div.className = "row-action";
-
-                        // Edit
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-warning btn-action mx-1 action-edit";
-                        btn.innerHTML = '<i class="icon fa fa-edit"></i>';
-                        div.append(btn);
-
-                        // Delete
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-danger btn-action mx-1 action-hapus";
-                        btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
-                        div.append(btn);
-
-                        return div.outerHTML;
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        width: '50px'
                     },
-                    width: "150px",
-                    orderable: false,
-                },
-            ],
-            createdRow: function(row, data) {
-                $(".action-edit", row).click(function(e) {
-                    const url = baseUrl('/sekolah/' + data.id + '/edit');
-                    window.location.replace(url);
-                });
-
-                $(".action-hapus", row).click(function(e) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Warning",
-                        text: "Anda yakin akan menghapus data ini ??",
-                        showCancelButton: true,
-                        confirmButtonText: "Hapus",
-                        cancelButtonText: "Batal",
-                    }).then((result) => {
-                        if (result.value) {
-                            const url = $('#form-destroy').attr('action');
-                            $('#form-destroy').attr('action', url + '/' + data.id)
-                                .trigger('submit');
+                    {
+                        data: 'nama',
+                        name: 'nama',
+                        orderable: true,
+                        searchable: true
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'created_at',
+                        orderable: true,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            if (!data) return '-';
+                            var date = new Date(data);
+                            return date.toLocaleDateString('id-ID', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
                         }
-                    });
+                    },
+                    {
+                        data: 'id',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        width: '150px',
+                        render: function(data, type, row) {
+                            return `
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-warning btn-sm btn-edit" 
+                                            data-id="${data}" title="Edit">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm btn-delete" 
+                                            data-id="${data}" title="Hapus">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                order: [
+                    [1, 'asc']
+                ],
+                pageLength: 10,
+                lengthMenu: [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                language: {
+                    processing: "Memproses...",
+                    lengthMenu: "Tampilkan _MENU_ data per halaman",
+                    zeroRecords: "Data tidak ditemukan",
+                    emptyTable: "Tidak ada data yang tersedia",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    search: "Cari:",
+                    paginate: {
+                        first: "Pertama",
+                        last: "Terakhir",
+                        next: "Selanjutnya",
+                        previous: "Sebelumnya"
+                    }
+                }
+            });
+
+            // Edit button click handler
+            $('#sekolah-table').on('click', '.btn-edit', function() {
+                var id = $(this).data('id');
+                var editUrl = `/admin/sekolah/${id}/edit`;
+                window.location.href = editUrl;
+                window.location.href = editUrl;
+            });
+
+            // Delete button click handler
+            $('#sekolah-table').on('click', '.btn-delete', function() {
+                var id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Konfirmasi Hapus',
+                    text: 'Apakah Anda yakin ingin menghapus data ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var deleteUrl = `/admin/sekolah/${id}`;
+                        $('#form-destroy').attr('action', deleteUrl).submit();
+                        $('#form-destroy').attr('action', deleteUrl);
+                        $('#form-destroy').submit();
+                    }
                 });
-            },
+            });
         });
     </script>
-    @if (session()->has('dataSaved') && session()->get('dataSaved') == true)
+
+    <!-- Success Message -->
+    @if (session('dataSaved') && session('dataSaved') == true)
         <script>
             Swal.fire({
                 icon: 'success',
-                title: 'Success',
-                text: '{{ session()->get('message') }}',
+                title: 'Berhasil!',
+                text: '{{ session('message') }}',
+                timer: 3000,
+                showConfirmButton: false
             });
         </script>
     @endif
-    @if (session()->has('dataSaved') && session()->get('dataSaved') == false)
+
+    <!-- Error Message -->
+    @if (session('dataSaved') && session('dataSaved') == false)
         <script>
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: '{{ session()->get('message') }}',
+                title: 'Error!',
+                text: '{{ session('message') }}',
+                confirmButtonText: 'OK'
             });
         </script>
     @endif

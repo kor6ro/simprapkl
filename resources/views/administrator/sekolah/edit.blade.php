@@ -1,7 +1,13 @@
 @extends('layout.main')
 @section('css')
     <style>
+        .card-primary {
+            border-top: 3px solid #007bff;
+        }
 
+        .form-group {
+            margin-bottom: 1rem;
+        }
     </style>
 @endsection
 @section('content')
@@ -12,7 +18,10 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item">
-                            <a href="#">Home</a>
+                            <a href="{{ route('dashboard') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{{ route('admin.sekolah.index') }}">Sekolah</a>
                         </li>
                         <li class="breadcrumb-item active">Edit Sekolah</li>
                     </ol>
@@ -20,30 +29,34 @@
             </div>
         </div>
     </div>
+
     <div class="card card-primary">
         <div class="card-body">
             <h4 class="card-title text-primary mb-4">Edit Sekolah</h4>
-            <form action="{{ route('sekolah.update', $sekolah->id) }}" method="post" enctype="multipart/form-data">
+
+            <form action="{{ route('admin.sekolah.update', $sekolah->id) }}" method="post">
                 @csrf
                 @method('PUT')
                 <div class="row">
-                    <div class="col-xl-auto">
+                    <div class="col-xl-6 col-md-8 col-12">
                         <div class="form-group">
-                            <label for="nama" class="form-label">Nama</label>
-                            <input class="form-control" type="text" name="nama" id="nama"
-                                value="{{ old('nama') ? old('nama') : $sekolah->nama }}">
+                            <label for="nama" class="form-label">Nama Sekolah <span class="text-danger">*</span></label>
+                            <input class="form-control @error('nama') is-invalid @enderror" type="text" name="nama"
+                                id="nama" value="{{ old('nama', $sekolah->nama) }}" placeholder="Masukkan nama sekolah"
+                                required>
                             @error('nama')
-                                <small class="text-danger">{{ $message }}</small>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                 </div>
+
                 <div class="button-navigate mt-3">
-                    <a href="{{ route('sekolah.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.sekolah.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i> Simpan
+                        <i class="fa fa-save me-1"></i> Update
                     </button>
                 </div>
             </form>
@@ -51,5 +64,19 @@
     </div>
 @endsection
 @section('js')
-    <script></script>
+    <script>
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const namaInput = document.getElementById('nama');
+            if (!namaInput.value.trim()) {
+                e.preventDefault();
+                namaInput.focus();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: 'Nama sekolah harus diisi!',
+                });
+            }
+        });
+    </script>
 @endsection

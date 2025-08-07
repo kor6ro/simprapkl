@@ -23,7 +23,7 @@
     <div class="card card-primary">
         <div class="card-body">
             <h4 class="card-title text-primary mb-4">Edit User</h4>
-            <form action="{{ route('user.update', $user->id) }}" method="post" enctype="multipart/form-data">
+            <form action="{{ route('admin.user.update', $user->id) }}" method="post" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="row">
@@ -125,7 +125,7 @@
                     </div>
                 </div>
                 <div class="button-navigate mt-3">
-                    <a href="{{ route('user.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-primary">

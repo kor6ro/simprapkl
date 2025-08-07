@@ -2,150 +2,151 @@
 
 @section('css')
     <style>
-       .table th {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        border-bottom: 2px solid #dee2e6;
-    }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
 
-    .btn-action {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
 
-    .row-action {
-        display: flex;
-        gap: 0.25rem;
-        justify-content: center;
-    }
-    .card {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        border: 1px solid rgba(0, 0, 0, 0.125);
-    }
+        .row-action {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+        }
 
-    /* Custom style for photo preview */
-    .photo-preview {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-    }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
 
-    .photo-preview:hover {
-        border-color: #007bff;
-        transform: scale(1.05);
-    }
+        /* Custom style for photo preview */
+        .photo-preview {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
 
-    /* Custom SweetAlert styles for photo modal */
-    .swal2-popup.photo-modal {
-        padding: 10px !important;
-    }
+        .photo-preview:hover {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
 
-    .photo-container {
-        position: relative;
-        text-align: center;
-    }
+        /* Custom SweetAlert styles for photo modal */
+        .swal2-popup.photo-modal {
+            padding: 10px !important;
+        }
 
-    .photo-main {
-        max-width: 100%;
-        max-height: 70vh;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
+        .photo-container {
+            position: relative;
+            text-align: center;
+        }
 
-    .photo-info {
-        margin-top: 10px;
-        padding: 8px;
-        background: #f8f9fa;
-        border-radius: 4px;
-        font-size: 0.9em;
-        color: #666;
-    }
+        .photo-main {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-    /* Style for scrollable address */
-    .address-cell {
-        max-width: 200px;
-        white-space: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 8px;
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        background-color: #f8f9fa;
-    }
+        .photo-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
 
-    .address-cell::-webkit-scrollbar {
-        height: 4px;
-    }
+        /* Style for scrollable address */
+        .address-cell {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
 
-    .address-cell::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 2px;
-    }
+        .address-cell::-webkit-scrollbar {
+            height: 4px;
+        }
 
-    .address-cell::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 2px;
-    }
+        .address-cell::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
 
-    .address-cell::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
+        .address-cell::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
 
-    /* ===== MODAL COMPACT STYLES ===== */
-    /* Compact modal styles */
-    .swal2-popup.detail-modal-compact {
-        padding: 15px !important;
-    }
+        .address-cell::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
 
-    .detail-modal-content {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    /* Responsive untuk desktop */
-    @media (min-width: 768px) {
+        /* ===== MODAL COMPACT STYLES ===== */
+        /* Compact modal styles */
         .swal2-popup.detail-modal-compact {
-            width: 600px !important;
-            max-width: 90vw !important;
+            padding: 15px !important;
         }
-    }
 
-    /* Responsive untuk tablet */
-    @media (max-width: 767px) and (min-width: 576px) {
-        .swal2-popup.detail-modal-compact {
-            width: 95vw !important;
-            max-width: 500px !important;
-        }
-        
-        .detail-modal-content .col-md-8,
-        .detail-modal-content .col-md-4 {
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
-        }
-    }
-
-    /* Responsive untuk mobile */
-    @media (max-width: 575px) {
-        .swal2-popup.detail-modal-compact {
-            width: 95vw !important;
-            margin: 10px !important;
-        }
-        
         .detail-modal-content {
-            font-size: 12px !important;
+            max-height: 400px;
+            overflow-y: auto;
         }
-        
-        .detail-modal-content .col-md-8,
-        .detail-modal-content .col-md-4 {
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
+
+        /* Responsive untuk desktop */
+        @media (min-width: 768px) {
+            .swal2-popup.detail-modal-compact {
+                width: 600px !important;
+                max-width: 90vw !important;
+            }
         }
-        
-        .detail-modal-content img {
-            width: 100px !important;
-            height: 100px !important;
+
+        /* Responsive untuk tablet */
+        @media (max-width: 767px) and (min-width: 576px) {
+            .swal2-popup.detail-modal-compact {
+                width: 95vw !important;
+                max-width: 500px !important;
+            }
+
+            .detail-modal-content .col-md-8,
+            .detail-modal-content .col-md-4 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
         }
-    }
+
+        /* Responsive untuk mobile */
+        @media (max-width: 575px) {
+            .swal2-popup.detail-modal-compact {
+                width: 95vw !important;
+                margin: 10px !important;
+            }
+
+            .detail-modal-content {
+                font-size: 12px !important;
+            }
+
+            .detail-modal-content .col-md-8,
+            .detail-modal-content .col-md-4 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+
+            .detail-modal-content img {
+                width: 100px !important;
+                height: 100px !important;
+            }
+        }
     </style>
 @endsection
 
@@ -165,18 +166,16 @@
             </div>
         </div>
     </div>
-    
-    {{-- Tombol tambah hanya untuk Siswa --}}
-    @if (isRole('Siswa'))
-        <div class="row mb-3">
-            <div class="col-auto">
-                <a href="{{ route('colect_data.create') }}" class="btn btn-success">
-                    <i class="fa fa-plus me-1"></i> Tambah Collect Data
-                </a>
-            </div>
+
+    {{-- Tombol tambah --}}
+    <div class="row mb-3">
+        <div class="col-auto">
+            <a href="{{ route('admin.colect_data.create') }}" class="btn btn-success">
+                <i class="fa fa-plus me-1"></i> Tambah Collect Data
+            </a>
         </div>
-    @endif
-    
+    </div>
+
     <div class="card">
         <div class="card-header">
             <h5 class="card-title mb-0">
@@ -204,7 +203,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Data akan dimuat melalui DataTables -->
+                        <!-- Data akan diisi oleh DataTables -->
                     </tbody>
                 </table>
             </div>
@@ -212,7 +211,7 @@
     </div>
 
     <!-- Hidden form for delete action -->
-    <form id="form-destroy" action="{{ route('colect_data.store') }}" method="post" style="display: none;">
+    <form id="form-destroy" action="{{ route('admin.colect_data.store') }}" method="post" style="display: none;">
         @csrf
         @method('DELETE')
     </form>
@@ -238,7 +237,7 @@
                 // Format tanggal
                 const date = new Date(surveyDate);
                 const formattedDate = date.toLocaleDateString('id-ID');
-                
+
                 const photoInfo = `
                     <div class="photo-info">
                         <strong>Customer:</strong> ${customerName}<br>
@@ -327,7 +326,7 @@
                     }
                 },
                 ajax: {
-                    url: baseUrl('/colect_data/fetch'),
+                    url: "{{ route('admin.colect_data.fetch') }}",
                     type: "POST",
                     headers: {
                         'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
@@ -337,8 +336,7 @@
                 order: [
                     [2, 'desc']
                 ], // Order by tanggal descending
-                columns: [
-                    {
+                columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -384,7 +382,7 @@
                         className: 'text-center',
                         render: function(data, type, row) {
                             let buttons = `<div class="row-action">`;
-                            
+
                             // Semua role bisa melihat detail
                             buttons += `
                                 <button type="button" class="btn btn-info btn-action action-detail" 
@@ -392,9 +390,9 @@
                                     <i class="fa fa-info-circle"></i>
                                 </button>
                             `;
-                            
+
                             // PERMISSION LOGIC BERDASARKAN ROLE:
-                            
+
                             @if (isRole('Admin'))
                                 // ADMIN: Bisa edit dan hapus semua data
                                 buttons += `
@@ -421,7 +419,7 @@
                                 // PEMBIMBING: Hanya bisa melihat detail (tidak ada edit/hapus)
                                 // Tidak menambahkan tombol edit atau hapus
                             @endif
-                            
+
                             buttons += `</div>`;
                             return buttons;
                         }
@@ -431,7 +429,7 @@
                     // Edit button handler
                     $(row).find('.action-edit').on('click', function() {
                         const id = $(this).data('id');
-                        const url = baseUrl('/colect_data/' + id + '/edit');
+                        const url = "{{ url('/admin/colect-data') }}" + '/' + id + '/edit';
                         window.location.href = url;
                     });
 
@@ -465,15 +463,16 @@
                         const kelebihan = data.kelebihan || '-';
                         const kekurangan = data.kekurangan || '-';
                         const serlok = data.serlok || '-';
-                        const foto = data.gambar_foto ? window.location.origin + '/uploads/colect_data_gambar_foto/' + data.gambar_foto : null;
+                        const foto = data.gambar_foto ? window.location.origin +
+                            '/uploads/colect_data_gambar_foto/' + data.gambar_foto : null;
 
-                        let fotoHtml = foto
-                            ? `<img src="${foto}" alt="Foto" style="width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #ccc;cursor:pointer;" onclick="showPhotoModal('${foto}', '${data.nama_cus}', '${data.tanggal}', '${data.gambar_foto}')" title="Klik untuk melihat foto lebih besar" />`
-                            : '<div style="width:150px;height:150px;border:1px solid #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;"><span class="badge bg-secondary">Tidak ada foto</span></div>';
+                        let fotoHtml = foto ?
+                            `<img src="${foto}" alt="Foto" style="width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #ccc;cursor:pointer;" onclick="showPhotoModal('${foto}', '${data.nama_cus}', '${data.tanggal}', '${data.gambar_foto}')" title="Klik untuk melihat foto lebih besar" />` :
+                            '<div style="width:150px;height:150px;border:1px solid #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;"><span class="badge bg-secondary">Tidak ada foto</span></div>';
 
-                        let serlokHtml = serlok.startsWith('http')
-                            ? `<a href="${serlok}" target="_blank" class="badge bg-primary">Lihat Lokasi</a>`
-                            : serlok;
+                        let serlokHtml = serlok.startsWith('http') ?
+                            `<a href="${serlok}" target="_blank" class="badge bg-primary">Lihat Lokasi</a>` :
+                            serlok;
 
                         Swal.fire({
                             title: 'Detail Collect Data',

@@ -22,7 +22,7 @@
     @if (isRole('Admin'))
         <div class="row mb-3">
             <div class="col-auto">
-                <a href="{{ route('task_break_down.create') }}" class="btn btn-success">
+                <a href="{{ route('admin.task_breakdown.create') }}" class="btn btn-success">
                     <i class="fa fa-plus me-1"></i> Tambah
                 </a>
             </div>
@@ -68,7 +68,7 @@
 
                     @if (isRole('Admin'))
                         <div class="d-flex gap-2">
-                            <a href="{{ route('task_break_down.edit', $tugas->id) }}" class="btn btn-sm btn-warning">
+                            <a href="{{ route('admin.task_breakdown.edit', $tugas->id) }}" class="btn btn-sm btn-warning">
                                 <i class="fa fa-edit me-1"></i> Edit
                             </a>
                             <form class="form-delete" data-id="{{ $tugas->id }}" method="POST">

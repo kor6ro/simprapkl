@@ -17,7 +17,8 @@
             color: #dc3545;
         }
 
-        .form-control, .form-select {
+        .form-control,
+        .form-select {
             padding: 0.5rem 0.75rem;
             font-size: 0.9rem;
         }
@@ -101,13 +102,15 @@
             .card-body {
                 padding: 1rem;
             }
-            
+
             .btn-group-form {
                 flex-direction: column;
             }
-            
-            .form-control, .form-select {
-                font-size: 16px; /* Prevent zoom on iOS */
+
+            .form-control,
+            .form-select {
+                font-size: 16px;
+                /* Prevent zoom on iOS */
             }
         }
     </style>
@@ -124,7 +127,7 @@
                             <a href="{{ route('dashboard') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item">
-                            <a href="{{ route('colect_data.index') }}">Collect Data</a>
+                            <a href="{{ route('admin.colect_data.index') }}">Collect Data</a>
                         </li>
                         <li class="breadcrumb-item active">Tambah</li>
                     </ol>
@@ -134,12 +137,12 @@
     </div>
 
     <!-- Error Messages -->
-    @if($errors->any())
+    @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fa fa-exclamation-triangle me-2"></i>
             <strong>Terdapat kesalahan:</strong>
             <ul class="mb-0 mt-1">
-                @foreach($errors->all() as $error)
+                @foreach ($errors->all() as $error)
                     <li><small>{{ $error }}</small></li>
                 @endforeach
             </ul>
@@ -154,7 +157,8 @@
             </h5>
         </div>
         <div class="card-body">
-            <form action="{{ route('colect_data.store') }}" method="post" enctype="multipart/form-data" id="collectDataForm">
+            <form action="{{ route('admin.colect_data.store') }}" method="post" enctype="multipart/form-data"
+                id="collectDataForm">
                 @csrf
 
                 <!-- Row 1: Tanggal & Nama Customer -->
@@ -164,43 +168,31 @@
                             <label for="tanggal" class="form-label">
                                 Tanggal <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('tanggal') is-invalid @enderror" 
-                                   type="date" 
-                                   name="tanggal"
-                                   id="tanggal" 
-                                   value="{{ old('tanggal', date('Y-m-d')) }}" 
-                                   required>
+                            <input class="form-control @error('tanggal') is-invalid @enderror" type="date" name="tanggal"
+                                id="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
                             @error('tanggal')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nama_cus" class="form-label">
                                 Nama Customer <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('nama_cus') is-invalid @enderror" 
-                                   type="text"
-                                   name="nama_cus" 
-                                   id="nama_cus" 
-                                   value="{{ old('nama_cus') }}"
-                                   placeholder="Nama customer" 
-                                   required>
+                            <input class="form-control @error('nama_cus') is-invalid @enderror" type="text"
+                                name="nama_cus" id="nama_cus" value="{{ old('nama_cus') }}" placeholder="Nama customer"
+                                required>
                             @error('nama_cus')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="no_telp" class="form-label">No. Telepon</label>
-                            <input class="form-control @error('no_telp') is-invalid @enderror" 
-                                   type="text"
-                                   name="no_telp"
-                                   id="no_telp"
-                                   value="{{ old('no_telp') }}"
-                                   placeholder="No HP/Alasan">
+                            <input class="form-control @error('no_telp') is-invalid @enderror" type="text" name="no_telp"
+                                id="no_telp" value="{{ old('no_telp') }}" placeholder="No HP/Alasan">
                             @error('no_telp')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -210,48 +202,36 @@
 
                 <!-- Row 2: Alamat & Provider -->
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="alamat_cus" class="form-label">
                                 Alamat Customer <span class="required">*</span>
                             </label>
-                            <textarea class="form-control @error('alamat_cus') is-invalid @enderror" 
-                                      name="alamat_cus" 
-                                      id="alamat_cus"
-                                      rows="2" 
-                                      placeholder="Alamat lengkap customer" 
-                                      required>{{ old('alamat_cus') }}</textarea>
+                            <textarea class="form-control @error('alamat_cus') is-invalid @enderror" name="alamat_cus" id="alamat_cus"
+                                rows="2" placeholder="Alamat lengkap customer" required>{{ old('alamat_cus') }}</textarea>
                             @error('alamat_cus')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="provider_sekarang" class="form-label">
                                 Provider <span class="required">*</span>
                             </label>
-                            <input class="form-control @error('provider_sekarang') is-invalid @enderror" 
-                                   type="text"
-                                   name="provider_sekarang" 
-                                   id="provider_sekarang" 
-                                   value="{{ old('provider_sekarang') }}"
-                                   placeholder="Telkom, Indihome, dll" 
-                                   required>
+                            <input class="form-control @error('provider_sekarang') is-invalid @enderror" type="text"
+                                name="provider_sekarang" id="provider_sekarang" value="{{ old('provider_sekarang') }}"
+                                placeholder="Telkom, Indihome, dll" required>
                             @error('provider_sekarang')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="serlok" class="form-label">Serial/Lokasi</label>
-                            <input class="form-control @error('serlok') is-invalid @enderror" 
-                                   type="text" 
-                                   name="serlok"
-                                   id="serlok" 
-                                   value="{{ old('serlok') }}" 
-                                   placeholder="Serial/kode lokasi">
+                            <input class="form-control @error('serlok') is-invalid @enderror" type="text" name="serlok"
+                                id="serlok" value="{{ old('serlok') }}" placeholder="Serial/kode lokasi">
                             @error('serlok')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -264,11 +244,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="kelebihan" class="form-label">Kelebihan Provider</label>
-                            <textarea class="form-control @error('kelebihan') is-invalid @enderror" 
-                                      name="kelebihan" 
-                                      id="kelebihan"
-                                      rows="2" 
-                                      placeholder="Kelebihan provider saat ini">{{ old('kelebihan') }}</textarea>
+                            <textarea class="form-control @error('kelebihan') is-invalid @enderror" name="kelebihan" id="kelebihan"
+                                rows="2" placeholder="Kelebihan provider saat ini">{{ old('kelebihan') }}</textarea>
                             @error('kelebihan')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -277,11 +254,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="kekurangan" class="form-label">Kekurangan Provider</label>
-                            <textarea class="form-control @error('kekurangan') is-invalid @enderror" 
-                                      name="kekurangan" 
-                                      id="kekurangan"
-                                      rows="2" 
-                                      placeholder="Kekurangan/keluhan provider">{{ old('kekurangan') }}</textarea>
+                            <textarea class="form-control @error('kekurangan') is-invalid @enderror" name="kekurangan" id="kekurangan"
+                                rows="2" placeholder="Kekurangan/keluhan provider">{{ old('kekurangan') }}</textarea>
                             @error('kekurangan')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -290,19 +264,15 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="gambar_foto" class="form-label">Upload Foto</label>
-                            <input class="form-control @error('gambar_foto') is-invalid @enderror" 
-                                   type="file"
-                                   name="gambar_foto" 
-                                   id="gambar_foto" 
-                                   accept="image/*"
-                                   style="margin-bottom: 0.5rem;">
-                            
+                            <input class="form-control @error('gambar_foto') is-invalid @enderror" type="file"
+                                name="gambar_foto" id="gambar_foto" accept="image/*" style="margin-bottom: 0.5rem;">
+
                             <!-- Preview Container -->
                             <div class="preview-container" id="preview-container">
                                 <i class="fa fa-image text-muted"></i>
                                 <small class="text-muted">Preview foto</small>
                             </div>
-                            
+
                             @error('gambar_foto')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -312,7 +282,7 @@
 
                 <!-- Action Buttons -->
                 <div class="btn-group-form">
-                    <a href="{{ route('colect_data.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.colect_data.index') }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -395,7 +365,8 @@
 
             // Form submission with loading state
             $('#collectDataForm').on('submit', function() {
-                $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...');
+                $submitBtn.prop('disabled', true).html(
+                    '<i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...');
             });
 
             // Auto-resize textareas

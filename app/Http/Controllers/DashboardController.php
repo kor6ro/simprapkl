@@ -20,11 +20,11 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Get today's presensi statistics
+        // Get today's presensi statistics (untuk admin)
         $todayPresensi = Presensi::whereDate('tanggal_presensi', $today)->count();
         $totalUsers = User::count();
 
-        // Get presensi by session today
+        // Get presensi by session today (untuk admin)
         $pagiPresensi = Presensi::whereDate('tanggal_presensi', $today)
             ->where('sesi', 'pagi')
             ->count();
@@ -33,11 +33,14 @@ class DashboardController extends Controller
             ->where('sesi', 'sore')
             ->count();
 
-        // Get recent presensi (semua user)
-        $recentPresensi = Presensi::orderBy('created_at', 'desc')
+        // Get recent presensi (untuk admin)
+        $recentPresensi = Presensi::with('user')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
+        // Semua user (admin dan siswa) menggunakan view yang sama
+        // Tapi data yang ditampilkan berbeda berdasarkan kondisi @if di view
         return view('administrator.dashboard.index', compact(
             'todayPresensi',
             'totalUsers',

@@ -22,7 +22,7 @@
     </div>
     <div class="row mb-3">
         <div class="col-auto">
-            <a href="{{ route('group.create') }}" class="btn btn-success">
+            <a href="{{ route('admin.group.create') }}" class="btn btn-success">
                 <i class="fa fa-plus me-1"></i> Tambah
             </a>
         </div>
@@ -45,7 +45,7 @@
         </div>
     </div>
     <div class="d-none">
-        <form id="form-destroy" action="{{ route('group.store') }}" method="post">
+        <form id="form-destroy" action="{{ route('admin.group.store') }}" method="post">
             @csrf
             @method('DELETE')
         </form>

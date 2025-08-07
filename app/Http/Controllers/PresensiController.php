@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -17,10 +18,11 @@ class PresensiController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Presensi::with('user')->latest();
+            $data = Presensi::with(['user.sekolah'])->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nama', fn($row) => $row->user->name)
+                ->addColumn('sekolah', fn($row) => $row->user->sekolah_id->nama ?? '-')
                 ->addColumn('bukti_foto', function ($row) {
                     if ($row->bukti_foto) {
                         return '<a href="' . asset('storage/' . $row->bukti_foto) . '" target="_blank">
@@ -29,158 +31,176 @@ class PresensiController extends Controller
                     }
                     return '-';
                 })
-                ->addColumn('aksi', function ($row) {
-                    return '<a href="' . route('presensi.edit', $row->id) . '" class="btn btn-sm btn-primary">Edit</a>
-                            <form action="' . route('presensi.destroy', $row->id) . '" method="POST" style="display:inline;">
-                                ' . csrf_field() . method_field('DELETE') . '
-                                <button class="btn btn-sm btn-danger" onclick="return confirm(\'Yakin ingin menghapus?\')">Hapus</button>
-                            </form>';
+                ->addColumn('status_badge', function ($row) {
+                    $badgeClass = match ($row->status) {
+                        'Tepat Waktu' => 'success',
+                        'Terlambat' => 'warning',
+                        'Sakit' => 'secondary',
+                        'Izin' => 'info',
+                        'Alpa' => 'danger',
+                        default => 'light'
+                    };
+                    return '<span class="badge bg-' . $badgeClass . '">' . $row->status . '</span>';
                 })
-                ->rawColumns(['aksi', 'bukti_foto'])
+                ->addColumn('aksi', function ($row) {
+                    $actions = '';
+                    if (auth()->user()->group_id === 2) { // Admin only
+                        $actions = '<a href="' . route('presensi.edit', $row->id) . '" class="btn btn-sm btn-primary me-1">Edit</a>
+                                   <form action="' . route('presensi.destroy', $row->id) . '" method="POST" style="display:inline;" onsubmit="return confirm(\'Yakin ingin menghapus?\')">
+                                       ' . csrf_field() . method_field('DELETE') . '
+                                       <button class="btn btn-sm btn-danger">Hapus</button>
+                                   </form>';
+                    }
+                    return $actions;
+                })
+                ->rawColumns(['aksi', 'bukti_foto', 'status_badge'])
                 ->make(true);
         }
 
-        return view('administrator.presensi.index');
+        $data = Presensi::with(['user.sekolah'])->latest()->paginate(10);
+        return view('administrator.presensi.index', compact('data'));
     }
 
     public function create()
     {
-        $user = User::all();
-        return view('administrator.presensi.create', compact('user'));
+        $users = User::where('group_id', 4)->get(); // Only students
+        return view('administrator.presensi.create', compact('users'));
     }
 
-    public function checkin(Request $request)
+    /**
+     * Unified method for handling all presensi types
+     */
+    public function processPresensi(Request $request, string $type)
     {
-        return $this->processPresensi($request, 'pagi');
-    }
+        // Validate based on type
+        $rules = $this->getValidationRules($type);
+        $request->validate($rules);
 
-    public function checkout(Request $request)
-    {
-        return $this->processPresensi($request, 'sore');
-    }
-
-    private function processPresensi(Request $request, $sesi)
-    {
-        $request->validate([
-            'image' => 'required|string',
-        ]);
-
-        $user_id = Auth::id();
+        $user = Auth::user();
         $today = now()->toDateString();
-        $jamSekarang = now();
 
-        // Check if already present for this session today
-        $sudahAbsen = Presensi::where('user_id', $user_id)
-            ->where('tanggal_presensi', $today)
-            ->where('sesi', $sesi)
-            ->exists();
-
-        if ($sudahAbsen) {
-            return redirect()->back()->with('error', 'Anda sudah melakukan presensi ' . $sesi . ' hari ini.');
+        // Check existing presensi
+        if ($this->hasExistingPresensi($user->id, $today, $type)) {
+            return back()->with('error', $this->getExistingPresensiMessage($type));
         }
-
-        // Get settings
-        $setting = PresensiSetting::first();
-        if (!$setting) {
-            return redirect()->back()->with('error', 'Pengaturan presensi belum dikonfigurasi.');
-        }
-
-        // Check if late
-        $batasWaktu = $sesi === 'pagi' ? $setting->pagi_selesai : $setting->sore_selesai;
-        $telat = $jamSekarang->format('H:i:s') > $batasWaktu;
-
-        // Save photo from base64
-        $buktiPath = $this->simpanFotoBase64($request->image);
-        if (!$buktiPath) {
-            return redirect()->back()->with('error', 'Gagal menyimpan foto.');
-        }
-
-        $status = $telat ? 'Terlambat' : 'Tepat Waktu';
 
         try {
-            $presensi = Presensi::create([
-                'user_id' => $user_id,
-                'tanggal_presensi' => $today,
-                'sesi' => $sesi,
-                'jam_presensi' => $jamSekarang->format('H:i:s'),
-                'bukti_foto' => $buktiPath,
-                'keterangan' => $request->keterangan,
-                'status' => $status,
-            ]);
+            $presensiData = $this->buildPresensiData($request, $user, $type);
 
-            $message = 'Presensi ' . $sesi . ' berhasil! Status: ' . $status;
-            return redirect()->back()->with('success', $message);
-        } catch (\Exception $e) {
-            // Delete uploaded file if database save fails
-            if ($buktiPath && Storage::disk('public')->exists($buktiPath)) {
-                Storage::disk('public')->delete($buktiPath);
+            if ($type === 'sakit') {
+                // Create for both sessions
+                $this->createSakitPresensi($presensiData);
+            } else {
+                Presensi::create($presensiData);
             }
 
-            return redirect()->back()->with('error', 'Gagal menyimpan presensi: ' . $e->getMessage());
+            return back()->with('success', $this->getSuccessMessage($type, $presensiData['status'] ?? null));
+        } catch (\Exception $e) {
+            Log::error('Presensi error: ' . $e->getMessage());
+
+            // Cleanup uploaded file if exists
+            if (isset($presensiData['bukti_foto']) && Storage::disk('public')->exists($presensiData['bukti_foto'])) {
+                Storage::disk('public')->delete($presensiData['bukti_foto']);
+            }
+
+            return back()->with('error', 'Gagal menyimpan presensi. Silakan coba lagi.');
         }
     }
 
+    /**
+     * Check-in method
+     */
+    public function checkin(Request $request)
+    {
+        return $this->processPresensi($request, 'checkin');
+    }
+
+    /**
+     * Check-out method  
+     */
+    public function checkout(Request $request)
+    {
+        return $this->processPresensi($request, 'checkout');
+    }
+
+    /**
+     * Sick/Permission method
+     */
+    public function sakit(Request $request)
+    {
+        return $this->processPresensi($request, 'sakit');
+    }
+
+    /**
+     * Store method for admin/manual entry
+     */
     public function store(Request $request)
     {
         $request->validate([
+            'user_id' => 'required|exists:users,id',
             'tanggal_presensi' => 'required|date',
+            'jam_presensi' => 'required',
+            'sesi' => 'required|in:pagi,sore',
+            'status' => 'required|string',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'keterangan' => 'nullable|string|max:255'
         ]);
 
-        $user_id = Auth::id();
-        $jamSekarang = now();
-        $tanggal = $request->tanggal_presensi;
-
-        $setting = PresensiSetting::first();
-        $sesi = $jamSekarang->format('H:i:s') <= $setting->pagi_selesai ? 'pagi' : 'sore';
-
-        $sudah = Presensi::where('user_id', $user_id)
-            ->where('tanggal_presensi', $tanggal)
-            ->where('sesi', $sesi)
+        // Check for existing presensi
+        $existing = Presensi::where('user_id', $request->user_id)
+            ->where('tanggal_presensi', $request->tanggal_presensi)
+            ->where('sesi', $request->sesi)
             ->exists();
 
-        if ($sudah) {
-            return back()->with('error', 'Sudah melakukan presensi untuk sesi ini.');
+        if ($existing) {
+            return back()->with('error', 'Presensi untuk sesi ini sudah ada.');
         }
 
-        $telat = ($sesi === 'pagi' && $jamSekarang->format('H:i:s') > $setting->pagi_selesai);
+        $buktiPath = null;
+        if ($request->hasFile('bukti_foto')) {
+            $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+        }
 
-        $buktiPath = $this->simpanFoto($request);
-        $status = $telat ? 'Terlambat' : 'Tepat Waktu';
-
-        $presensi = Presensi::create([
-            'user_id' => $user_id,
-            'tanggal_presensi' => $tanggal,
-            'sesi' => $sesi,
-            'jam_presensi' => $jamSekarang->format('H:i:s'),
+        Presensi::create([
+            'user_id' => $request->user_id,
+            'tanggal_presensi' => $request->tanggal_presensi,
+            'sesi' => $request->sesi,
+            'jam_presensi' => $request->jam_presensi,
             'bukti_foto' => $buktiPath,
             'keterangan' => $request->keterangan,
-            'status' => $status,
+            'status' => $request->status,
         ]);
 
-        return redirect()->route('presensi.index')->with('success', 'Presensi berhasil disimpan' . ($telat ? ' (Terlambat)' : ' (Tepat Waktu)'));
+        return redirect()->route('presensi.index')->with('success', 'Presensi berhasil ditambahkan.');
     }
 
     public function edit($id)
     {
-        $presensi = Presensi::findOrFail($id);
-        return view('administrator.presensi.edit', compact('presensi'));
+        $presensi = Presensi::with('user')->findOrFail($id);
+        $users = User::where('group_id', 4)->get();
+        return view('administrator.presensi.edit', compact('presensi', 'users'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'keterangan' => 'nullable|string|max:255'
         ]);
 
         $presensi = Presensi::findOrFail($id);
 
         if ($request->hasFile('bukti_foto')) {
+            // Delete old file
             if ($presensi->bukti_foto && Storage::disk('public')->exists($presensi->bukti_foto)) {
                 Storage::disk('public')->delete($presensi->bukti_foto);
             }
 
             $presensi->bukti_foto = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+        }
+
+        if ($request->filled('keterangan')) {
+            $presensi->keterangan = $request->keterangan;
         }
 
         $presensi->save();
@@ -192,6 +212,7 @@ class PresensiController extends Controller
     {
         $presensi = Presensi::findOrFail($id);
 
+        // Delete associated file
         if ($presensi->bukti_foto && Storage::disk('public')->exists($presensi->bukti_foto)) {
             Storage::disk('public')->delete($presensi->bukti_foto);
         }
@@ -201,66 +222,30 @@ class PresensiController extends Controller
         return redirect()->route('presensi.index')->with('success', 'Presensi berhasil dihapus.');
     }
 
-    public function sakit(Request $request)
-    {
-        $request->validate([
-            'image' => 'required|string',
-            'jenis' => 'required|in:Sakit,Izin',
-            'keterangan' => 'required|string|min:10',
-        ]);
-
-        $user = Auth::user();
-        $today = now()->toDateString();
-
-        // Check if already submitted today
-        if (Presensi::where('user_id', $user->id)->where('tanggal_presensi', $today)->exists()) {
-            return redirect()->back()->with('error', 'Anda sudah mengisi presensi hari ini.');
-        }
-
-        // Save photo from base64
-        $buktiPath = $this->simpanFotoBase64($request->image);
-        if (!$buktiPath) {
-            return redirect()->back()->with('error', 'Gagal menyimpan foto.');
-        }
-
-        try {
-            // Create presensi for both sessions
-            foreach (['pagi', 'sore'] as $sesi) {
-                Presensi::create([
-                    'user_id' => $user->id,
-                    'tanggal_presensi' => $today,
-                    'sesi' => $sesi,
-                    'status' => $request->jenis,
-                    'keterangan' => $request->keterangan,
-                    'bukti_foto' => $buktiPath,
-                    'jam_presensi' => null, // No time for sick/permit
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Pengajuan ' . strtolower($request->jenis) . ' berhasil disubmit!');
-        } catch (\Exception $e) {
-            // Delete uploaded file if database save fails
-            if ($buktiPath && Storage::disk('public')->exists($buktiPath)) {
-                Storage::disk('public')->delete($buktiPath);
-            }
-
-            return redirect()->back()->with('error', 'Gagal menyimpan pengajuan: ' . $e->getMessage());
-        }
-    }
-
+    /**
+     * Generate absence for students who haven't checked in
+     */
     public function generateAlpa()
     {
+        // Only admin can generate
         if (Auth::user()->group_id !== 2) {
-            return redirect()->back()->with('error', 'Hanya admin yang dapat generate presensi alpa.');
+            return back()->with('error', 'Hanya admin yang dapat generate presensi alpa.');
         }
 
         $today = now()->toDateString();
-        $siswa = User::where('group_id', 4)->pluck('id');
-        $sudahAbsen = Presensi::where('tanggal_presensi', $today)->pluck('user_id')->unique();
-        $belumAbsen = $siswa->diff($sudahAbsen);
+        $students = User::where('group_id', 4)->pluck('id');
+        $presentStudents = Presensi::where('tanggal_presensi', $today)
+            ->pluck('user_id')
+            ->unique();
+
+        $absentStudents = $students->diff($presentStudents);
+
+        if ($absentStudents->isEmpty()) {
+            return back()->with('info', 'Semua siswa sudah melakukan presensi hari ini.');
+        }
 
         $count = 0;
-        foreach ($belumAbsen as $userId) {
+        foreach ($absentStudents as $userId) {
             foreach (['pagi', 'sore'] as $sesi) {
                 Presensi::create([
                     'user_id' => $userId,
@@ -268,91 +253,104 @@ class PresensiController extends Controller
                     'sesi' => $sesi,
                     'status' => 'Alpa',
                     'jam_presensi' => null,
+                    'keterangan' => 'Generated automatically',
                 ]);
                 $count++;
             }
         }
 
-        return redirect()->back()->with('success', "Berhasil generate {$count} presensi alpa untuk " . $belumAbsen->count() . " siswa.");
+        return back()->with('success', "Berhasil generate {$count} presensi alpa untuk " . $absentStudents->count() . " siswa.");
     }
 
-    private function simpanFoto(Request $request)
+    // ===== PRIVATE HELPER METHODS =====
+
+    private function getValidationRules(string $type): array
     {
-        if ($request->hasFile('bukti_foto')) {
-            return $request->file('bukti_foto')->store('uploads/presensi', 'public');
-        }
-        return null;
+        $baseRules = [
+            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+        ];
+
+        return match ($type) {
+            'sakit' => array_merge($baseRules, [
+                'jenis' => 'required|in:Sakit,Izin',
+                'keterangan' => 'required|string|min:10|max:255'
+            ]),
+            'checkin', 'checkout' => $baseRules,
+            default => $baseRules
+        };
     }
 
-    private function simpanFotoBase64($base64Image)
+    private function hasExistingPresensi(int $userId, string $date, string $type): bool
     {
-        try {
-            // Remove data:image/jpeg;base64, part
-            if (strpos($base64Image, 'data:image') === 0) {
-                $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-            }
+        if ($type === 'sakit') {
+            return Presensi::where('user_id', $userId)
+                ->where('tanggal_presensi', $date)
+                ->exists();
+        }
 
-            // Decode base64
-            $imageData = base64_decode($base64Image);
-            if ($imageData === false) {
-                return null;
-            }
+        $sesi = $type === 'checkin' ? 'pagi' : 'sore';
+        return Presensi::where('user_id', $userId)
+            ->where('tanggal_presensi', $date)
+            ->where('sesi', $sesi)
+            ->exists();
+    }
 
-            // Generate unique filename
-            $filename = 'presensi_' . Auth::id() . '_' . time() . '_' . Str::random(8) . '.jpg';
-            $filepath = 'uploads/presensi/' . $filename;
+    private function getExistingPresensiMessage(string $type): string
+    {
+        return match ($type) {
+            'checkin' => 'Anda sudah melakukan absen masuk hari ini.',
+            'checkout' => 'Anda sudah melakukan absen pulang hari ini.',
+            'sakit' => 'Anda sudah mengisi presensi hari ini.',
+            default => 'Presensi sudah ada.'
+        };
+    }
 
-            // Save to storage
-            if (Storage::disk('public')->put($filepath, $imageData)) {
-                return $filepath;
-            }
+    private function buildPresensiData(Request $request, $user, string $type): array
+    {
+        $today = now()->toDateString();
+        $now = now();
 
-            return null;
-        } catch (\Exception $e) {
-            \Log::error('Error saving base64 image: ' . $e->getMessage());
-            return null;
+        // Save uploaded file
+        $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+
+        $data = [
+            'user_id' => $user->id,
+            'tanggal_presensi' => $today,
+            'bukti_foto' => $buktiPath,
+            'keterangan' => $request->get('keterangan'),
+        ];
+
+        if ($type === 'sakit') {
+            $data['status'] = $request->get('jenis'); // Sakit or Izin
+            $data['jam_presensi'] = null;
+        } else {
+            // Check if late
+            $setting = PresensiSetting::first();
+            $sesi = $type === 'checkin' ? 'pagi' : 'sore';
+            $batasWaktu = $sesi === 'pagi' ? $setting?->pagi_selesai : $setting?->sore_selesai;
+
+            $data['sesi'] = $sesi;
+            $data['jam_presensi'] = $now->format('H:i:s');
+            $data['status'] = ($batasWaktu && $now->format('H:i:s') > $batasWaktu) ? 'Terlambat' : 'Tepat Waktu';
+        }
+
+        return $data;
+    }
+
+    private function createSakitPresensi(array $data): void
+    {
+        foreach (['pagi', 'sore'] as $sesi) {
+            Presensi::create(array_merge($data, ['sesi' => $sesi]));
         }
     }
 
-    private function overlayFotoPresensi($fotoPath, $user)
+    private function getSuccessMessage(string $type, ?string $status): string
     {
-        if (!$fotoPath || !class_exists('\Intervention\Image\ImageManagerStatic')) {
-            return;
-        }
-
-        try {
-            $imagePath = storage_path('app/public/' . $fotoPath);
-            if (!file_exists($imagePath)) {
-                return;
-            }
-
-            $image = \Intervention\Image\ImageManagerStatic::make($imagePath);
-
-            // Make square crop
-            $size = min($image->width(), $image->height());
-            $image->crop($size, $size, intval(($image->width() - $size) / 2), intval(($image->height() - $size) / 2));
-
-            // Add timestamp
-            $timestamp = now()->format('d/m/Y H:i:s');
-            $image->text($timestamp, 10, $image->height() - 20, function ($font) {
-                $font->size(20);
-                $font->color('#ffffff');
-                $font->align('left');
-                $font->valign('bottom');
-            });
-
-            // Add school logo if exists
-            if ($user->school && $user->school->logo) {
-                $logoPath = storage_path('app/public/' . $user->school->logo);
-                if (file_exists($logoPath)) {
-                    $logo = \Intervention\Image\ImageManagerStatic::make($logoPath)->resize(80, 80);
-                    $image->insert($logo, 'top-left', 10, 10);
-                }
-            }
-
-            $image->save($imagePath, 80); // Save with 80% quality
-        } catch (\Exception $e) {
-            \Log::error('Error processing image overlay: ' . $e->getMessage());
-        }
+        return match ($type) {
+            'checkin' => "Absen masuk berhasil! Status: {$status}",
+            'checkout' => "Absen pulang berhasil! Status: {$status}",
+            'sakit' => "Pengajuan {$status} berhasil disubmit!",
+            default => 'Presensi berhasil disimpan.'
+        };
     }
 }

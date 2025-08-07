@@ -4,20 +4,29 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSekolahTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
         Schema::create('sekolah', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
-            $table->string('logo')->nullable(); // path logo sekolah
+            $table->string('logo')->nullable();
             $table->timestamps();
+
+            // Add index for performance
+            $table->index('nama');
         });
     }
 
-    public function down()
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
         Schema::dropIfExists('sekolah');
     }
-}
+};
