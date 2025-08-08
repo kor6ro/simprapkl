@@ -488,11 +488,11 @@
                                         </div>
                                         <div style="margin-bottom: 12px;">
                                             <strong style="color: #6c757d;">Kelebihan:</strong><br>
-                                            <div style="background: #f1f8e9; padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; font-size: 0.9em;">${kelebihan}</div>
+                                            <div style="background: #f1f8e9; padding: 8px; border-radius: 4px; border-left: 3px solid #007bff; font-size: 0.9em;">${kelebihan}</div>
                                         </div>
                                         <div style="margin-bottom: 12px;">
                                             <strong style="color: #6c757d;">Kekurangan:</strong><br>
-                                            <div style="background: #fff3e0; padding: 8px; border-radius: 4px; border-left: 3px solid #ff9800; font-size: 0.9em;">${kekurangan}</div>
+                                            <div style="background: #fff3e0; padding: 8px; border-radius: 4px; border-left: 3px solid #007bff; font-size: 0.9em;">${kekurangan}</div>
                                         </div>
                                         <div style="margin-bottom: 12px;">
                                             <strong style="color: #6c757d;">Share Lokasi:</strong><br>
@@ -512,7 +512,7 @@
                             width: 400,
                             showCloseButton: true,
                             confirmButtonText: 'Tutup',
-                            confirmButtonColor: '#6c757d'
+                            confirmButtonColor: '#007bff'
                         });
                     });
                 }

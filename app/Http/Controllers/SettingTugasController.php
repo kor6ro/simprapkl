@@ -11,11 +11,16 @@ class SettingTugasController extends Controller
 {
     public function index()
     {
-        $siswa = User::where('group_id', 4)
-            ->with(['divisiHarianToday'])
-            ->get();
-        $settings = \App\Models\SettingTugas::whereDate('tanggal', today())->get();
-        return view('administrator.setting_tugas.index', compact('siswa', 'settings'));
+        // Ambil semua user admin sebagai calon ketua tim
+        $adminKetua = User::where('group_id', 2)->get();
+
+        // Ambil semua user siswa sebagai calon anggota tim
+        $anggotaSiswa = User::where('group_id', 4)->get();
+
+        // Setting tugas hari ini
+        $settings = SettingTugas::whereDate('tanggal', today())->get();
+
+        return view('administrator.setting_tugas.index', compact('adminKetua', 'anggotaSiswa', 'settings'));
     }
 
     public function store(Request $request)
@@ -66,4 +71,14 @@ class SettingTugasController extends Controller
 
         return back()->with('success', 'Semua divisi berhasil ditukar!');
     }
+
+    private function getTeams($divisi)
+    {
+        return SiswaDivisiHarian::where('divisi', $divisi)
+            ->whereDate('tanggal', today())
+            ->with('siswa')
+            ->get()
+            ->groupBy('ketua_id');
+    }
 }
+$siswa = User::where('group_id', 4)->with(['divisiHarianToday'])->get();
