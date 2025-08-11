@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Presensi;
+use App\Models\PresensiStatus;
 use Illuminate\Support\Carbon;
 
 class PresensiHelper
@@ -12,17 +13,16 @@ class PresensiHelper
         $pagi = Presensi::where('user_id', $userId)
             ->where('sesi', 'pagi')
             ->whereDate('tanggal_presensi', $tanggal)
-            ->with('presensiStatus')
             ->first();
 
         $sore = Presensi::where('user_id', $userId)
             ->where('sesi', 'sore')
             ->whereDate('tanggal_presensi', $tanggal)
-            ->with('presensiStatus')
             ->first();
 
-        $pagiStatus = $pagi?->presensiStatus?->kode;
-        $soreStatus = $sore?->presensiStatus?->kode;
+        // Konversi status ke format yang konsisten
+        $pagiStatus = $pagi ? self::normalizeStatus($pagi->status) : null;
+        $soreStatus = $sore ? self::normalizeStatus($sore->status) : null;
 
         // Jika ada izin/sakit di salah satu sesi
         if (in_array($pagiStatus, ['IZIN', 'SAKIT'])) return strtolower($pagiStatus);
@@ -50,6 +50,20 @@ class PresensiHelper
         if (!$pagiStatus && !$soreStatus) return 'absen';
 
         return 'tidak lengkap'; // fallback
+    }
+
+    // Konversi berbagai format status ke format standar
+    private static function normalizeStatus($status)
+    {
+        $statusMap = [
+            'Tepat Waktu' => 'TEPAT',
+            'Terlambat' => 'TELAT',
+            'Izin' => 'IZIN',
+            'Sakit' => 'SAKIT',
+            'Alpa' => 'ALPA',
+        ];
+
+        return $statusMap[$status] ?? strtoupper($status);
     }
 
     public static function getStatusColor($status)
@@ -90,5 +104,50 @@ class PresensiHelper
         }
 
         return $statistik;
+    }
+
+    // Helper untuk mendapatkan status presensi berdasarkan waktu
+    public static function getStatusByTime($jamPresensi, $sesi, $setting)
+    {
+        if (!$setting) return 'Tepat Waktu';
+
+        $batasWaktu = $sesi === 'pagi' ? $setting->pagi_selesai : $setting->sore_selesai;
+
+        if (!$batasWaktu) return 'Tepat Waktu';
+
+        $toleransi = $setting->toleransi_telat ?? 10; // Default 10 menit
+
+        $waktuPresensi = Carbon::createFromFormat('H:i:s', $jamPresensi);
+        $waktuBatas = Carbon::createFromFormat('H:i:s', $batasWaktu)->addMinutes($toleransi);
+
+        return $waktuPresensi->gt($waktuBatas) ? 'Terlambat' : 'Tepat Waktu';
+    }
+
+    // Helper untuk format tampilan waktu
+    public static function formatWaktu($waktu)
+    {
+        return $waktu ? Carbon::parse($waktu)->format('H:i') : '-';
+    }
+
+    // Helper untuk cek apakah hari ini weekend
+    public static function isWeekend($tanggal = null)
+    {
+        $tanggal = $tanggal ? Carbon::parse($tanggal) : now();
+        return $tanggal->isWeekend();
+    }
+
+    // Helper untuk mendapatkan status warna CSS
+    public static function getStatusBadge($status)
+    {
+        $badges = [
+            'Tepat Waktu' => 'success',
+            'Terlambat' => 'warning',
+            'Izin' => 'info',
+            'Sakit' => 'secondary',
+            'Alpa' => 'danger',
+        ];
+
+        $color = $badges[$status] ?? 'light';
+        return "<span class=\"badge bg-{$color}\">{$status}</span>";
     }
 }

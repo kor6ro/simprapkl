@@ -19,6 +19,7 @@ class CreatePresensiSettingTable extends Migration
             $table->time('pagi_selesai');
             $table->time('sore_mulai');
             $table->time('sore_selesai');
+            $table->integer('toleransi_telat')->default(15)->comment('Toleransi keterlambatan dalam menit');
             $table->timestamps();
         });
     }

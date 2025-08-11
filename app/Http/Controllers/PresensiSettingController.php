@@ -10,6 +10,7 @@ class PresensiSettingController extends Controller
     public function index()
     {
         $setting = PresensiSetting::first();
+
         return view('administrator.presensi_setting.index', compact('setting'));
     }
 
@@ -20,16 +21,20 @@ class PresensiSettingController extends Controller
             'pagi_selesai' => 'required|date_format:H:i|after:pagi_mulai',
             'sore_mulai' => 'required|date_format:H:i',
             'sore_selesai' => 'required|date_format:H:i|after:sore_mulai',
+            'toleransi_telat' => 'required|integer|min:0|max:60',
         ]);
 
-        $setting = PresensiSetting::first();
-        $setting->update($request->only([
+        $data = $request->only([
             'pagi_mulai',
             'pagi_selesai',
             'sore_mulai',
-            'sore_selesai'
-        ]));
+            'sore_selesai',
+            'toleransi_telat'
+        ]);
 
-        return redirect()->route('presensi-setting.index')->with('success', 'Presensi setting berhasil diperbarui.');
+        PresensiSetting::updateOrCreate(['id' => 1], $data);
+
+        return redirect()->route('admin.presensi_setting.index')
+            ->with('success', 'Pengaturan presensi berhasil diperbarui.');
     }
 }
