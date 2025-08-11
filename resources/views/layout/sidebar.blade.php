@@ -33,13 +33,14 @@
                             <span>Group</span>
                         </a>
                     </li>
-                    <li class="menu-title">Pengaturan Sistem</li>
-                    <li class="{{ Route::is('admin.presensi_setting.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('admin.presensi_setting.index') }}" class="waves-effect">
+                    <!-- TEMPORARY FIX: Ganti di sidebar -->
+                    <li class="{{ Request::is('admin/presensi-setting*') ? 'mm-active' : '' }}">
+                        <a href="{{ url('admin/presensi-setting') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Setting Presensi</span>
                         </a>
                     </li>
+
                     <li class="{{ Route::is('admin.setting_tugas') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.setting_tugas.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
