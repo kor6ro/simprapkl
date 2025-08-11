@@ -63,19 +63,23 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::get('/edit', 'edit')->name('edit');
         Route::post('/update', 'save')->name('update');
     });
+    // Presensi routes
+    Route::prefix('presensi')->name('presensi.')->group(function () {
+        Route::get('/', [PresensiController::class, 'index'])->name('index');
+        Route::post('/checkin', [PresensiController::class, 'checkin'])->name('checkin');
+        Route::post('/checkout', [PresensiController::class, 'checkout'])->name('checkout');
+        Route::post('/sakit', [PresensiController::class, 'sakit'])->name('sakit');
 
-    // ===== PRESENSI ROUTES =====
-    Route::controller(PresensiController::class)->prefix('presensi')->name('presensi.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/checkin', 'checkin')->name('checkin');
-        Route::post('/checkout', 'checkout')->name('checkout');
-        Route::post('/sakit', 'sakit')->name('sakit');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/store', 'store')->name('store');
-        Route::get('/{presensi}/edit', 'edit')->name('edit');
-        Route::put('/{presensi}', 'update')->name('update');
-        Route::delete('/{presensi}', 'destroy')->name('destroy');
-        Route::post('/generate-alpa', 'generateAlpa')->name('generate.alpa');
+        // Route untuk camera presensi
+        Route::post('/camera', [PresensiController::class, 'PresensiCamera'])->name('camera');
+
+
+        Route::get('/create', [PresensiController::class, 'create'])->name('create');
+        Route::post('/store', [PresensiController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [PresensiController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [PresensiController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PresensiController::class, 'destroy'])->name('destroy');
+        Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
     });
 
     Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
@@ -136,9 +140,9 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         });
 
         // Presensi Settings
-        Route::controller(PresensiSettingController::class)->prefix('presensi-settings')->name('presensi_setting.')->group(function () {
+        Route::controller(PresensiSettingController::class)->prefix('presensi-setting')->name('presensi_setting.')->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::post('/', 'update')->name('update');
+            Route::post('/update', 'update')->name('update');
         });
 
         // Reports Management
