@@ -63,31 +63,49 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::get('/edit', 'edit')->name('edit');
         Route::post('/update', 'save')->name('update');
     });
-    // Presensi routes
+
+    // ===== PRESENSI ROUTES =====
     Route::prefix('presensi')->name('presensi.')->group(function () {
+        // Main presensi routes
         Route::get('/', [PresensiController::class, 'index'])->name('index');
         Route::post('/checkin', [PresensiController::class, 'checkin'])->name('checkin');
         Route::post('/checkout', [PresensiController::class, 'checkout'])->name('checkout');
         Route::post('/sakit', [PresensiController::class, 'sakit'])->name('sakit');
+        Route::get('/rekap', [PresensiController::class, 'rekap'])->name('rekap');
 
-        // Route untuk camera presensi
+        // Camera presensi routes
         Route::post('/camera', [PresensiController::class, 'PresensiCamera'])->name('camera');
 
+        // Izin/Sakit manual submission
+        Route::post('/izin-sakit', [PresensiController::class, 'submitIzinSakit'])->name('izin-sakit');
 
+        // Request edit alpa to izin/sakit (for students)
+        Route::post('/request-edit', [PresensiController::class, 'requestEditAlpa'])->name('request-edit');
+
+        // Admin approval routes
+        Route::get('/approval', [PresensiController::class, 'approvalIndex'])
+            ->name('approval.index');
+        Route::post('/approval/{presensiId}', [PresensiController::class, 'processApproval'])
+            ->name('approval');
+
+        // CRUD operations
         Route::get('/create', [PresensiController::class, 'create'])->name('create');
         Route::post('/store', [PresensiController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [PresensiController::class, 'edit'])->name('edit');
         Route::put('/{id}', [PresensiController::class, 'update'])->name('update');
         Route::delete('/{id}', [PresensiController::class, 'destroy'])->name('destroy');
+
+        // Additional operations
         Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
+        Route::get('/all', [PresensiController::class, 'all'])->name('all'); // For Yajra DataTables
     });
 
+    // ===== TUGAS HARIAN ROUTES =====
     Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
         Route::get('/', [TugasHarianController::class, 'index'])->name('index');
         Route::post('/mulai', [TugasHarianController::class, 'mulaiTugas'])->name('mulai');
         Route::post('/lapor', [TugasHarianController::class, 'laporTugas'])->name('lapor');
     });
-
 
     // ===== MANAGEMENT ROUTES =====
     Route::prefix('admin')->name('admin.')->group(function () {

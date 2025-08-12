@@ -57,6 +57,12 @@
                             <span>User</span>
                         </a>
                     </li>
+                    <li class="{{ Route::is('presensi.approval.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('presensi.approval.index') }}" class="waves-effect">
+                            <i class="cil-user"></i>
+                            <span>Izin/Sakit Approval</span>
+                        </a>
+                    </li>
                 @endif
                 {{-- Manajemen Data (Semua Role) --}}
                 @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa'))

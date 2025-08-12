@@ -21,8 +21,8 @@ class DatabaseSeeder extends Seeder
             GroupSeeder::class,
             SekolahSeeder::class,
             PresensiSettingSeeder::class,
-            PresensiSeeder::class,
-            PresensiStatusSeeder::class
+            PresensiStatusSeeder::class,
+            PresensiSeeder::class
         ]);
 
         Schema::enableForeignKeyConstraints();

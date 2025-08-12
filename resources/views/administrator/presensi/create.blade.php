@@ -4,8 +4,13 @@
         table th {
             width: 30%;
         }
+
         video {
             object-fit: cover;
+        }
+
+        .hidden-logo {
+            display: none;
         }
     </style>
 @endsection
@@ -37,6 +42,7 @@
                 <tr>
                     <th>Tidak Dapat Hadir</th>
                     <td>
+                        <select name="presensi_status_id" class="form-control" required>
                             <option value="">Pilih Alasan</option>
                             @foreach ($presensistatus as $status)
                                 @if (in_array(strtolower($status->status), ['izin', 'sakit']))
@@ -84,6 +90,7 @@
                     <form method="POST" action="{{ route('presensi.store') }}">
                         @csrf
                         <!-- Default status hadir (bisa ubah sesuai ID) -->
+                        <input type="hidden" name="presensi_status_id"
                             value="{{ $presensistatus->firstWhere('status', 'hadir')->id ?? 1 }}">
                         <div class="mb-3">
                             <label class="form-label">Preview Webcam</label><br>
@@ -106,8 +113,16 @@
             </div>
         </div>
     </div>
-    <!-- Logo sekolah tersembunyi -->
-    <img id="logo" src="{{ asset('logo/smkn1pacitan.png') }}" style="display:none;" />
+
+    <!-- Hidden logo sekolah -->
+    @if (auth()->user()->sekolah && auth()->user()->sekolah->logo)
+        <img id="schoolLogo" class="hidden-logo" src="{{ asset('uploads/sekolah_logo/' . auth()->user()->sekolah->logo) }}"
+            crossorigin="anonymous" alt="Logo Sekolah">
+    @else
+        <!-- Fallback logo jika tidak ada logo sekolah -->
+        <img id="schoolLogo" class="hidden-logo" src="{{ asset('logo/smkn1pacitan.png') }}" crossorigin="anonymous"
+            alt="Logo Default">
+    @endif
 @endsection
 @section('js')
     <script>
@@ -118,8 +133,9 @@
             const snap = document.getElementById('snap');
             const imageInput = document.getElementById('image');
             const preview = document.getElementById('preview');
-            const logo = document.getElementById('logo');
+            const schoolLogo = document.getElementById('schoolLogo');
             let stream = null;
+
             // Saat modal dibuka, aktifkan kamera
             modal.addEventListener('shown.bs.modal', () => {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -136,6 +152,7 @@
                         });
                 }
             });
+
             // Saat modal ditutup, matikan kamera
             modal.addEventListener('hidden.bs.modal', () => {
                 if (stream) {
@@ -146,25 +163,77 @@
                     imageInput.value = '';
                 }
             });
+
             // Ambil foto
             snap.addEventListener('click', () => {
                 if (!video.videoWidth || !video.videoHeight) {
                     alert("Kamera belum siap, silakan tunggu beberapa detik.");
                     return;
                 }
+
                 // Set ukuran canvas sesuai video
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                // Tambah timestamp
-                const timestamp = new Date().toLocaleString();
+
+                // Add overlay information
+                const now = new Date();
+                const timestampText = `Presensi: ${now.toLocaleString()}`;
+                const locationText = '{{ auth()->user()->sekolah->nama ?? 'SMKN 1 Pacitan' }} - SimPraPKL';
+                const userText = 'User: {{ auth()->user()->name }}';
+
+                // Background overlay
+                const overlayHeight = 80;
+                const overlayWidth = Math.min(400, canvas.width - 20);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(10, canvas.height - overlayHeight - 10, overlayWidth, overlayHeight);
+
+                // Text styling
                 ctx.fillStyle = "white";
-                ctx.font = "20px Arial";
-                ctx.fillText(`Presensi: ${timestamp}`, 10, canvas.height - 10);
-                // Tambah logo
-                const logoSize = 50;
-                ctx.drawImage(logo, canvas.width - logoSize - 10, 10, logoSize, logoSize);
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = 'left';
+
+                // Draw overlay text
+                const textY = canvas.height - overlayHeight + 15;
+                const lineHeight = 18;
+                ctx.fillText(timestampText, 20, textY);
+                ctx.fillText(locationText, 20, textY + lineHeight);
+                ctx.fillText(userText, 20, textY + (lineHeight * 2));
+
+                // Add school logo if available
+                if (schoolLogo && schoolLogo.complete && schoolLogo.naturalHeight !== 0) {
+                    try {
+                        const logoSize = Math.min(60, canvas.width * 0.1);
+                        const logoX = canvas.width - logoSize - 15;
+                        const logoY = 15;
+
+                        // Draw logo with rounded corners effect
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.clip();
+                        ctx.drawImage(schoolLogo, logoX, logoY, logoSize, logoSize);
+                        ctx.restore();
+
+                        console.log('School logo added to photo');
+                    } catch (logoError) {
+                        console.error('Error drawing school logo:', logoError);
+
+                        // Fallback: draw simple logo without rounded corners
+                        try {
+                            const logoSize = Math.min(50, canvas.width * 0.08);
+                            const logoX = canvas.width - logoSize - 20;
+                            const logoY = 20;
+                            ctx.drawImage(schoolLogo, logoX, logoY, logoSize, logoSize);
+                        } catch (fallbackError) {
+                            console.error('Fallback logo drawing also failed:', fallbackError);
+                        }
+                    }
+                } else {
+                    console.log('School logo not available or not loaded properly');
+                }
+
                 // Hasil base64
                 const imageData = canvas.toDataURL('image/png');
                 imageInput.value = imageData;
