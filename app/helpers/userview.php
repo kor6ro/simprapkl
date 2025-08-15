@@ -38,6 +38,12 @@ if (!function_exists('isSiswa')) {
         return Auth::check() && Auth::user()->group_id === 4;
     }
 }
+if (!function_exists('isKaryawan')) {
+    function isKaryawan()
+    {
+        return Auth::check() && Auth::user()->group_id === 5;
+    }
+}
 
 if (!function_exists('canManagePresensi')) {
     function canManagePresensi()
@@ -49,7 +55,7 @@ if (!function_exists('canManagePresensi')) {
 if (!function_exists('canViewAllPresensi')) {
     function canViewAllPresensi()
     {
-        return isDeveloper() || isAdmin() || isPembimbing();
+        return isDeveloper() || isAdmin() || isPembimbing() || isKaryawan();
     }
 }
 

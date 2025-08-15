@@ -12,20 +12,20 @@ class SettingTugasController extends Controller
 {
     public function index()
     {
-        // Ambil admin yang sudah menjadi ketua tim hari ini
-        $adminYangSudahTerdaftar = SettingTugas::whereDate('tanggal', today())
+        // PERUBAHAN: Ambil karyawan yang sudah menjadi ketua tim hari ini (bukan admin)
+        $karyawanYangSudahTerdaftar = SettingTugas::whereDate('tanggal', today())
             ->pluck('ketua_id')
             ->toArray();
 
-        // Ambil user admin sebagai calon ketua tim (kecuali admin yang sedang login)
-        $availableAdmins = User::where('group_id', 2)
-            ->where('id', '!=', auth()->id())
+        // PERUBAHAN: Ambil user karyawan sebagai calon ketua tim (group_id = 5, bukan 2)
+        $availableAdmins = User::where('group_id', 5) // UBAH: dari 2 ke 5 (karyawan)
+            ->where('id', '!=', auth()->id()) // Yang memilih tetap admin yang sedang login
             ->get();
 
-        // Tandai admin yang sudah terdaftar
-        $availableAdmins = $availableAdmins->map(function ($admin) use ($adminYangSudahTerdaftar) {
-            $admin->sudah_terdaftar = in_array($admin->id, $adminYangSudahTerdaftar);
-            return $admin;
+        // Tandai karyawan yang sudah terdaftar
+        $availableAdmins = $availableAdmins->map(function ($karyawan) use ($karyawanYangSudahTerdaftar) {
+            $karyawan->sudah_terdaftar = in_array($karyawan->id, $karyawanYangSudahTerdaftar);
+            return $karyawan;
         });
 
         // Tim Sales hari ini dengan anggota (diurutkan berdasarkan created_at)
@@ -61,7 +61,7 @@ class SettingTugasController extends Controller
         });
 
         // Debug log
-        Log::info('Admin yang sudah terdaftar hari ini:', $adminYangSudahTerdaftar);
+        Log::info('Karyawan yang sudah terdaftar hari ini:', $karyawanYangSudahTerdaftar);
         Log::info('Siswa yang sudah terdaftar hari ini:', $siswaYangSudahTerdaftar);
         Log::info('Total tim Sales: ' . $timSales->count());
         Log::info('Total tim Teknisi: ' . $timTeknisi->count());
@@ -88,15 +88,15 @@ class SettingTugasController extends Controller
                 'anggota.*' => 'exists:user,id'
             ]);
 
-            // Validasi tambahan: Pastikan ketua adalah admin (group_id = 2)
+            // PERUBAHAN: Validasi tambahan - Pastikan ketua adalah karyawan (group_id = 5)
             $ketua = User::find($validated['ketua_id']);
-            if (!$ketua || $ketua->group_id != 2) {
-                Log::warning('Ketua bukan admin:', ['ketua_id' => $validated['ketua_id']]);
+            if (!$ketua || $ketua->group_id != 5) { // UBAH: dari 2 ke 5
+                Log::warning('Ketua bukan karyawan:', ['ketua_id' => $validated['ketua_id']]);
                 
                 if ($request->ajax()) {
-                    return response()->json(['success' => false, 'message' => 'Ketua tim harus dari grup admin!']);
+                    return response()->json(['success' => false, 'message' => 'Ketua tim harus dari grup karyawan!']); // UBAH: pesan error
                 }
-                return back()->with('error', 'Ketua tim harus dari grup admin!');
+                return back()->with('error', 'Ketua tim harus dari grup karyawan!'); // UBAH: pesan error
             }
 
             // Validasi tambahan: Pastikan anggota adalah siswa (group_id = 4)
@@ -160,7 +160,7 @@ class SettingTugasController extends Controller
 
                 if ($existingTim) {
                     DB::rollback();
-                    $message = 'Admin tersebut sudah menjadi ketua tim lain hari ini!';
+                    $message = 'Karyawan tersebut sudah menjadi ketua tim lain hari ini!'; // UBAH: pesan error
                     
                     if ($request->ajax()) {
                         return response()->json(['success' => false, 'message' => $message]);
@@ -185,7 +185,7 @@ class SettingTugasController extends Controller
 
                 if ($existingTim) {
                     DB::rollback();
-                    $message = 'Admin tersebut sudah menjadi ketua tim lain hari ini!';
+                    $message = 'Karyawan tersebut sudah menjadi ketua tim lain hari ini!'; // UBAH: pesan error
                     
                     if ($request->ajax()) {
                         return response()->json(['success' => false, 'message' => $message]);
@@ -257,195 +257,136 @@ class SettingTugasController extends Controller
         }
     }
 
-    // public function destroy($id)
-    // {
-    //     // Validasi ID harus numeric
-    //     if (!is_numeric($id)) {
-    //         if (request()->ajax()) {
-    //             return response()->json([
-    //                 'success' => false, 
-    //                 'message' => 'ID tim tidak valid'
-    //             ]);
-    //         }
-    //         return back()->with('error', 'ID tim tidak valid');
-    //     }
-    //     DB::beginTransaction();
-    //     try {
-    //         $settingTugas = SettingTugas::findOrFail($id);
-            
-    //         // Log untuk audit
-    //         Log::info('Menghapus tim:', [
-    //             'id' => $settingTugas->id,
-    //             'ketua' => $settingTugas->ketua->name ?? 'Unknown',
-    //             'divisi' => $settingTugas->divisi,
-    //             'anggota_count' => $settingTugas->anggota->count()
-    //         ]);
-            
-    //         // Hapus anggota tim (many-to-many relationship)
-    //         $settingTugas->anggota()->detach();
-            
-    //         // Hapus tim
-    //         $settingTugas->delete();
-
-    //         DB::commit();
-            
-    //         $message = 'Tim berhasil dihapus!';
-            
-    //         if (request()->ajax()) {
-    //             return response()->json(['success' => true, 'message' => $message]);
-    //         }
-            
-    //         return back()->with('success', $message);
-
-    //     } catch (\Exception $e) {
-    //         DB::rollback();
-    //         Log::error('SettingTugas Delete Error:', [
-    //             'message' => $e->getMessage(),
-    //             'id' => $id
-    //         ]);
-            
-    //         $message = 'Terjadi kesalahan saat menghapus tim: ' . $e->getMessage();
-            
-    //         if (request()->ajax()) {
-    //             return response()->json(['success' => false, 'message' => $message]);
-    //         }
-            
-    //         return back()->with('error', $message);
-    //     }
-    // }
-
-    /**
-     * Delete all teams for today (batch delete)
-     */
-public function destroy($id)
-{
-    // PERBAIKAN: Handle khusus untuk destroy-all
-    if ($id === 'destroy-all' || $id === 'all') {
-        return $this->destroyAll();
-    }
-    
-    // Validasi ID harus numeric
-    if (!is_numeric($id)) {
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'ID tim tidak valid'
-            ]);
-        }
-        return back()->with('error', 'ID tim tidak valid');
-    }
-    
-    DB::beginTransaction();
-    try {
-        $settingTugas = SettingTugas::findOrFail($id);
-        
-        // Log untuk audit
-        Log::info('Menghapus tim:', [
-            'id' => $settingTugas->id,
-            'ketua' => $settingTugas->ketua->name ?? 'Unknown',
-            'divisi' => $settingTugas->divisi,
-            'anggota_count' => $settingTugas->anggota->count()
-        ]);
-        
-        // Hapus anggota tim (many-to-many relationship)
-        $settingTugas->anggota()->detach();
-        
-        // Hapus tim
-        $settingTugas->delete();
-
-        DB::commit();
-        
-        $message = 'Tim berhasil dihapus!';
-        
-        if (request()->ajax()) {
-            return response()->json(['success' => true, 'message' => $message]);
+    public function destroy($id)
+    {
+        // PERBAIKAN: Handle khusus untuk destroy-all
+        if ($id === 'destroy-all' || $id === 'all') {
+            return $this->destroyAll();
         }
         
-        return back()->with('success', $message);
-
-    } catch (\Exception $e) {
-        DB::rollback();
-        Log::error('SettingTugas Delete Error:', [
-            'message' => $e->getMessage(),
-            'id' => $id
-        ]);
-        
-        $message = 'Terjadi kesalahan saat menghapus tim: ' . $e->getMessage();
-        
-        if (request()->ajax()) {
-            return response()->json(['success' => false, 'message' => $message]);
+        // Validasi ID harus numeric
+        if (!is_numeric($id)) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'ID tim tidak valid'
+                ]);
+            }
+            return back()->with('error', 'ID tim tidak valid');
         }
         
-        return back()->with('error', $message);
-    }
-}
-
-/**
- * Delete all teams for today - METHOD YANG SUDAH DIPERBAIKI
- */
-public function destroyAll()
-{
-    DB::beginTransaction();
-    try {
-        // Ambil semua tim hari ini
-        $teams = SettingTugas::whereDate('tanggal', today())->get();
-        
-        if ($teams->isEmpty()) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Tidak ada tim untuk dihapus hari ini!'
-            ]);
-        }
-        
-        $deletedCount = 0;
-        
-        foreach ($teams as $team) {
+        DB::beginTransaction();
+        try {
+            $settingTugas = SettingTugas::findOrFail($id);
+            
             // Log untuk audit
-            Log::info('Menghapus tim (batch delete):', [
-                'id' => $team->id,
-                'ketua' => optional($team->ketua)->name ?? 'Unknown',
-                'divisi' => $team->divisi,
-                'anggota_count' => $team->anggota()->count()
+            Log::info('Menghapus tim:', [
+                'id' => $settingTugas->id,
+                'ketua' => $settingTugas->ketua->name ?? 'Unknown',
+                'divisi' => $settingTugas->divisi,
+                'anggota_count' => $settingTugas->anggota->count()
             ]);
             
-            // Hapus anggota tim terlebih dahulu (many-to-many relationship)
-            $team->anggota()->detach();
+            // Hapus anggota tim (many-to-many relationship)
+            $settingTugas->anggota()->detach();
             
             // Hapus tim
-            $team->delete();
-            $deletedCount++;
+            $settingTugas->delete();
+
+            DB::commit();
+            
+            $message = 'Tim berhasil dihapus!';
+            
+            if (request()->ajax()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('SettingTugas Delete Error:', [
+                'message' => $e->getMessage(),
+                'id' => $id
+            ]);
+            
+            $message = 'Terjadi kesalahan saat menghapus tim: ' . $e->getMessage();
+            
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            
+            return back()->with('error', $message);
         }
-
-        DB::commit();
-        
-        $message = "Berhasil menghapus semua {$deletedCount} tim hari ini!";
-        
-        Log::info('Batch Delete Success:', [
-            'deleted_count' => $deletedCount,
-            'date' => today()->toDateString()
-        ]);
-        
-        return response()->json([
-            'success' => true, 
-            'message' => $message,
-            'deleted_count' => $deletedCount
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollback();
-        Log::error('Batch Delete Error:', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        return response()->json([
-            'success' => false, 
-            'message' => 'Terjadi kesalahan saat menghapus tim: ' . $e->getMessage()
-        ]);
     }
-}
+
+    /**
+     * Delete all teams for today - METHOD YANG SUDAH DIPERBAIKI
+     */
+    public function destroyAll()
+    {
+        DB::beginTransaction();
+        try {
+            // Ambil semua tim hari ini
+            $teams = SettingTugas::whereDate('tanggal', today())->get();
+            
+            if ($teams->isEmpty()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Tidak ada tim untuk dihapus hari ini!'
+                ]);
+            }
+            
+            $deletedCount = 0;
+            
+            foreach ($teams as $team) {
+                // Log untuk audit
+                Log::info('Menghapus tim (batch delete):', [
+                    'id' => $team->id,
+                    'ketua' => optional($team->ketua)->name ?? 'Unknown',
+                    'divisi' => $team->divisi,
+                    'anggota_count' => $team->anggota()->count()
+                ]);
+                
+                // Hapus anggota tim terlebih dahulu (many-to-many relationship)
+                $team->anggota()->detach();
+                
+                // Hapus tim
+                $team->delete();
+                $deletedCount++;
+            }
+
+            DB::commit();
+            
+            $message = "Berhasil menghapus semua {$deletedCount} tim hari ini!";
+            
+            Log::info('Batch Delete Success:', [
+                'deleted_count' => $deletedCount,
+                'date' => today()->toDateString()
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => $message,
+                'deleted_count' => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Batch Delete Error:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false, 
+                'message' => 'Terjadi kesalahan saat menghapus tim: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Update multiple teams at once (bulk update)
      */
@@ -482,14 +423,14 @@ public function destroyAll()
                 ]);
             }
 
-            // Validasi: Pastikan ketua adalah admin
+            // PERUBAHAN: Validasi - Pastikan ketua adalah karyawan (group_id = 5)
             $ketuaUsers = User::whereIn('id', $ketuaIds)->get();
-            $nonAdmin = $ketuaUsers->where('group_id', '!=', 2);
-            if ($nonAdmin->count() > 0) {
-                $namaNonAdmin = $nonAdmin->pluck('name')->join(', ');
+            $nonKaryawan = $ketuaUsers->where('group_id', '!=', 5); // UBAH: dari 2 ke 5
+            if ($nonKaryawan->count() > 0) {
+                $namaNonKaryawan = $nonKaryawan->pluck('name')->join(', ');
                 return response()->json([
                     'success' => false,
-                    'message' => "Ketua berikut bukan admin: {$namaNonAdmin}"
+                    'message' => "Ketua berikut bukan karyawan: {$namaNonKaryawan}" // UBAH: pesan error
                 ]);
             }
 
@@ -516,7 +457,7 @@ public function destroyAll()
                 $namaKetua = $existingKetua->pluck('ketua.name')->join(', ');
                 return response()->json([
                     'success' => false,
-                    'message' => "Admin berikut sudah menjadi ketua tim lain hari ini: {$namaKetua}"
+                    'message' => "Karyawan berikut sudah menjadi ketua tim lain hari ini: {$namaKetua}" // UBAH: pesan error
                 ]);
             }
 
@@ -637,14 +578,14 @@ public function destroyAll()
                 ]);
             }
 
-            // Validasi: Pastikan ketua adalah admin
+            // PERUBAHAN: Validasi - Pastikan ketua adalah karyawan (group_id = 5)
             $ketuaUsers = User::whereIn('id', $ketuaIds)->get();
-            $nonAdmin = $ketuaUsers->where('group_id', '!=', 2);
-            if ($nonAdmin->count() > 0) {
-                $namaNonAdmin = $nonAdmin->pluck('name')->join(', ');
+            $nonKaryawan = $ketuaUsers->where('group_id', '!=', 5); // UBAH: dari 2 ke 5
+            if ($nonKaryawan->count() > 0) {
+                $namaNonKaryawan = $nonKaryawan->pluck('name')->join(', ');
                 return response()->json([
                     'success' => false,
-                    'message' => "Ketua berikut bukan admin: {$namaNonAdmin}"
+                    'message' => "Ketua berikut bukan karyawan: {$namaNonKaryawan}" // UBAH: pesan error
                 ]);
             }
 
@@ -669,7 +610,7 @@ public function destroyAll()
                 $namaKetua = $existingKetua->pluck('ketua.name')->join(', ');
                 return response()->json([
                     'success' => false,
-                    'message' => "Admin berikut sudah menjadi ketua tim lain hari ini: {$namaKetua}"
+                    'message' => "Karyawan berikut sudah menjadi ketua tim lain hari ini: {$namaKetua}" // UBAH: pesan error
                 ]);
             }
 
@@ -815,7 +756,8 @@ public function destroyAll()
                     ->join('setting_tugas', 'setting_tugas_anggota.setting_tugas_id', '=', 'setting_tugas.id')
                     ->whereDate('setting_tugas.tanggal', $today)
                     ->count(),
-                'admin_tersedia' => User::where('group_id', 2)
+                // PERUBAHAN: Ganti admin tersedia dengan karyawan tersedia (group_id = 5)
+                'karyawan_tersedia' => User::where('group_id', 5) // UBAH: dari group_id = 2 ke 5
                     ->where('id', '!=', auth()->id())
                     ->whereNotIn('id', SettingTugas::whereDate('tanggal', $today)->pluck('ketua_id'))
                     ->count(),
