@@ -118,7 +118,6 @@ class PresensiController extends Controller
                             $row->user_id,
                             $row->tanggal_presensi
                         );
-
                         $color = \App\Helpers\presensihelper::getStatusColor($statusHarian);
                         $statusText = ucfirst($statusHarian); // This will display as "Alpa" in UI
 
