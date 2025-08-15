@@ -213,6 +213,7 @@
 </style>
 @endsection
 @section('content')
+@if(isRole('Admin'))
 <div class="row mb-4">
     <div class="col">
         <h4 class="fw-bold">Setting Anggota Tim</h4>
@@ -244,7 +245,7 @@
         </div>
     </div>
 </div>
-
+@endif
 {{-- TABEL DAFTAR TIM dengan DataTables --}}
 <div class="section-header">
     <div class="section-header-left">
@@ -252,12 +253,14 @@
         <small class="text-muted">Total: <span id="total-teams">{{ $timSales->count() + $timTeknisi->count() }}</span> tim</small>
     </div>
     <div class="section-header-right">
+        @if(isRole('Admin'))
         <button type="button" class="btn btn-info btn-bulk-action" onclick="editAllTeams()">
              Edit Semua Tim
         </button>
         <button type="button" class="btn btn-danger btn-bulk-action" onclick="deleteAllTeamsConfirm()">
              Hapus Semua Tim
         </button>
+        @endif
     </div>
 </div>
 
@@ -343,7 +346,9 @@
 
 <script>
 // Data untuk JavaScript
-const availableAdmins = @json($availableAdmins);
+// CATATAN: availableAdmins sebenarnya berisi data karyawan (group_id = 5), bukan admin
+// Variabel tetap menggunakan nama availableAdmins untuk konsistensi dengan kode yang ada
+const availableAdmins = @json($availableAdmins); // Berisi karyawan, bukan admin
 const availableSiswa = @json($availableSiswa);
 let teamCounter = 0;
 let teamsDataTable;
@@ -520,10 +525,10 @@ function addTeamRow() {
         noFormsMessage.style.display = 'none';
     }
     
-    // Filter admin yang tersedia (belum terdaftar)
-    const adminTersedia = availableAdmins.filter(admin => !admin.sudah_terdaftar);
-    if (adminTersedia.length === 0) {
-        showWarningAlert('Tidak ada admin yang tersedia untuk menjadi ketua tim!');
+    // PERUBAHAN: Filter karyawan yang tersedia (availableAdmins berisi karyawan, bukan admin)
+    const karyawanTersedia = availableAdmins.filter(karyawan => !karyawan.sudah_terdaftar);
+    if (karyawanTersedia.length === 0) {
+        showWarningAlert('Tidak ada karyawan yang tersedia untuk menjadi ketua tim!'); // UBAH: pesan error
         return;
     }
     
@@ -534,10 +539,10 @@ function addTeamRow() {
         return;
     }
     
-    // Buat dropdown options
+    // Buat dropdown options untuk karyawan sebagai ketua
     let ketuaOptions = '<option value="">-- Pilih Ketua Tim --</option>';
-    adminTersedia.forEach(admin => {
-        ketuaOptions += `<option value="${admin.id}">${admin.name}</option>`;
+    karyawanTersedia.forEach(karyawan => {
+        ketuaOptions += `<option value="${karyawan.id}">${karyawan.name}</option>`;
     });
     
     let anggotaOptions = '';
@@ -558,7 +563,7 @@ function addTeamRow() {
                     <select class="form-select ketua-select" name="teams[${teamCounter}][ketua_id]" required>
                         ${ketuaOptions}
                     </select>
-                    <small class="text-muted">${adminTersedia.length} admin tersedia</small>
+                    <small class="text-muted">${karyawanTersedia.length} karyawan tersedia</small>
                 </div>
                 
                 <div class="col-md-2">
@@ -595,10 +600,8 @@ function removeTeamRow(teamId) {
         if (container.children.length === 0) {
             container.innerHTML = '<div class="text-center text-muted py-3" id="no-forms-message">Klik "Tambah Tim" untuk mulai membuat tim baru</div>';
         }
-
     }
 }
-
 
 // UPDATED: Fungsi untuk simpan semua tim sekaligus dengan SweetAlert2
 function saveAllTeams() {
@@ -818,15 +821,15 @@ function enableEditMode() {
         const currentAnggotaString = anggotaCell.querySelector('.anggota-scrollable')?.textContent || '';
         const currentAnggota = currentAnggotaString.split(', ').filter(name => name.trim() !== '');
         
-        // Buat form edit untuk ketua
-        const adminOptions = availableAdmins.map(admin => 
-            `<option value="${admin.id}" ${admin.name === currentKetua ? 'selected' : ''}>${admin.name}</option>`
+        // PERUBAHAN: Buat form edit untuk ketua (availableAdmins berisi karyawan)
+        const karyawanOptions = availableAdmins.map(karyawan => 
+            `<option value="${karyawan.id}" ${karyawan.name === currentKetua ? 'selected' : ''}>${karyawan.name}</option>`
         ).join('');
         
         ketuaCell.innerHTML = `
             <select class="form-select form-select-sm edit-ketua" data-team-id="${teamId}">
                 <option value="">-- Pilih Ketua --</option>
-                ${adminOptions}
+                ${karyawanOptions}
             </select>
         `;
         
@@ -1070,7 +1073,7 @@ function deleteAllTeams() {
     .finally(() => {
         deleteAllButton.disabled = false;
     });
-}
+}   
 
 // UPDATED: Fungsi untuk konfirmasi tukar divisi dengan SweetAlert2
 function swapDivisiConfirm() {

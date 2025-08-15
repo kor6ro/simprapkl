@@ -19,7 +19,7 @@
                 </li>
 
                 {{-- Master Data (Admin Saja) --}}
-                @if (isRole('Admin'))
+               @if (isRole('Admin') || isRole('Karyawan'))
                     <li class="menu-title">Master Data</li>
                     <li class="{{ Route::is('admin.sekolah.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.sekolah.index') }}" class="waves-effect">
@@ -49,7 +49,7 @@
                     </li>
                 @endif
                 {{-- Manajemen User (Admin & Pembimbing) --}}
-                @if (isRole('Admin') || isRole('Pembimbing'))
+               @if (isRole('Admin') || isRole('Pembimbing') || isRole('Karyawan'))
                     <li class="menu-title">Manajement User</li>
                     <li class="{{ Route::is('admin.user.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.user.index') }}" class="waves-effect">
@@ -59,7 +59,7 @@
                     </li>
                 @endif
                 {{-- Manajemen Data (Semua Role) --}}
-                @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa'))
+                @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa') || isRole('Karyawan'))
                     <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('presensi.index') }}" class="waves-effect">
                             <i class="cil-calendar"></i>
