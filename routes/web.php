@@ -64,7 +64,6 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::post('/update', 'save')->name('update');
     });
 
-    // ===== PRESENSI ROUTES =====
     Route::prefix('presensi')->name('presensi.')->group(function () {
         // Main presensi routes
         Route::get('/', [PresensiController::class, 'index'])->name('index');
@@ -78,15 +77,16 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
         // Izin/Sakit manual submission
         Route::post('/izin-sakit', [PresensiController::class, 'submitIzinSakit'])->name('izin-sakit');
+        Route::post('/request-approval-date', [PresensiController::class, 'requestApprovalDate'])->name('request.approval.date');
 
-        // Request edit alpa to izin/sakit (for students)
-        Route::post('/request-edit', [PresensiController::class, 'requestEditAlpa'])->name('request-edit');
+        // DataTables endpoints
+        Route::get('/data/hari-ini', [PresensiController::class, 'dataHariIni'])->name('data.hari_ini');
+        Route::get('/data/semua', [PresensiController::class, 'dataSemua'])->name('data.semua');
 
-        // Admin approval routes
-        Route::get('/approval', [PresensiController::class, 'approvalIndex'])
-            ->name('approval.index');
-        Route::post('/approval/{presensiId}', [PresensiController::class, 'processApproval'])
-            ->name('approval');
+        // Approval routes  
+        Route::get('/approval/data', [PresensiController::class, 'approvalData'])->name('approval.data');
+        Route::get('/approval/history', [PresensiController::class, 'approvalHistory'])->name('approval.history');
+        Route::post('/approval/{id}', [PresensiController::class, 'processApproval'])->name('approval.process');
 
         // CRUD operations
         Route::get('/create', [PresensiController::class, 'create'])->name('create');
@@ -97,9 +97,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
         // Additional operations
         Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
-        Route::get('/all', [PresensiController::class, 'all'])->name('all'); // For Yajra DataTables
     });
-
     // ===== TUGAS HARIAN ROUTES =====
     Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
         Route::get('/', [TugasHarianController::class, 'index'])->name('index');

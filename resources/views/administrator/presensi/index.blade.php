@@ -3,6 +3,7 @@
 @section('css')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
+        /* === Styles utama === */
         .camera-container {
             background: #f8f9fa;
             border-radius: 10px;
@@ -44,7 +45,6 @@
             max-width: 400px;
             aspect-ratio: 1 / 1;
             object-fit: cover;
-            object-position: center;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
@@ -58,7 +58,6 @@
             flex-wrap: wrap;
             gap: 8px;
             justify-content: center;
-            align-items: center;
             margin-bottom: 15px;
         }
 
@@ -108,21 +107,28 @@
             margin-bottom: 20px;
         }
 
-        .approval-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        .edit-request-form {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-
         .hidden-logo {
             display: none;
+        }
+
+        /* Approval tab specific styles */
+        .approval-pending-badge {
+            background: linear-gradient(45deg, #ffc107, #fd7e14);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
     </style>
 @endsection
@@ -132,49 +138,37 @@
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                 <h4 class="mb-sm-0 font-size-18">📱 Presensi Digital</h4>
-
-                @if (auth()->user()->group_id === 2)
-                    <form method="POST" action="{{ route('presensi.generate.alpa') }}" class="d-inline">
-                        @csrf
-                        <button class="btn btn-danger btn-sm"
-                            onclick="return confirm('Generate siswa alpa untuk hari ini?')">
-                            Generate Siswa Alpa
-                        </button>
-                    </form>
-                @endif
             </div>
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Alerts --}}
     @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show">
             <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
-
     @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show">
             <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    {{-- Status Presensi Hari Ini --}}
+    {{-- Status Presensi + Tombol --}}
     <div class="card">
         <div class="card-header">
             <h5 class="card-title mb-0">📋 Status Presensi Hari Ini</h5>
         </div>
         <div class="card-body">
+
             <div class="presensi-status-card">
                 <div class="row">
                     <div class="col-md-4">
                         <h6>Sesi Pagi</h6>
                         @if ($statusPresensi['pagi_status'])
-                            <span class="badge bg-success session-badge">
-                                ✓ {{ $statusPresensi['pagi_status'] }}
-                            </span>
+                            <span class="badge bg-success session-badge">✓ {{ $statusPresensi['pagi_status'] }}</span>
                             @if ($statusPresensi['pagi_jam'])
                                 <br><small class="text-muted">Jam: {{ $statusPresensi['pagi_jam'] }}</small>
                             @endif
@@ -185,9 +179,7 @@
                     <div class="col-md-4">
                         <h6>Sesi Sore</h6>
                         @if ($statusPresensi['sore_status'])
-                            <span class="badge bg-success session-badge">
-                                ✓ {{ $statusPresensi['sore_status'] }}
-                            </span>
+                            <span class="badge bg-success session-badge">✓ {{ $statusPresensi['sore_status'] }}</span>
                             @if ($statusPresensi['sore_jam'])
                                 <br><small class="text-muted">Jam: {{ $statusPresensi['sore_jam'] }}</small>
                             @endif
@@ -197,250 +189,274 @@
                     </div>
                     <div class="col-md-4">
                         <h6>Status Saat Ini</h6>
-                        <div class="alert alert-info mb-0 py-2">
-                            {{ $statusPresensi['message'] }}
-                        </div>
+                        <div class="alert alert-info mb-0 py-2">{{ $statusPresensi['message'] }}</div>
                         @if ($statusPresensi['current_session'])
                             <small class="text-muted">Sesi: {{ ucfirst($statusPresensi['current_session']) }}</small>
                         @endif
                     </div>
                 </div>
             </div>
+
+            {{-- Tombol di bagian bawah card-body --}}
+            <div class="mt-3 d-flex gap-2">
+                @if ($statusPresensi['can_presensi'])
+                    <button class="btn btn-primary btn-sm" onclick="showPresensiModal()">📷 Presensi</button>
+                @endif
+                <button class="btn btn-warning btn-sm" onclick="showIzinModal()">🏥 Izin/Sakit</button>
+            </div>
+
         </div>
     </div>
 
-    {{-- Form Izin/Sakit --}}
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">🏥 Form Izin/Sakit</h5>
+    {{-- Modal Presensi Kamera --}}
+    <div class="modal fade" id="presensiModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📷 Presensi Kamera</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    @include('administrator.presensi.partials.camera')
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="izin-sakit-form">
-                <p class="mb-3"><strong>Jika Anda tidak dapat hadir karena sakit atau ada keperluan:</strong></p>
-                <form action="{{ route('presensi.izin-sakit') }}" method="POST" enctype="multipart/form-data">
+    </div>
+
+    {{-- Modal Form Izin/Sakit --}}
+    <div class="modal fade" id="izinModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">🏥 Form Izin/Sakit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    @include('administrator.presensi.partials.form_izinsakit')
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Tabs Navigation --}}
+    <ul class="nav nav-tabs" id="presensiTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#hari-ini">Hari Ini</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#semua">Semua</button>
+        </li>
+        @if (Auth::user()->group_id == 2)
+            <li class="nav-item">
+                <button class="nav-link position-relative" data-bs-toggle="tab" data-bs-target="#approval">
+                    ✅ Approval
+                    @php
+                        $pendingCount = \App\Models\Presensi::where('approval_status', 'pending')->count();
+                    @endphp
+                    @if ($pendingCount > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ $pendingCount }}
+                        </span>
+                    @endif
+                </button>
+            </li>
+        @endif
+    </ul>
+
+    {{-- Tab Content --}}
+    <div class="tab-content mt-3">
+        {{-- Tab Hari Ini --}}
+        <div class="tab-pane fade show active" id="hari-ini">
+            <table class="table table-bordered" id="table-hari-ini" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nama</th>
+                        <th>Sekolah</th>
+                        <th>Status</th>
+                        <th>Bukti Foto</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+        {{-- Tab Semua --}}
+        <div class="tab-pane fade" id="semua">
+            <table class="table table-bordered table-striped" id="table-semua" style="width:100%">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th>Nama</th>
+                        <th>Sekolah</th>
+                        <th width="10%">Tanggal</th>
+                        <th width="12%">Status Harian</th>
+                        <th width="20%">Detail Sesi</th>
+                        <th width="10%">Bukti Foto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DataTables akan mengisi ini -->
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Tab Approval (Admin only) --}}
+        @if (Auth::user()->group_id == 2)
+            <div class="tab-pane fade" id="approval">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5 class="text-warning">⏳ Permintaan Approval</h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-danger btn-sm me-2" onclick="generateAlpa()"
+                            title="Generate Alpa untuk siswa yang belum presensi hari ini">
+                            <i class="fas fa-exclamation-triangle"></i> Generate Alpa
+                        </button>
+                        <small class="text-muted">Total pending: <span
+                                class="badge bg-warning">{{ $pendingCount ?? 0 }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="table-approval">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Siswa</th>
+                                <th>Sekolah</th>
+                                <th>Sesi</th>
+                                <th>Status Awal</th>
+                                <th>Status Diminta</th>
+                                <th>Alasan</th>
+                                <th>Bukti</th>
+                                <th>Waktu Request</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- DataTables akan mengisi ini -->
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- History Section --}}
+                <div class="mt-4">
+                    <h5 class="text-info">📚 History Approval (7 Hari Terakhir)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="table-approval-history">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Siswa</th>
+                                    <th>Status Diminta</th>
+                                    <th>Keputusan</th>
+                                    <th>Catatan Admin</th>
+                                    <th>Diproses Oleh</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- DataTables akan mengisi ini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    {{-- Modal Request Approval untuk Tanggal Tertentu --}}
+    <div class="modal fade" id="requestApprovalDateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📝 Request Perubahan Status Alpa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="requestApprovalDateForm" method="POST" action="{{ route('presensi.request.approval.date') }}"
+                    enctype="multipart/form-data">
                     @csrf
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Jenis</label>
-                                <select name="jenis" class="form-control" required>
-                                    <option value="">Pilih</option>
-                                    <option value="Izin">Izin</option>
-                                    <option value="Sakit">Sakit</option>
-                                </select>
-                            </div>
+                    <input type="hidden" name="tanggal_presensi" id="requestTanggal">
+
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Anda akan meminta perubahan status <span class="badge bg-danger">Alpa</span>
+                            untuk tanggal <strong id="displayTanggal"></strong>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Keterangan</label>
-                                <textarea name="keterangan" class="form-control" rows="2" placeholder="Jelaskan alasan (minimal 10 karakter)"
-                                    required></textarea>
-                            </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Status yang diminta <span class="text-danger">*</span></label>
+                            <select name="requested_status" class="form-control" required>
+                                <option value="">-- Pilih Status --</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Sakit">Sakit</option>
+                            </select>
                         </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">Bukti (opsional)</label>
-                                <input type="file" name="bukti_foto" class="form-control" accept="image/*">
-                            </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Alasan/Keterangan <span class="text-danger">*</span></label>
+                            <textarea name="keterangan" class="form-control" rows="4"
+                                placeholder="Jelaskan alasan kenapa tidak bisa presensi..." minlength="20" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Bukti Pendukung (Foto)</label>
+                            <input type="file" name="bukti_foto" class="form-control" accept="image/*">
+                            <small class="text-muted">Upload foto sebagai bukti (surat dokter, surat izin, dll)</small>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-paper-plane me-1"></i> Submit Izin/Sakit
-                    </button>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-warning">Kirim Permintaan</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Camera Presensi Section --}}
-    @if ($statusPresensi['can_presensi'])
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">📷 Presensi Otomatis dengan Kamera</h5>
-            </div>
-            <div class="card-body">
-                <div class="camera-container">
-                    <div id="cameraStatus" class="status-indicator status-ready">
-                        Klik "Aktifkan Kamera" untuk presensi {{ $statusPresensi['current_session'] }}
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="video-container" style="display: none;" id="videoContainer">
-                                <video id="video" autoplay muted playsinline></video>
-                                <div class="camera-overlay">
-                                    <div id="timestamp">Loading...</div>
-                                    <div>{{ ucfirst($statusPresensi['current_session']) }} - {{ auth()->user()->name }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="camera-controls">
-                                <button id="startCamera" class="btn btn-primary btn-camera">
-                                    <i class="fas fa-video me-1"></i> Aktifkan Kamera
-                                </button>
-                                <button id="capturePhoto" class="btn btn-success btn-camera" disabled>
-                                    <i class="fas fa-camera me-1"></i> Ambil Foto
-                                </button>
-                                <button id="flipCamera" class="btn btn-secondary btn-camera" disabled
-                                    style="display: none;">
-                                    <i class="fas fa-sync-alt me-1"></i> Flip
-                                </button>
-                                <button id="stopCamera" class="btn btn-secondary btn-camera" disabled>
-                                    <i class="fas fa-stop me-1"></i> Stop
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <form id="presensiForm" style="display: none;">
-                                <div class="mb-3" id="previewContainer" style="display: none;">
-                                    <label class="form-label">Preview Foto:</label><br>
-                                    <img id="preview" class="preview-image" alt="Preview foto">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Keterangan (opsional):</label>
-                                    <textarea id="keterangan" class="form-control" rows="2" placeholder="Tambahkan keterangan jika diperlukan"></textarea>
-                                </div>
-
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="fas fa-paper-plane me-1"></i>
-                                    Submit Presensi {{ ucfirst($statusPresensi['current_session']) }}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <canvas id="canvas" style="display: none;"></canvas>
-
-                    {{-- Hidden logo for canvas overlay --}}
-                    @if (auth()->user()->sekolah && auth()->user()->sekolah->logo)
-                        <img id="schoolLogo" class="hidden-logo"
-                            src="{{ asset('uploads/sekolah_logo/' . auth()->user()->sekolah->logo) }}"
-                            crossorigin="anonymous" alt="Logo Sekolah">
-                    @endif
+    {{-- Modal Approval Notes --}}
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Approval</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-            </div>
-        </div>
-    @endif
+                <div class="modal-body">
+                    <form id="approvalForm" method="POST">
+                        @csrf
+                        <input type="hidden" name="action" id="approvalAction">
 
-    {{-- Data Presensi Hari Ini --}}
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">📊 Data Presensi Hari Ini</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nama</th>
-                            <th>Sekolah</th>
-                            <th>Sesi</th>
-                            <th>Jam</th>
-                            <th>Status</th>
-                            <th>Keterangan</th>
-                            <th>Bukti</th>
-                            @if (auth()->user()->group_id === 2)
-                                <th>Approval</th>
-                            @endif
-                            @if (auth()->user()->group_id === 4)
-                                <th>Aksi</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($data as $item)
-                            <tr>
-                                <td>{{ $item->user->name }}</td>
-                                <td>{{ $item->user->sekolah->nama ?? '-' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $item->sesi === 'pagi' ? 'info' : 'warning' }}">
-                                        {{ ucfirst($item->sesi) }}
-                                    </span>
-                                </td>
-                                <td>{{ $item->jam_presensi ?? '-' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $item->status_color }}">
-                                        {{ $item->status_display }}
-                                    </span>
-                                    @if ($item->approval_status)
-                                        <br><span
-                                            class="badge bg-{{ $item->approval_status === 'pending' ? 'warning' : ($item->approval_status === 'approved' ? 'success' : 'danger') }} approval-badge">
-                                            {{ ucfirst($item->approval_status) }}
-                                        </span>
-                                    @endif
-                                </td>
-                                <td>{{ $item->keterangan ?? '-' }}</td>
-                                <td>
-                                    @if ($item->bukti_foto)
-                                        <button class="btn btn-sm btn-outline-primary"
-                                            onclick="showImage('{{ asset('storage/' . $item->bukti_foto) }}')">
-                                            <i class="fas fa-eye"></i> Lihat
-                                        </button>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
+                        <div class="mb-3">
+                            <label class="form-label">Siswa</label>
+                            <input type="text" id="studentName" class="form-control" readonly>
+                        </div>
 
-                                {{-- Admin Approval Column --}}
-                                @if (auth()->user()->group_id === 2 && $item->approval_status === 'pending')
-                                    <td>
-                                        <form action="{{ route('presensi.approval', $item->id) }}" method="POST"
-                                            class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="action" value="approve">
-                                            <button type="submit" class="btn btn-sm btn-success" title="Setujui">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                        </form>
-                                        <form action="{{ route('presensi.approval', $item->id) }}" method="POST"
-                                            class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Tolak">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                @elseif(auth()->user()->group_id === 2)
-                                    <td>-</td>
-                                @endif
+                        <div class="mb-3">
+                            <label class="form-label">Status yang Diminta</label>
+                            <input type="text" id="requestedStatus" class="form-control" readonly>
+                        </div>
 
-                                {{-- Student Edit Request Column --}}
-                                @if (auth()->user()->group_id === 4 && $item->user_id === auth()->id())
-                                    <td>
-                                        @if ($item->status === 'Alpa' && !$item->approval_status)
-                                            <button class="btn btn-sm btn-warning"
-                                                onclick="showEditRequest({{ $item->id }})">
-                                                <i class="fas fa-edit"></i> Ubah ke Izin/Sakit
-                                            </button>
-                                        @elseif($item->approval_status === 'pending')
-                                            <span class="text-warning">Menunggu Approval</span>
-                                        @elseif($item->approval_status === 'rejected')
-                                            <button class="btn btn-sm btn-warning"
-                                                onclick="showEditRequest({{ $item->id }})">
-                                                <i class="fas fa-edit"></i> Ajukan Lagi
-                                            </button>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                @elseif(auth()->user()->group_id === 4)
-                                    <td>-</td>
-                                @endif
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ auth()->user()->group_id === 2 ? '8' : (auth()->user()->group_id === 4 ? '8' : '7') }}"
-                                    class="text-center text-muted">
-                                    Belum ada data presensi hari ini
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        <div class="mb-3">
+                            <label class="form-label">Catatan Admin (opsional)</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Tambahkan catatan jika diperlukan"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                Batal
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="submitApproval('reject')">
+                                <i class="fas fa-times me-1"></i> Tolak
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="submitApproval('approve')">
+                                <i class="fas fa-check me-1"></i> Setujui
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -450,356 +466,360 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Bukti Foto Presensi</h5>
+                    <h5 class="modal-title">Bukti Foto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img id="modalImage" src="" class="img-fluid" alt="Bukti presensi">
+                    <img id="modalImage" src="" class="img-fluid" alt="Bukti foto">
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Modal Edit Request --}}
-    <div class="modal fade" id="editRequestModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Ubah Status Alpa ke Izin/Sakit</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editRequestForm" action="{{ route('presensi.request-edit') }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="presensi_id" id="editPresensiId">
-
-                        <div class="mb-3">
-                            <label class="form-label">Ubah Status Menjadi</label>
-                            <select name="new_status" class="form-control" required>
-                                <option value="">Pilih Status Baru</option>
-                                <option value="Izin">Izin</option>
-                                <option value="Sakit">Sakit</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Alasan Perubahan</label>
-                            <textarea name="keterangan" class="form-control" rows="3"
-                                placeholder="Jelaskan mengapa Anda tidak hadir pada hari tersebut (minimal 10 karakter)" required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Bukti Pendukung</label>
-                            <input type="file" name="bukti_foto" class="form-control" accept="image/*">
-                            <small class="text-muted">Upload surat keterangan dokter untuk sakit, atau surat izin untuk
-                                izin</small>
-                        </div>
-
-                        <div class="alert alert-warning">
-                            <strong>Catatan:</strong> Permintaan perubahan status akan dikirim ke admin untuk disetujui.
-                            Pastikan alasan dan bukti yang Anda berikan valid.
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-paper-plane me-1"></i> Ajukan Perubahan Status
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @section('js')
     <script>
-        class PresensiCamera {
-            constructor() {
-                this.video = document.getElementById('video');
-                this.canvas = document.getElementById('canvas');
-                this.preview = document.getElementById('preview');
-                this.startBtn = document.getElementById('startCamera');
-                this.captureBtn = document.getElementById('capturePhoto');
-                this.stopBtn = document.getElementById('stopCamera');
-                this.form = document.getElementById('presensiForm');
-                this.status = document.getElementById('cameraStatus');
-                this.timestamp = document.getElementById('timestamp');
-                this.videoContainer = document.getElementById('videoContainer');
-                this.previewContainer = document.getElementById('previewContainer');
-                this.flipBtn = document.getElementById('flipCamera');
-                this.schoolLogo = document.getElementById('schoolLogo');
+        let currentPresensiId = null;
 
-                this.currentFacingMode = 'user';
-                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator
-                    .userAgent);
-                this.stream = null;
-                this.capturedImage = null;
+        $(function() {
+            // Debug: Pastikan jQuery dan DataTables loaded
+            console.log('Initializing DataTables...');
 
-                if (this.startBtn) {
-                    this.initEventListeners();
-                    this.updateTimestamp();
-                    setInterval(() => this.updateTimestamp(), 1000);
+            // DataTable untuk Hari Ini
+            $('#table-hari-ini').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '{{ route('presensi.data.hari_ini') }}',
+                    error: function(xhr, error, code) {
+                        console.error('Ajax error hari ini:', xhr.responseText);
+                    }
+                },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'nama',
+                        name: 'user.name'
+                    },
+                    {
+                        data: 'sekolah',
+                        name: 'user.sekolah.nama'
+                    },
+                    {
+                        data: 'status_badge',
+                        name: 'status',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'bukti_foto',
+                        name: 'bukti_foto',
+                        orderable: false,
+                        searchable: false
+                    }
+                ]
+            });
+
+            // DataTable untuk Semua
+            $('#table-semua').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '{{ route('presensi.data.semua') }}',
+                    error: function(xhr, error, code) {
+                        console.error('Ajax error semua:', xhr.responseText);
+                        alert('Error loading data. Check console for details.');
+                    }
+                },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        width: '5%'
+                    },
+                    {
+                        data: 'nama',
+                        name: 'user.name',
+                        title: 'Nama'
+                    },
+                    {
+                        data: 'sekolah',
+                        name: 'user.sekolah.nama',
+                        title: 'Sekolah'
+                    },
+                    {
+                        data: 'tanggal',
+                        name: 'tanggal_presensi',
+                        title: 'Tanggal',
+                        width: '10%'
+                    },
+                    {
+                        data: 'status_badge',
+                        name: 'status_badge',
+                        orderable: false,
+                        searchable: false,
+                        title: 'Keterangan',
+                        width: '12%'
+
+                    },
+                    {
+                        data: 'detail_sesi',
+                        name: 'detail_sesi',
+                        orderable: false,
+                        searchable: false,
+                        title: 'Detail Sesi',
+                        width: '20%'
+                    },
+                    {
+                        data: 'bukti_foto',
+                        name: 'bukti_foto',
+                        orderable: false,
+                        searchable: false,
+                        title: 'Bukti Foto',
+                        width: '10%'
+                    }
+                ],
+                order: [
+                    [3, 'desc']
+                ], // Sort by tanggal descending
+                pageLength: 25,
+                language: {
+                    processing: "Memuat data...",
+                    lengthMenu: "Tampilkan _MENU_ data per halaman",
+                    zeroRecords: "Data tidak ditemukan",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    search: "Cari:",
+                    paginate: {
+                        first: "Pertama",
+                        last: "Terakhir",
+                        next: "Selanjutnya",
+                        previous: "Sebelumnya"
+                    }
                 }
-            }
+            });
 
-            initEventListeners() {
-                this.startBtn.addEventListener('click', () => this.startCamera());
-                this.captureBtn.addEventListener('click', () => this.capturePhoto());
-                this.stopBtn.addEventListener('click', () => this.stopCamera());
-
-                if (this.flipBtn && this.isMobile) {
-                    this.flipBtn.addEventListener('click', () => this.flipCamera());
-                    this.flipBtn.style.display = 'block';
-                }
-
-                this.form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.submitPresensi();
-                });
-            }
-
-            updateTimestamp() {
-                if (!this.timestamp) return;
-                const now = new Date();
-                this.timestamp.textContent = now.toLocaleString('id-ID', {
-                    weekday: 'short',
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-            }
-
-            async startCamera() {
-                try {
-                    this.stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: this.currentFacingMode,
-                            width: {
-                                ideal: 720
-                            },
-                            height: {
-                                ideal: 720
-                            },
-                            aspectRatio: 1.0
+            // DataTable untuk Approval (hanya jika admin)
+            @if (Auth::user()->group_id == 2)
+                $('#table-approval').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '{{ route('presensi.approval.data') }}',
+                        error: function(xhr, error, code) {
+                            console.error('Ajax error approval:', xhr.responseText);
                         }
-                    });
-
-                    this.video.srcObject = this.stream;
-                    this.videoContainer.style.display = 'block';
-
-                    this.startBtn.disabled = true;
-                    this.captureBtn.disabled = false;
-                    this.stopBtn.disabled = false;
-
-                    if (this.flipBtn && this.isMobile) {
-                        this.flipBtn.disabled = false;
-                    }
-
-                    this.updateStatus('Kamera aktif - Ambil foto untuk presensi otomatis', 'ready');
-
-                } catch (error) {
-                    console.error('Camera error:', error);
-                    this.updateStatus('Gagal mengakses kamera: ' + error.message, 'error');
-                }
-            }
-
-            async flipCamera() {
-                if (!this.isMobile) return;
-
-                try {
-                    this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
-
-                    if (this.stream) {
-                        this.stream.getTracks().forEach(track => track.stop());
-                    }
-
-                    await this.startCamera();
-                } catch (error) {
-                    console.error('Flip camera error:', error);
-                    this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
-                    this.updateStatus('Gagal mengganti kamera', 'error');
-                }
-            }
-
-            capturePhoto() {
-                if (!this.stream || !this.video.videoWidth) {
-                    this.updateStatus('Kamera belum siap', 'warning');
-                    return;
-                }
-
-                const minDimension = Math.min(this.video.videoWidth, this.video.videoHeight);
-                this.canvas.width = minDimension;
-                this.canvas.height = minDimension;
-
-                const ctx = this.canvas.getContext('2d');
-                const cropX = (this.video.videoWidth - minDimension) / 2;
-                const cropY = (this.video.videoHeight - minDimension) / 2;
-
-                ctx.drawImage(this.video, cropX, cropY, minDimension, minDimension, 0, 0, minDimension, minDimension);
-
-                // Add overlay
-                const now = new Date();
-                const timestampText = now.toLocaleString('id-ID');
-                const locationText = '{{ auth()->user()->sekolah->nama ?? 'SMKN 1 Pacitan' }} - SimPraPKL';
-                const userText = '{{ auth()->user()->name }}';
-                const sessionText = 'Sesi: {{ $statusPresensi['current_session'] ?? 'Auto' }}';
-
-                const overlayHeight = Math.min(120, minDimension * 0.3);
-                const overlayWidth = Math.min(400, minDimension - 20);
-
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.fillRect(10, minDimension - overlayHeight - 10, overlayWidth, overlayHeight);
-
-                const fontSize = Math.max(12, Math.min(14, minDimension / 50));
-                ctx.fillStyle = 'white';
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.textAlign = 'left';
-
-                const textY = minDimension - overlayHeight + 15;
-                const lineHeight = fontSize + 6;
-                ctx.fillText(timestampText, 20, textY);
-                ctx.fillText(locationText, 20, textY + lineHeight);
-                ctx.fillText(`User: ${userText}`, 20, textY + (lineHeight * 2));
-                ctx.fillText(sessionText, 20, textY + (lineHeight * 3));
-
-                // Add school logo
-                if (this.schoolLogo && this.schoolLogo.complete) {
-                    try {
-                        const logoSize = Math.min(100, minDimension * 0.25);
-                        const logoX = minDimension - logoSize - 25;
-                        const logoY = 25;
-                        ctx.drawImage(this.schoolLogo, logoX, logoY, logoSize, logoSize);
-                    } catch (e) {
-                        console.error('Logo error:', e);
-                    }
-                }
-
-                this.capturedImage = this.canvas.toDataURL('image/jpeg', 0.8);
-                this.preview.src = this.capturedImage;
-                this.previewContainer.style.display = 'block';
-                this.form.style.display = 'block';
-
-                this.updateStatus('Foto siap - Submit untuk presensi otomatis', 'ready');
-            }
-
-            stopCamera() {
-                if (this.stream) {
-                    this.stream.getTracks().forEach(track => track.stop());
-                    this.stream = null;
-                }
-
-                this.videoContainer.style.display = 'none';
-                this.form.style.display = 'none';
-                this.previewContainer.style.display = 'none';
-
-                this.startBtn.disabled = false;
-                this.captureBtn.disabled = true;
-                this.stopBtn.disabled = true;
-
-                if (this.flipBtn) {
-                    this.flipBtn.disabled = true;
-                }
-
-                this.updateStatus('Kamera dimatikan', 'ready');
-                this.resetForm();
-            }
-
-            async submitPresensi() {
-                if (!this.capturedImage) {
-                    this.updateStatus('Belum ada foto', 'error');
-                    return;
-                }
-
-                this.updateStatus('Mengirim presensi...', 'warning');
-
-                try {
-                    const payload = {
-                        image_data: this.capturedImage,
-                        keterangan: document.getElementById('keterangan').value || ''
-                    };
-
-                    const response = await fetch('{{ route('presensi.camera') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                'content')
+                    },
+                    columns: [{
+                            data: 'tanggal',
+                            name: 'tanggal_presensi'
                         },
-                        body: JSON.stringify(payload)
-                    });
+                        {
+                            data: 'nama',
+                            name: 'user.name'
+                        },
+                        {
+                            data: 'sekolah',
+                            name: 'user.sekolah.nama'
+                        },
+                        {
+                            data: 'sesi',
+                            name: 'sesi'
+                        },
+                        {
+                            data: 'status_awal',
+                            name: 'status_awal',
+                            orderable: false
+                        },
+                        {
+                            data: 'requested_status',
+                            name: 'requested_status'
+                        },
+                        {
+                            data: 'keterangan',
+                            name: 'keterangan'
+                        },
+                        {
+                            data: 'bukti_foto',
+                            name: 'bukti_foto',
+                            orderable: false
+                        },
+                        {
+                            data: 'waktu_request',
+                            name: 'updated_at'
+                        },
+                        {
+                            data: 'aksi',
+                            name: 'aksi',
+                            orderable: false,
+                            searchable: false
+                        }
+                    ],
+                    order: [
+                        [8, 'desc']
+                    ], // Sort by waktu request descending
+                    pageLength: 10
+                });
 
-                    const result = await response.json();
+                // DataTable untuk Approval History
+                $('#table-approval-history').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '{{ route('presensi.approval.history') }}',
+                        error: function(xhr, error, code) {
+                            console.error('Ajax error approval history:', xhr.responseText);
+                        }
+                    },
+                    columns: [{
+                            data: 'tanggal',
+                            name: 'tanggal_presensi'
+                        },
+                        {
+                            data: 'nama',
+                            name: 'user.name'
+                        },
+                        {
+                            data: 'requested_status',
+                            name: 'requested_status'
+                        },
+                        {
+                            data: 'approval_status',
+                            name: 'approval_status'
+                        },
+                        {
+                            data: 'approval_notes',
+                            name: 'approval_notes'
+                        },
+                        {
+                            data: 'approved_by',
+                            name: 'approvedBy.name'
+                        },
+                        {
+                            data: 'approved_at',
+                            name: 'approved_at'
+                        }
+                    ],
+                    order: [
+                        [6, 'desc']
+                    ], // Sort by approved_at descending
+                    pageLength: 10
+                });
+            @endif
 
-                    if (response.ok && result.success) {
-                        this.updateStatus('✅ ' + result.message, 'ready');
-                        this.stopCamera();
-                        this.showAlert('success', result.message);
+            // Handle form submissions
 
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        throw new Error(result.message || 'Server error');
+            $('#approvalForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+                var actionUrl = $(this).attr('action');
+
+                $.ajax({
+                    url: actionUrl,
+                    method: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        $('#approvalModal').modal('hide');
+                        $('#table-approval').DataTable().ajax.reload();
+                        $('#table-approval-history').DataTable().ajax.reload();
+                        // Update pending count badge
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Gagal memproses approval: ' + xhr.responseJSON.message);
                     }
-
-                } catch (error) {
-                    console.error('Submit error:', error);
-                    this.updateStatus('❌ Gagal: ' + error.message, 'error');
-                }
-            }
-
-            updateStatus(message, type) {
-                if (this.status) {
-                    this.status.textContent = message;
-                    this.status.className = `status-indicator status-${type}`;
-                }
-            }
-
-            resetForm() {
-                if (this.form) {
-                    this.form.reset();
-                }
-                this.capturedImage = null;
-            }
-
-            showAlert(type, message) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-                alertDiv.innerHTML = `
-                    <i class="fas fa-check-circle me-2"></i>${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-
-                const titleBox = document.querySelector('.page-title-box').parentElement.parentElement;
-                titleBox.insertAdjacentElement('afterend', alertDiv);
-
-                setTimeout(() => {
-                    if (alertDiv.parentElement) {
-                        alertDiv.remove();
-                    }
-                }, 5000);
-            }
-        }
-
-        // Initialize camera when DOM loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            new PresensiCamera();
+                });
+            });
         });
 
-        // Function to show image in modal
-        function showImage(src) {
-            document.getElementById('modalImage').src = src;
-            new bootstrap.Modal(document.getElementById('imageModal')).show();
+        // Modal Functions
+        function showPresensiModal() {
+            var modal = new bootstrap.Modal(document.getElementById('presensiModal'));
+            modal.show();
         }
 
-        // Function to show edit request modal
-        function showEditRequest(presensiId) {
-            document.getElementById('editPresensiId').value = presensiId;
-            new bootstrap.Modal(document.getElementById('editRequestModal')).show();
+        function showIzinModal() {
+            var modal = new bootstrap.Modal(document.getElementById('izinModal'));
+            modal.show();
+        }
+
+        function requestApprovalForDate(tanggal) {
+            document.getElementById('requestTanggal').value = tanggal;
+            document.getElementById('displayTanggal').textContent = new Date(tanggal).toLocaleDateString('id-ID');
+            document.getElementById('requestApprovalDateForm').reset();
+            document.getElementById('requestTanggal').value = tanggal; // Set lagi setelah reset
+
+            new bootstrap.Modal(document.getElementById('requestApprovalDateModal')).show();
+        }
+
+        // Quick approve/reject functions
+        function processApproval(presensiId, action) {
+            if (!confirm(`Yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} permintaan ini?`)) {
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/presensi/approval/${presensiId}`;
+
+            form.innerHTML = `
+                @csrf
+                <input type="hidden" name="action" value="${action}">
+            `;
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Show approval modal with details
+        function showApprovalModal(presensiId, studentName, requestedStatus) {
+            currentPresensiId = presensiId;
+
+            document.getElementById('studentName').value = studentName;
+            document.getElementById('requestedStatus').value = requestedStatus;
+            document.getElementById('approvalForm').action = `/presensi/approval/${presensiId}`;
+
+            new bootstrap.Modal(document.getElementById('approvalModal')).show();
+        }
+
+        // Submit approval with notes
+        function submitApproval(action) {
+            document.getElementById('approvalAction').value = action;
+            document.getElementById('approvalForm').submit();
+        }
+
+        // Generate Alpa function
+        function generateAlpa() {
+            if (!confirm(
+                    'Yakin ingin generate presensi Alpa untuk siswa yang belum presensi hari ini?\n\nIni akan membuat status Alpa otomatis untuk semua siswa yang belum melakukan presensi pagi dan sore.'
+                )) {
+                return;
+            }
+
+            // Show loading
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route('presensi.generate.alpa') }}';
+            form.innerHTML = '@csrf';
+
+            // Add hidden form to body and submit
+            document.body.appendChild(form);
+            form.submit();
         }
     </script>
+    @include('administrator.presensi.partials.camera_script')
 @endsection

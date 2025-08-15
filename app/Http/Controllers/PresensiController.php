@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PresensiHelper;
 use App\Models\Presensi;
 use App\Models\PresensiSetting;
 use App\Models\PresensiStatus;
@@ -11,72 +12,230 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class PresensiController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Halaman utama presensi (1 halaman, multi-tab).
+     */
+    public function index()
     {
-        // Untuk AJAX DataTables (jika ada)
-        if ($request->ajax()) {
-            $data = Presensi::with(['user.sekolah', 'presensiStatus'])->latest();
-            return datatables()->of($data)
-                ->addIndexColumn()
-                ->addColumn('nama', fn($row) => $row->user->name)
-                ->addColumn('sekolah', fn($row) => $row->user->sekolah->nama ?? '-')
-                ->addColumn('status_badge', function ($row) {
-                    return '<span class="badge bg-' . $row->status_color . '">' . $row->status_display . '</span>';
-                })
-                ->addColumn('bukti_foto', function ($row) {
-                    if ($row->bukti_foto) {
-                        return '<a href="' . asset('storage/' . $row->bukti_foto) . '" target="_blank">
-                                    <img src="' . asset('storage/' . $row->bukti_foto) . '" width="60" class="rounded">
-                                </a>';
-                    }
-                    return '-';
-                })
-                ->rawColumns(['status_badge', 'bukti_foto'])
-                ->make(true);
-        }
-
-        $user = Auth::user();
-        $today = now()->toDateString();
+        $user    = Auth::user();
+        $today   = now()->toDateString();
         $setting = PresensiSetting::first();
 
-        // Data untuk tampilan biasa
-        $data = Presensi::with(['user.sekolah', 'presensiStatus'])
-            ->where('tanggal_presensi', $today)
-            ->latest()
-            ->get();
-
-        // Cek status presensi user hari ini
         $presensiHariIni = Presensi::where('user_id', $user->id)
             ->where('tanggal_presensi', $today)
             ->get();
 
         $statusPresensi = $this->getStatusPresensiHariIni($presensiHariIni, $setting);
 
-        return view('administrator.presensi.index', compact('data', 'statusPresensi', 'setting'));
+        return view('administrator.presensi.index', compact('statusPresensi', 'setting'));
     }
 
-    // Method baru untuk mendapatkan status presensi hari ini
+    /**
+     * DataTables: Presensi Hari Ini (detail per sesi)
+     */
+    public function dataHariIni()
+    {
+        $today = now()->toDateString();
+
+        $data = Presensi::with(['user.sekolah', 'presensiStatus'])
+            ->whereDate('tanggal_presensi', $today)
+            ->orderBy('presensi.created_at', 'desc');
+
+        // Jika user adalah siswa, filter hanya miliknya
+        if (Auth::user()->group_id == 4) {
+            $data->where('user_id', Auth::id());
+        }
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->addColumn('nama', fn($row) => $row->user->name ?? '-')
+            ->addColumn('sekolah', fn($row) => $row->user->sekolah->nama ?? '-')
+            ->addColumn('status_badge', fn($row) => $this->renderStatusBadge($row))
+            ->addColumn('bukti_foto', function ($row) {
+                if ($row->bukti_foto && $row->bukti_foto !== 'default.jpg') {
+                    $url = asset('storage/' . $row->bukti_foto);
+                    return '<a href="' . $url . '" target="_blank"><img src="' . $url . '" width="60" class="rounded"></a>';
+                }
+                return '-';
+            })
+            ->rawColumns(['status_badge', 'bukti_foto'])
+            ->make(true);
+    }
+
+    /**
+     * DataTables: Semua Presensi (SUMMARY per hari - gabungan pagi+sore)
+     */
+    /**
+     * DataTables: Semua Presensi (SUMMARY per hari - gabungan pagi+sore)
+     */
+    public function dataSemua()
+    {
+        try {
+            // Debug: Log request
+            \Log::info('dataSemua called', [
+                'user_id' => Auth::id(),
+                'group_id' => Auth::user()->group_id
+            ]);
+
+            // Ambil raw data presensi terlebih dahulu
+            $baseQuery = Presensi::with(['user.sekolah'])
+                ->select([
+                    'user_id',
+                    'tanggal_presensi',
+                    \DB::raw('MIN(created_at) as earliest_created_at'),
+                    \DB::raw('MIN(id) as min_id') // Tambah ini untuk unique identifier
+                ])
+                ->groupBy('user_id', 'tanggal_presensi')
+                ->orderBy('tanggal_presensi', 'desc');
+
+            // Filter jika siswa
+            if (Auth::user()->group_id == 4) {
+                $baseQuery->where('user_id', Auth::id());
+            }
+
+            // Debug: Cek ada data atau tidak
+            $count = $baseQuery->count();
+            \Log::info('Data count:', ['count' => $count]);
+
+            return DataTables::of($baseQuery)
+                ->addIndexColumn()
+                ->addColumn('nama', function ($row) {
+                    return $row->user->name ?? 'Unknown';
+                })
+                ->addColumn('sekolah', function ($row) {
+                    return $row->user->sekolah->nama ?? 'Unknown';
+                })
+                ->addColumn('tanggal', function ($row) {
+                    return \Carbon\Carbon::parse($row->tanggal_presensi)->format('d/m/Y');
+                })
+                ->addColumn('status_badge', function ($row) {
+                    try {
+                        $statusHarian = \App\Helpers\presensihelper::hitungStatusHarian(
+                            $row->user_id,
+                            $row->tanggal_presensi
+                        );
+
+                        $color = \App\Helpers\presensihelper::getStatusColor($statusHarian);
+                        $statusText = ucfirst($statusHarian); // This will display as "Alpa" in UI
+
+                        $badge = '<span class="badge bg-' . $color . '">' . $statusText . '</span>';
+
+                        // Keep this condition as lowercase
+                        if ($statusHarian === 'alpa' && Auth::id() == $row->user_id) {
+                            // Check if there's already a pending request
+                            $pendingRequest = Presensi::where('user_id', $row->user_id)
+                                ->where('tanggal_presensi', $row->tanggal_presensi)
+                                ->where('approval_status', 'pending')
+                                ->exists();
+
+                            if (!$pendingRequest) {
+                                $badge .= '<br><button class="btn btn-sm btn-outline-warning mt-1" 
+                     onclick="requestApprovalForDate(\'' . $row->tanggal_presensi . '\')" 
+                     title="Request perubahan status Alpa">
+                     📝 Request Approval
+                  </button>';
+                            } else {
+                                $badge .= '<br><small class="text-warning">⏳ Menunggu approval</small>';
+                            }
+                        }
+
+                        return $badge;
+                    } catch (\Exception $e) {
+                        \Log::error('Error in status_badge:', ['error' => $e->getMessage()]);
+                        return '<span class="badge bg-secondary">Error</span>';
+                    }
+                })
+
+                ->addColumn('detail_sesi', function ($row) {
+                    try {
+                        // Ambil data pagi dan sore
+                        $pagi = Presensi::where('user_id', $row->user_id)
+                            ->where('tanggal_presensi', $row->tanggal_presensi)
+                            ->where('sesi', 'pagi')
+                            ->first();
+
+                        $sore = Presensi::where('user_id', $row->user_id)
+                            ->where('tanggal_presensi', $row->tanggal_presensi)
+                            ->where('sesi', 'sore')
+                            ->first();
+
+                        $pagiStatus = $pagi ? ($pagi->status ?? 'Unknown') : 'Tidak Presensi';
+                        $soreStatus = $sore ? ($sore->status ?? 'Unknown') : 'Tidak Presensi';
+
+                        $pagiJam = $pagi && $pagi->jam_presensi
+                            ? \Carbon\Carbon::parse($pagi->jam_presensi)->format('H:i')
+                            : '-';
+                        $soreJam = $sore && $sore->jam_presensi
+                            ? \Carbon\Carbon::parse($sore->jam_presensi)->format('H:i')
+                            : '-';
+
+                        return "
+                        <small>
+                            <strong>Pagi:</strong> {$pagiStatus} ({$pagiJam})<br>
+                            <strong>Sore:</strong> {$soreStatus} ({$soreJam})
+                        </small>
+                    ";
+                    } catch (\Exception $e) {
+                        \Log::error('Error in detail_sesi:', ['error' => $e->getMessage()]);
+                        return '<small>Error loading details</small>';
+                    }
+                })
+                ->addColumn('bukti_foto', function ($row) {
+                    try {
+                        // Ambil bukti foto dari salah satu sesi yang ada
+                        $presensi = Presensi::where('user_id', $row->user_id)
+                            ->where('tanggal_presensi', $row->tanggal_presensi)
+                            ->whereNotNull('bukti_foto')
+                            ->where('bukti_foto', '!=', 'default.jpg')
+                            ->where('bukti_foto', '!=', '')
+                            ->first();
+
+                        if ($presensi && $presensi->bukti_foto) {
+                            $url = asset('storage/' . $presensi->bukti_foto);
+                            return '<a href="' . $url . '" target="_blank"><img src="' . $url . '" width="60" class="rounded"></a>';
+                        }
+                        return '-';
+                    } catch (\Exception $e) {
+                        \Log::error('Error in bukti_foto:', ['error' => $e->getMessage()]);
+                        return '-';
+                    }
+                })
+                ->rawColumns(['status_badge', 'bukti_foto', 'detail_sesi'])
+                ->make(true);
+        } catch (\Exception $e) {
+            \Log::error('Error in dataSemua:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Cek status presensi hari ini untuk user login
+     */
     private function getStatusPresensiHariIni($presensiHariIni, $setting)
     {
-        $now = now();
+        $now         = now();
         $currentTime = $now->format('H:i');
 
         $pagiData = $presensiHariIni->where('sesi', 'pagi')->first();
         $soreData = $presensiHariIni->where('sesi', 'sore')->first();
 
         $status = [
-            'can_presensi' => false,
+            'can_presensi'    => false,
             'current_session' => null,
-            'message' => '',
-            'pagi_status' => $pagiData ? $pagiData->status : null,
-            'sore_status' => $soreData ? $soreData->status : null,
-            'pagi_jam' => $pagiData ? $pagiData->jam_presensi : null,
-            'sore_jam' => $soreData ? $soreData->jam_presensi : null,
+            'message'         => '',
+            'pagi_status'     => $pagiData?->status,
+            'sore_status'     => $soreData?->status,
+            'pagi_jam'        => $pagiData?->jam_presensi,
+            'sore_jam'        => $soreData?->jam_presensi,
         ];
 
         if (!$setting) {
@@ -84,25 +243,18 @@ class PresensiController extends Controller
             return $status;
         }
 
-        // Tentukan sesi berdasarkan waktu sekarang
         if ($currentTime >= $setting->pagi_mulai && $currentTime < $setting->sore_mulai) {
             $status['current_session'] = 'pagi';
-
-            if (!$pagiData) {
-                $status['can_presensi'] = true;
-                $status['message'] = 'Silakan lakukan presensi pagi';
-            } else {
-                $status['message'] = "Presensi pagi sudah dilakukan ({$pagiData->status})";
-            }
+            $status['can_presensi'] = !$pagiData;
+            $status['message'] = $pagiData
+                ? "Presensi pagi sudah dilakukan ({$pagiData->status})"
+                : 'Silakan lakukan presensi pagi';
         } elseif ($currentTime >= $setting->sore_mulai && $currentTime <= $setting->sore_selesai) {
             $status['current_session'] = 'sore';
-
-            if (!$soreData) {
-                $status['can_presensi'] = true;
-                $status['message'] = 'Silakan lakukan presensi sore';
-            } else {
-                $status['message'] = "Presensi sore sudah dilakukan ({$soreData->status})";
-            }
+            $status['can_presensi'] = !$soreData;
+            $status['message'] = $soreData
+                ? "Presensi sore sudah dilakukan ({$soreData->status})"
+                : 'Silakan lakukan presensi sore';
         } else {
             $status['message'] = 'Waktu presensi sudah berakhir untuk hari ini';
         }
@@ -111,7 +263,7 @@ class PresensiController extends Controller
     }
 
     /**
-     * Presensi otomatis dengan camera - hanya perlu foto
+     * Presensi otomatis (kamera) – input: base64 image
      */
     public function PresensiCamera(Request $request)
     {
@@ -121,7 +273,6 @@ class PresensiController extends Controller
         ]);
 
         try {
-            // Validasi request
             $request->validate([
                 'image_data' => 'required|string',
                 'keterangan' => 'nullable|string|max:255'
@@ -130,13 +281,13 @@ class PresensiController extends Controller
             Log::error('Validation failed', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Data tidak valid.'
             ], 422);
         }
 
-        $user = Auth::user();
-        $today = now()->toDateString();
-        $now = now();
+        $user    = Auth::user();
+        $today   = now()->toDateString();
+        $now     = now();
         $setting = PresensiSetting::first();
 
         if (!$setting) {
@@ -146,10 +297,7 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        // Tentukan sesi otomatis berdasarkan waktu
         $currentTime = $now->format('H:i');
-        $sesi = null;
-
         if ($currentTime >= $setting->pagi_mulai && $currentTime < $setting->sore_mulai) {
             $sesi = 'pagi';
         } elseif ($currentTime >= $setting->sore_mulai && $currentTime <= $setting->sore_selesai) {
@@ -161,13 +309,12 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        // Cek apakah sudah presensi untuk sesi ini
-        $existingPresensi = Presensi::where('user_id', $user->id)
+        $existing = Presensi::where('user_id', $user->id)
             ->where('tanggal_presensi', $today)
             ->where('sesi', $sesi)
             ->first();
 
-        if ($existingPresensi) {
+        if ($existing) {
             return response()->json([
                 'success' => false,
                 'message' => "Anda sudah melakukan presensi {$sesi} hari ini"
@@ -175,50 +322,38 @@ class PresensiController extends Controller
         }
 
         try {
-            // Process image
             $imageFile = $this->processBase64Image($request->image_data);
-            if (!$imageFile) {
-                throw new \Exception('Failed to process image data');
-            }
+            if (!$imageFile) throw new \Exception('Gagal memproses gambar');
 
-            // Save image
             $fileName = 'camera_' . date('Y-m-d_H-i-s') . '_' . $user->id . '_' . uniqid() . '.jpg';
-            $path = 'uploads/presensi/' . $fileName;
+            $path     = 'uploads/presensi/' . $fileName;
 
             if (!Storage::disk('public')->put($path, $imageFile)) {
-                throw new \Exception('Failed to save image');
+                throw new \Exception('Gagal menyimpan gambar');
             }
 
-            // Tentukan status berdasarkan waktu presensi
             $jamPresensi = $now->format('H:i:s');
-            $status = $this->getStatusByTime($jamPresensi, $sesi, $setting);
-            $statusId = PresensiStatus::where('status', $status)->first()?->id;
+            $status      = $this->getStatusByTime($jamPresensi, $sesi, $setting);
+            $statusId    = PresensiStatus::where('status', $status)->first()?->id;
 
-            // Simpan presensi
             Presensi::create([
-                'user_id' => $user->id,
-                'tanggal_presensi' => $today,
-                'sesi' => $sesi,
-                'jam_presensi' => $jamPresensi,
-                'status' => $status,
+                'user_id'            => $user->id,
+                'tanggal_presensi'   => $today,
+                'sesi'               => $sesi,
+                'jam_presensi'       => $jamPresensi,
+                'status'             => $status,
                 'presensi_status_id' => $statusId,
-                'bukti_foto' => $path,
-                'keterangan' => $request->keterangan ?? "Presensi {$sesi} otomatis",
-            ]);
-
-            Log::info('Auto presensi saved', [
-                'sesi' => $sesi,
-                'jam' => $jamPresensi,
-                'status' => $status
+                'bukti_foto'         => $path,
+                'keterangan'         => $request->keterangan ?? "Presensi {$sesi} otomatis",
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => "Presensi {$sesi} berhasil! Status: {$status}",
-                'data' => [
-                    'sesi' => $sesi,
+                'data'    => [
+                    'sesi'   => $sesi,
                     'status' => $status,
-                    'jam' => $jamPresensi
+                    'jam'    => $jamPresensi
                 ]
             ]);
         } catch (\Exception $e) {
@@ -227,7 +362,6 @@ class PresensiController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // Cleanup file if exists
             if (isset($path) && Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
@@ -238,27 +372,25 @@ class PresensiController extends Controller
             ], 500);
         }
     }
-
     /**
-     * Submit izin/sakit (manual input)
+     * Submit Izin/Sakit
      */
     public function submitIzinSakit(Request $request)
     {
         $request->validate([
-            'jenis' => 'required|in:Izin,Sakit',
-            'keterangan' => 'required|string|min:10|max:255',
-            'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'jenis'       => 'required|in:Izin,Sakit',
+            'keterangan'  => 'required|string|min:10|max:255',
+            'bukti_foto'  => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $user = Auth::user();
+        $user  = Auth::user();
         $today = now()->toDateString();
 
-        // Cek apakah sudah ada presensi hari ini
-        $existingPresensi = Presensi::where('user_id', $user->id)
+        $exists = Presensi::where('user_id', $user->id)
             ->where('tanggal_presensi', $today)
             ->exists();
 
-        if ($existingPresensi) {
+        if ($exists) {
             return back()->with('error', 'Anda sudah melakukan presensi hari ini');
         }
 
@@ -268,20 +400,19 @@ class PresensiController extends Controller
                 $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
             }
 
-            $jenis = $request->jenis;
+            $jenis    = $request->jenis;
             $statusId = PresensiStatus::where('status', $jenis)->first()?->id;
 
-            // Buat presensi untuk kedua sesi
             foreach (['pagi', 'sore'] as $sesi) {
                 Presensi::create([
-                    'user_id' => $user->id,
-                    'tanggal_presensi' => $today,
-                    'sesi' => $sesi,
-                    'status' => $jenis,
+                    'user_id'            => $user->id,
+                    'tanggal_presensi'   => $today,
+                    'sesi'               => $sesi,
+                    'status'             => $jenis,
                     'presensi_status_id' => $statusId,
-                    'bukti_foto' => $buktiPath,
-                    'keterangan' => $request->keterangan,
-                    'jam_presensi' => null,
+                    'bukti_foto'         => $buktiPath,
+                    'keterangan'         => $request->keterangan,
+                    'jam_presensi'       => null,
                 ]);
             }
 
@@ -292,85 +423,74 @@ class PresensiController extends Controller
         }
     }
 
-    /**
-     * Request edit alpa ke izin/sakit
-     */
-    public function requestEditAlpa(Request $request)
+    public function requestApprovalDate(Request $request)
     {
         $request->validate([
-            'presensi_id' => 'required|exists:presensi,id',
-            'new_status' => 'required|in:Izin,Sakit',
-            'keterangan' => 'required|string|min:10|max:500',
+            'tanggal_presensi' => 'required|date',
+            'requested_status' => 'required|in:Izin,Sakit',
+            'keterangan' => 'required|string|min:20',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $presensi = Presensi::findOrFail($request->presensi_id);
+        $userId = Auth::id();
+        $tanggal = $request->tanggal_presensi;
 
-        // Validasi: hanya bisa edit presensi sendiri
-        if ($presensi->user_id !== Auth::id()) {
-            return back()->with('error', 'Anda tidak dapat mengedit presensi orang lain');
+        // Cek apakah ada presensi Alpa di tanggal tersebut
+        $alpaExists = Presensi::where('user_id', $userId)
+            ->where('tanggal_presensi', $tanggal)
+            ->where('status', 'Alpa')
+            ->exists();
+
+        if (!$alpaExists) {
+            return back()->with('error', 'Tidak ada status Alpa pada tanggal tersebut');
         }
 
-        // Validasi: hanya bisa edit jika status Alpa
-        if ($presensi->status !== 'Alpa') {
-            return back()->with('error', 'Hanya presensi dengan status Alpa yang dapat diubah');
+        // Cek apakah sudah ada request pending
+        $pendingExists = Presensi::where('user_id', $userId)
+            ->where('tanggal_presensi', $tanggal)
+            ->where('approval_status', 'pending')
+            ->exists();
+
+        if ($pendingExists) {
+            return back()->with('error', 'Anda sudah memiliki permintaan approval untuk tanggal ini');
         }
 
         try {
-            $buktiPath = $presensi->bukti_foto;
+            // Handle upload bukti foto
+            $buktiPath = null;
             if ($request->hasFile('bukti_foto')) {
-                // Hapus foto lama jika ada
-                if ($buktiPath && Storage::disk('public')->exists($buktiPath)) {
-                    Storage::disk('public')->delete($buktiPath);
-                }
-                $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+                $buktiPath = $request->file('bukti_foto')->store('uploads/presensi/approval', 'public');
             }
 
-            // Update presensi dengan status pending approval
-            $presensi->update([
-                'status' => $request->new_status . ' (Menunggu Persetujuan)',
-                'keterangan' => $request->keterangan,
-                'bukti_foto' => $buktiPath,
-                'approval_status' => 'pending', // field baru yang perlu ditambah
-                'requested_status' => $request->new_status,
-                'approval_notes' => null,
-                'approved_by' => null,
-                'approved_at' => null
-            ]);
-
-            // Update presensi sesi lainnya juga (pagi/sore)
-            Presensi::where('user_id', $presensi->user_id)
-                ->where('tanggal_presensi', $presensi->tanggal_presensi)
-                ->where('id', '!=', $presensi->id)
+            // Update semua presensi Alpa di tanggal tersebut
+            Presensi::where('user_id', $userId)
+                ->where('tanggal_presensi', $tanggal)
                 ->where('status', 'Alpa')
                 ->update([
-                    'status' => $request->new_status . ' (Menunggu Persetujuan)',
+                    'requested_status' => $request->requested_status,
                     'keterangan' => $request->keterangan,
                     'bukti_foto' => $buktiPath,
-                    'approval_status' => 'pending',
-                    'requested_status' => $request->new_status,
+                    'approval_status' => 'pending'
                 ]);
 
-            return back()->with('success', 'Permintaan perubahan status berhasil diajukan. Menunggu persetujuan admin.');
+            return back()->with('success', 'Permintaan perubahan status berhasil dikirim. Menunggu approval admin.');
         } catch (\Exception $e) {
-            Log::error('Request edit alpa error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal mengajukan perubahan. Silakan coba lagi.');
+            \Log::error('Request approval error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengirim permintaan. Silakan coba lagi.');
         }
     }
-
     /**
-     * Admin approve/reject edit request
+     * Admin approve/reject permintaan perubahan
      */
     public function processApproval(Request $request, $presensiId)
     {
-        // Hanya admin yang bisa approve
         if (Auth::user()->group_id !== 2) {
             return back()->with('error', 'Anda tidak memiliki akses untuk melakukan approval');
         }
 
         $request->validate([
             'action' => 'required|in:approve,reject',
-            'notes' => 'nullable|string|max:255'
+            'notes'  => 'nullable|string|max:255'
         ]);
 
         $presensi = Presensi::findOrFail($presensiId);
@@ -381,58 +501,54 @@ class PresensiController extends Controller
 
         try {
             if ($request->action === 'approve') {
-                // Approve: ubah status ke yang diminta
                 $newStatus = $presensi->requested_status;
-                $statusId = PresensiStatus::where('status', $newStatus)->first()?->id;
+                $statusId  = PresensiStatus::where('status', $newStatus)->first()?->id;
 
                 $presensi->update([
-                    'status' => $newStatus,
+                    'status'             => $newStatus,
                     'presensi_status_id' => $statusId,
-                    'approval_status' => 'approved',
-                    'approval_notes' => $request->notes,
-                    'approved_by' => Auth::id(),
-                    'approved_at' => now()
+                    'approval_status'    => 'approved',
+                    'approval_notes'     => $request->notes,
+                    'approved_by'        => Auth::id(),
+                    'approved_at'        => now()
                 ]);
 
-                // Update sesi lainnya juga
                 Presensi::where('user_id', $presensi->user_id)
                     ->where('tanggal_presensi', $presensi->tanggal_presensi)
                     ->where('approval_status', 'pending')
                     ->where('requested_status', $newStatus)
                     ->update([
-                        'status' => $newStatus,
+                        'status'             => $newStatus,
                         'presensi_status_id' => $statusId,
-                        'approval_status' => 'approved',
-                        'approval_notes' => $request->notes,
-                        'approved_by' => Auth::id(),
-                        'approved_at' => now()
+                        'approval_status'    => 'approved',
+                        'approval_notes'     => $request->notes,
+                        'approved_by'        => Auth::id(),
+                        'approved_at'        => now()
                     ]);
 
-                $message = 'Permintaan perubahan status berhasil disetujui';
+                $message = 'Permintaan perubahan status disetujui';
             } else {
-                // Reject: kembalikan ke status Alpa
                 $alpaStatusId = PresensiStatus::where('status', 'Alpa')->first()?->id;
 
                 $presensi->update([
-                    'status' => 'Alpa',
+                    'status'             => 'Alpa',
                     'presensi_status_id' => $alpaStatusId,
-                    'approval_status' => 'rejected',
-                    'approval_notes' => $request->notes,
-                    'approved_by' => Auth::id(),
-                    'approved_at' => now()
+                    'approval_status'    => 'rejected',
+                    'approval_notes'     => $request->notes,
+                    'approved_by'        => Auth::id(),
+                    'approved_at'        => now()
                 ]);
 
-                // Update sesi lainnya juga
                 Presensi::where('user_id', $presensi->user_id)
                     ->where('tanggal_presensi', $presensi->tanggal_presensi)
                     ->where('approval_status', 'pending')
                     ->update([
-                        'status' => 'Alpa',
+                        'status'             => 'Alpa',
                         'presensi_status_id' => $alpaStatusId,
-                        'approval_status' => 'rejected',
-                        'approval_notes' => $request->notes,
-                        'approved_by' => Auth::id(),
-                        'approved_at' => now()
+                        'approval_status'    => 'rejected',
+                        'approval_notes'     => $request->notes,
+                        'approved_by'        => Auth::id(),
+                        'approved_at'        => now()
                     ]);
 
                 $message = 'Permintaan perubahan status ditolak';
@@ -445,41 +561,192 @@ class PresensiController extends Controller
         }
     }
 
-    // Existing methods remain the same...
+    /**
+     * Generate otomatis status Alpa untuk siswa yang belum presensi
+     */
+    public function generateAlpa()
+    {
+        if (Auth::user()->group_id !== 2) {
+            return back()->with('error', 'Hanya admin yang dapat generate presensi alpa.');
+        }
+
+        $today   = now()->toDateString();
+        $students = User::where('group_id', 4)->pluck('id'); // siswa = group_id 4 (sesuai kode kamu)
+        $presentStudents = Presensi::where('tanggal_presensi', $today)
+            ->pluck('user_id')
+            ->unique();
+
+        $absentStudents = $students->diff($presentStudents);
+
+        if ($absentStudents->isEmpty()) {
+            return back()->with('info', 'Semua siswa sudah melakukan presensi hari ini.');
+        }
+
+        $alpaStatusId = PresensiStatus::where('status', 'Alpa')->first()?->id;
+        $count = 0;
+
+        foreach ($absentStudents as $userId) {
+            foreach (['pagi', 'sore'] as $sesi) {
+                Presensi::create([
+                    'user_id'            => $userId,
+                    'tanggal_presensi'   => $today,
+                    'sesi'               => $sesi,
+                    'status'             => 'Alpa',
+                    'presensi_status_id' => $alpaStatusId,
+                    'jam_presensi'       => null,
+                    'keterangan'         => 'Generated automatically',
+                ]);
+                $count++;
+            }
+        }
+
+        return back()->with('success', "Berhasil generate {$count} presensi alpa untuk " . $absentStudents->count() . " siswa.");
+    }
+
+    public function approvalData()
+    {
+        if (Auth::user()->group_id !== 2) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $data = Presensi::with(['user.sekolah'])
+            ->where('approval_status', 'pending')
+            ->orderBy('updated_at', 'desc');
+
+        return DataTables::of($data)
+            ->addColumn('tanggal', function ($row) {
+                return Carbon::parse($row->tanggal_presensi)->format('d/m/Y');
+            })
+            ->addColumn('nama', function ($row) {
+                return '<strong>' . ($row->user->name ?? '-') . '</strong><br>' .
+                    '<small class="text-muted">' . ($row->user->email ?? '-') . '</small>';
+            })
+            ->addColumn('sekolah', function ($row) {
+                return $row->user->sekolah->nama ?? '-';
+            })
+            ->addColumn('sesi', function ($row) {
+                $color = $row->sesi === 'pagi' ? 'info' : 'warning';
+                return '<span class="badge bg-' . $color . '">' . ucfirst($row->sesi) . '</span>';
+            })
+            ->addColumn('status_awal', function ($row) {
+                return '<span class="badge bg-danger">Alpa</span>';
+            })
+            ->addColumn('requested_status', function ($row) {
+                $color = $row->requested_status === 'Izin' ? 'info' : 'secondary';
+                return '<span class="badge bg-' . $color . '">' . $row->requested_status . '</span>';
+            })
+            ->addColumn('keterangan', function ($row) {
+                $keterangan = $row->keterangan ?? '-';
+                if (strlen($keterangan) > 50) {
+                    return '<div class="text-truncate" style="max-width: 200px;" title="' . $keterangan . '">' .
+                        substr($keterangan, 0, 50) . '...</div>';
+                }
+                return $keterangan;
+            })
+            ->addColumn('bukti_foto', function ($row) {
+                if ($row->bukti_foto && $row->bukti_foto !== 'default.jpg') {
+                    $url = asset('storage/' . $row->bukti_foto);
+                    return '<button class="btn btn-sm btn-outline-primary" onclick="showImage(\'' . $url . '\')">' .
+                        '<i class="fas fa-eye"></i> Lihat</button>';
+                }
+                return '<span class="text-muted">-</span>';
+            })
+            ->addColumn('waktu_request', function ($row) {
+                return '<small>' . $row->updated_at->format('d/m/Y H:i') . '</small>';
+            })
+            ->addColumn('aksi', function ($row) {
+                return '
+                <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-success" onclick="processApproval(' . $row->id . ', \'approve\')" title="Setujui">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="processApproval(' . $row->id . ', \'reject\')" title="Tolak">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="showApprovalModal(' . $row->id . ', \'' .
+                    addslashes($row->user->name ?? '') . '\', \'' . ($row->requested_status ?? '') . '\')" title="Detail">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            ';
+            })
+            ->rawColumns(['nama', 'sesi', 'status_awal', 'requested_status', 'keterangan', 'bukti_foto', 'waktu_request', 'aksi'])
+            ->make(true);
+    }
+
+    /**
+     * DataTables: Data Approval History
+     */
+    public function approvalHistory()
+    {
+        if (Auth::user()->group_id !== 2) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $data = Presensi::with(['user', 'approvedBy'])
+            ->whereIn('approval_status', ['approved', 'rejected'])
+            ->where('approved_at', '>=', now()->subDays(7))
+            ->orderBy('approved_at', 'desc');
+
+        return DataTables::of($data)
+            ->addColumn('tanggal', function ($row) {
+                return Carbon::parse($row->tanggal_presensi)->format('d/m/Y');
+            })
+            ->addColumn('nama', function ($row) {
+                return $row->user->name ?? '-';
+            })
+            ->addColumn('requested_status', function ($row) {
+                $color = $row->requested_status === 'Izin' ? 'info' : 'secondary';
+                return '<span class="badge bg-' . $color . '">' . ($row->requested_status ?? '-') . '</span>';
+            })
+            ->addColumn('approval_status', function ($row) {
+                $color = $row->approval_status === 'approved' ? 'success' : 'danger';
+                $text = $row->approval_status === 'approved' ? 'Disetujui' : 'Ditolak';
+                return '<span class="badge bg-' . $color . '">' . $text . '</span>';
+            })
+            ->addColumn('approval_notes', function ($row) {
+                return $row->approval_notes ?? '-';
+            })
+            ->addColumn('approved_by', function ($row) {
+                return $row->approvedBy->name ?? '-';
+            })
+            ->addColumn('approved_at', function ($row) {
+                return $row->approved_at ? '<small>' . Carbon::parse($row->approved_at)->format('d/m/Y H:i') . '</small>' : '-';
+            })
+            ->rawColumns(['requested_status', 'approval_status', 'approved_at'])
+            ->make(true);
+    }
+
+    /* ===================== Helpers ===================== */
 
     private function processBase64Image(string $imageData): ?string
     {
         try {
             Log::info('Processing base64 image', [
-                'data_length' => strlen($imageData),
-                'starts_with_data' => str_starts_with($imageData, 'data:')
+                'data_length'       => strlen($imageData),
+                'starts_with_data'  => str_starts_with($imageData, 'data:')
             ]);
 
-            // Handle data URL format
             if (str_starts_with($imageData, 'data:')) {
                 if (!str_contains($imageData, ',')) {
                     throw new \Exception('Invalid data URL format');
                 }
-                $parts = explode(',', $imageData, 2);
+                $parts     = explode(',', $imageData, 2);
                 $imageData = $parts[1];
             }
 
-            // Clean and validate base64
             $imageData = preg_replace('/[^A-Za-z0-9+\/=]/', '', $imageData);
 
-            // Add padding if needed
             $remainder = strlen($imageData) % 4;
             if ($remainder) {
                 $imageData .= str_repeat('=', 4 - $remainder);
             }
 
-            // Decode base64
             $imageFile = base64_decode($imageData, true);
             if ($imageFile === false) {
                 throw new \Exception('Invalid base64 data');
             }
 
-            // Validate image
             if (!$this->isValidImageData($imageFile)) {
                 throw new \Exception('Invalid image format');
             }
@@ -496,16 +763,14 @@ class PresensiController extends Controller
         if (strlen($data) < 10) return false;
 
         $signatures = [
-            'JPEG' => "\xFF\xD8\xFF",
-            'PNG' => "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A",
+            'JPEG'   => "\xFF\xD8\xFF",
+            'PNG'    => "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A",
             'GIF87a' => "GIF87a",
             'GIF89a' => "GIF89a",
         ];
 
         foreach ($signatures as $signature) {
-            if (str_starts_with($data, $signature)) {
-                return true;
-            }
+            if (str_starts_with($data, $signature)) return true;
         }
 
         return false;
@@ -523,9 +788,9 @@ class PresensiController extends Controller
         $toleransi = $setting->toleransi_telat ?? 15;
 
         try {
-            $waktuPresensi = Carbon::createFromFormat('H:i:s', $jamPresensi);
-            $waktuMulaiCarbon = Carbon::createFromFormat('H:i:s', $waktuMulai);
-            $waktuBatasCarbon = Carbon::createFromFormat('H:i:s', $batasWaktu);
+            $waktuPresensi       = Carbon::createFromFormat('H:i:s', $jamPresensi);
+            $waktuMulaiCarbon    = Carbon::createFromFormat('H:i:s', $waktuMulai);
+            $waktuBatasCarbon    = Carbon::createFromFormat('H:i:s', $batasWaktu);
             $waktuBatasToleransi = Carbon::createFromFormat('H:i:s', $batasWaktu)->addMinutes($toleransi);
 
             if ($waktuPresensi->lt($waktuMulaiCarbon)) {
@@ -551,69 +816,29 @@ class PresensiController extends Controller
         }
     }
 
-    // Keep existing methods for other functionalities...
-    public function generateAlpa()
+    private function renderStatusBadge($row): string
     {
-        if (Auth::user()->group_id !== 2) {
-            return back()->with('error', 'Hanya admin yang dapat generate presensi alpa.');
+        // Prioritaskan status approval jika pending
+        if ($row->approval_status === 'pending') {
+            $txt   = ($row->requested_status ?? 'Perubahan') . ' (Menunggu)';
+            $class = 'warning';
+            return '<span class="badge bg-' . $class . '">' . $txt . '</span>';
         }
 
-        $today = now()->toDateString();
-        $students = User::where('group_id', 4)->pluck('id');
-        $presentStudents = Presensi::where('tanggal_presensi', $today)
-            ->pluck('user_id')
-            ->unique();
+        // Ambil status dari relasi presensiStatus terlebih dahulu
+        $status = $row->presensiStatus?->status ?? $row->status ?? '-';
 
-        $absentStudents = $students->diff($presentStudents);
+        $map = [
+            'Tepat Waktu'     => 'success',
+            'Terlambat'       => 'warning',
+            'Sangat Terlambat' => 'danger',
+            'Terlalu Awal'    => 'secondary',
+            'Izin'            => 'info',
+            'Sakit'           => 'secondary',
+            'Alpa'            => 'danger',
+        ];
 
-        if ($absentStudents->isEmpty()) {
-            return back()->with('info', 'Semua siswa sudah melakukan presensi hari ini.');
-        }
-
-        $alpaStatusId = PresensiStatus::where('status', 'Alpa')->first()?->id;
-        $count = 0;
-
-        foreach ($absentStudents as $userId) {
-            foreach (['pagi', 'sore'] as $sesi) {
-                Presensi::create([
-                    'user_id' => $userId,
-                    'tanggal_presensi' => $today,
-                    'sesi' => $sesi,
-                    'status' => 'Alpa',
-                    'presensi_status_id' => $alpaStatusId,
-                    'jam_presensi' => null,
-                    'keterangan' => 'Generated automatically',
-                ]);
-                $count++;
-            }
-        }
-
-        return back()->with('success', "Berhasil generate {$count} presensi alpa untuk " . $absentStudents->count() . " siswa.");
+        $class = $map[$status] ?? 'secondary';
+        return '<span class="badge bg-' . $class . '">' . $status . '</span>';
     }
-
-    /**
-     * Admin view untuk approval requests
-     */
-    public function approvalIndex()
-    {
-        // Hanya admin yang bisa akses
-        if (Auth::user()->group_id !== 2) {
-            return redirect()->route('presensi.index')->with('error', 'Akses ditolak');
-        }
-
-        $pendingApprovals = Presensi::with(['user.sekolah'])
-            ->pendingApproval()
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
-        $approvalHistory = Presensi::with(['user', 'approvedBy'])
-            ->whereIn('approval_status', ['approved', 'rejected'])
-            ->where('approved_at', '>=', now()->subDays(7))
-            ->orderBy('approved_at', 'desc')
-            ->get();
-
-        return view('administrator.presensi.approval', compact('pendingApprovals', 'approvalHistory'));
-    }
-
-    // Other existing methods...
 }
