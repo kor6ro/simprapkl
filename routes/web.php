@@ -135,7 +135,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::post('/fetch', 'fetch')->name('fetch');
         });
 
-        // School Management - FIXED
+        // School Management
         Route::controller(SekolahController::class)->prefix('sekolah')->name('sekolah.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
@@ -146,7 +146,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::post('/fetch', 'fetch')->name('fetch');
         });
 
-        // Task Breakdown Management - FIXED Controller Name
+        // Task Breakdown Management
         Route::controller(TaskBreakdownController::class)->prefix('task-breakdown')->name('task_breakdown.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
@@ -195,16 +195,26 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{colectData}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
-
-        // ===== ADMIN SETTING TUGAS (View Gabungan) =====
-        Route::get('setting-tugas', [SettingTugasController::class, 'index'])->name('setting_tugas.index');
-
-        Route::post('setting-tugas/swap-divisi', [SettingTugasController::class, 'swapDivisi'])->name('setting_tugas.swapDivisi');
-        Route::post('setting-tugas/set-divisi', [SettingTugasController::class, 'setDivisi'])
-            ->name('setting_tugas.setDivisi');
-
-        // Setting Tugas
-        Route::post('setting-tugas', [SettingTugasController::class, 'store'])->name('setting_tugas.store');
-        Route::delete('setting-tugas/{id}', [SettingTugasController::class, 'destroy'])->name('setting_tugas.destroy');
+        // Setting Tugas 
+Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
+    // Main route
+    Route::get('/', 'index')->name('index');
+    
+    // Individual team operations
+    Route::post('/', 'store')->name('store');
+    
+    // PERBAIKAN: Bulk operations HARUS di atas route /{id}
+    Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
+    Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
+    Route::post('/destroy-all', 'destroyAll')->name('destroyAll'); // UBAH ke POST
+    
+    // Utility routes (harus di atas route /{id})
+    Route::post('/swap-divisi', 'swapDivisi')->name('swapDivisi');
+    Route::get('/statistics', 'getStatistics')->name('statistics');
+    Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
+    
+    // Route dengan parameter ID HARUS di bawah semua route spesifik
+    Route::delete('/{id}', 'destroy')->name('destroy');
+});
     });
 });
