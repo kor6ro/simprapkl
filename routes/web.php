@@ -72,6 +72,8 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::post('/sakit', [PresensiController::class, 'sakit'])->name('sakit');
         Route::get('/rekap', [PresensiController::class, 'rekap'])->name('rekap');
 
+
+
         // Camera presensi routes
         Route::post('/camera', [PresensiController::class, 'PresensiCamera'])->name('camera');
 
@@ -82,6 +84,30 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         // DataTables endpoints
         Route::get('/data/hari-ini', [PresensiController::class, 'dataHariIni'])->name('data.hari_ini');
         Route::get('/data/semua', [PresensiController::class, 'dataSemua'])->name('data.semua');
+        // New unified routes
+        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])->name('data.unified');
+        Route::get('/stats', [PresensiController::class, 'getStats'])->name('stats');
+        Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])->name('sekolah.list');
+
+        // Export routes
+        Route::post('/export/excel', [PresensiController::class, 'exportExcel'])
+            ->name('export.excel');
+
+
+        Route::get('/export/pdf', [PresensiController::class, 'exportPDF'])
+            ->name('export.pdf');
+
+        // Data routes untuk DataTables
+        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])
+            ->name('data.unified');
+
+        Route::get('/stats', [PresensiController::class, 'getStats'])
+            ->name('stats');
+
+        Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])
+            ->name('sekolah.list');
+
+
 
         // Approval routes  
         Route::get('/approval/data', [PresensiController::class, 'approvalData'])->name('approval.data');
@@ -194,25 +220,25 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::post('/fetch', 'fetch')->name('fetch');
         });
         // Setting Tugas 
-Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
-    // Main route
-    Route::get('/', 'index')->name('index');
-    
-    // Individual team operations
-    Route::post('/', 'store')->name('store');
-    
-    // PERBAIKAN: Bulk operations HARUS di atas route /{id}
-    Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
-    Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
-    Route::post('/destroy-all', 'destroyAll')->name('destroyAll'); // UBAH ke POST
-    
-    // Utility routes (harus di atas route /{id})
-    Route::post('/swap-divisi', 'swapDivisi')->name('swapDivisi');
-    Route::get('/statistics', 'getStatistics')->name('statistics');
-    Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
-    
-    // Route dengan parameter ID HARUS di bawah semua route spesifik
-    Route::delete('/{id}', 'destroy')->name('destroy');
-});
+        Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
+            // Main route
+            Route::get('/', 'index')->name('index');
+
+            // Individual team operations
+            Route::post('/', 'store')->name('store');
+
+            // PERBAIKAN: Bulk operations HARUS di atas route /{id}
+            Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
+            Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
+            Route::post('/destroy-all', 'destroyAll')->name('destroyAll'); // UBAH ke POST
+
+            // Utility routes (harus di atas route /{id})
+            Route::post('/swap-divisi', 'swapDivisi')->name('swapDivisi');
+            Route::get('/statistics', 'getStatistics')->name('statistics');
+            Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
+
+            // Route dengan parameter ID HARUS di bawah semua route spesifik
+            Route::delete('/{id}', 'destroy')->name('destroy');
+        });
     });
 });
