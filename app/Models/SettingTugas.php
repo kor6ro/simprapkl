@@ -12,30 +12,30 @@ class SettingTugas extends Model
     protected $table = 'setting_tugas';
     
     protected $fillable = [
+        // 'nama_tim', // <-- HAPUS BARIS INI
         'ketua_id',
         'divisi', 
         'tanggal',
         'deskripsi'
     ];
 
+    // ... sisa kode model biarkan sama ...
     protected $casts = [
         'tanggal' => 'date'
     ];
 
-    // Relationship dengan User (Ketua)
     public function ketua()
     {
         return $this->belongsTo(User::class, 'ketua_id');
     }
 
-    // Relationship Many-to-Many dengan User (Anggota)
     public function anggota()
     {
         return $this->belongsToMany(
             User::class,
-            'setting_tugas_anggota', // nama tabel pivot
-            'setting_tugas_id',      // foreign key untuk setting_tugas
-            'user_id'                // foreign key untuk user
+            'setting_tugas_anggota',
+            'setting_tugas_id',
+            'user_id'
         )->withTimestamps();
     }
 }

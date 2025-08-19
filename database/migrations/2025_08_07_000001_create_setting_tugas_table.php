@@ -6,21 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('setting_tugas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ketua_id');
             $table->enum('divisi', ['teknisi', 'sales']);
-            $table->text('deskripsi')->nullable(); // buat nullable jika mau keep
+            $table->text('deskripsi')->nullable();
             $table->date('tanggal');
             $table->timestamps();
             
             $table->foreign('ketua_id')->references('id')->on('user')->onDelete('cascade');
-            $table->unique(['ketua_id', 'tanggal']);
+            
+            // Aturan unik sudah kita hapus, jadi biarkan seperti ini
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('setting_tugas');
