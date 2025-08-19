@@ -98,6 +98,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         // Additional operations
         Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
     });
+    
     // ===== TUGAS HARIAN ROUTES =====
     Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
         Route::get('/', [TugasHarianController::class, 'index'])->name('index');
@@ -193,26 +194,31 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{colectData}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
-        // Setting Tugas 
+// Setting Tugas - FIXED ROUTES
 Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
-    // Main route
+    // Main routes
     Route::get('/', 'index')->name('index');
+    Route::get('/create', 'create')->name('create');
     
-    // Individual team operations
-    Route::post('/', 'store')->name('store');
+    // DataTables route untuk server-side processing  
+    Route::get('/data', 'data')->name('data');
     
-    // PERBAIKAN: Bulk operations HARUS di atas route /{id}
-    Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
-    Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
-    Route::post('/destroy-all', 'destroyAll')->name('destroyAll'); // UBAH ke POST
-    
-    // Utility routes (harus di atas route /{id})
-    Route::post('/swap-divisi', 'swapDivisi')->name('swapDivisi');
+    // Utility routes HARUS di atas parameter routes untuk menghindari konflik
+    Route::get('/available-users', 'getAvailableUsers')->name('getAvailableUsers');
     Route::get('/statistics', 'getStatistics')->name('statistics');
     Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
     
-    // Route dengan parameter ID HARUS di bawah semua route spesifik
-    Route::delete('/{id}', 'destroy')->name('destroy');
+    // Bulk operations HARUS di atas route /{id}
+    Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
+    Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
+    Route::post('/destroy-all', 'destroyAll')->name('destroyAll');
+    
+    // CRUD operations - parameter routes di paling bawah
+    Route::post('/', 'store')->name('store');
+    Route::get('/get/{id}', 'getTeam')->name('getTeam');              // Specific route
+    Route::get('/{id}/edit', 'edit')->name('edit');                   // Edit form route
+    Route::put('/{id}', 'update')->name('update');                    // Update route
+    Route::delete('/{id}', 'destroy')->name('destroy');               // Delete route
 });
     });
 });
