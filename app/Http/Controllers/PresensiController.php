@@ -293,38 +293,63 @@ class PresensiController extends Controller
         return response()->json(Sekolah::select('id', 'nama')->orderBy('nama')->get());
     }
 
-
     private function getRekapAbsensiSiswa($monthString, Request $request)
     {
         $startDate = Carbon::createFromFormat('Y-m', $monthString)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
         $totalHariKerja = $startDate->diffInWeekdays($endDate);
 
-        $query = Presensi::query()->join('user', 'presensi.user_id', '=', 'user.id')->where('user.group_id', 4)->whereBetween('tanggal_presensi', [$startDate, $endDate]);
-        if ($request->filled('filter_sekolah')) $query->where('user.sekolah_id', $request->filter_sekolah);
-        $presensiBulanan = $query->select('user_id', 'tanggal_presensi', 'status', 'user.name as user_name')->get();
+        // Menggunakan whereHas yang lebih aman dan sesuai dengan Eloquent
+        $presensiBulanan = Presensi::with('user') // Eager load relasi user
+            ->whereBetween('tanggal_presensi', [$startDate, $endDate])
+            ->whereHas('user', function ($query) use ($request) {
+                $query->where('group_id', 4);
+
+                if ($request->filled('filter_sekolah')) {
+                    $query->where('sekolah_id', $request->filter_sekolah);
+                }
+            })
+            ->get();
 
         $allSiswaQuery = User::where('group_id', 4);
-        if ($request->filled('filter_sekolah')) $allSiswaQuery->where('sekolah_id', $request->filter_sekolah);
+        if ($request->filled('filter_sekolah')) {
+            $allSiswaQuery->where('sekolah_id', $request->filter_sekolah);
+        }
         $allSiswa = $allSiswaQuery->pluck('name', 'id');
 
-        $rekap = $presensiBulanan->groupBy('user_id')->map(function ($presensiUser) use ($totalHariKerja) {
-            $harian = $presensiUser->groupBy('tanggal_presensi')->map(fn($h) => PresensiHelper::hitungStatusHarianFromCollection($h));
-            $summary = $harian->countBy();
-            $hadir = ($summary['hadir'] ?? 0) + ($summary['telat'] ?? 0);
-            $sakit = $summary['sakit'] ?? 0;
-            $izin = $summary['izin'] ?? 0;
-            return ['nama' => $presensiUser->first()->user_name, 'hadir' => $hadir, 'sakit' => $sakit, 'izin' => $izin, 'tidak_hadir' => max(0, $totalHariKerja - ($hadir + $sakit + $izin))];
-        });
+        $rekap = $presensiBulanan
+            ->groupBy('user_id')
+            ->map(function ($presensiUser) use ($totalHariKerja) {
+                $harian = $presensiUser->groupBy('tanggal_presensi')
+                    ->map(fn($h) => PresensiHelper::hitungStatusHarianFromCollection($h));
+
+                $summary = $harian->countBy();
+
+                $hadir = ($summary['hadir'] ?? 0) + ($summary['telat'] ?? 0);
+                $sakit = $summary['sakit'] ?? 0;
+                $izin = $summary['izin'] ?? 0;
+
+                return [
+                    'nama' => $presensiUser->first()->user->name,
+                    'hadir' => $hadir,
+                    'sakit' => $sakit,
+                    'izin'  => $izin,
+                    'tidak_hadir'  => max(0, $totalHariKerja - ($hadir + $sakit + $izin)),
+                ];
+            });
 
         $siswaTanpaPresensi = $allSiswa->diffKeys($rekap);
         foreach ($siswaTanpaPresensi as $id => $name) {
-            $rekap[$id] = ['nama' => $name, 'hadir' => 0, 'sakit' => 0, 'izin' => 0, 'tidak_hadir' => $totalHariKerja];
+            $rekap[$id] = [
+                'nama' => $name,
+                'hadir' => 0,
+                'sakit' => 0,
+                'izin' => 0,
+                'tidak_hadir' => $totalHariKerja
+            ];
         }
-
         return $rekap->sortBy('nama')->values()->toArray();
     }
-
     /**
      * Menerapkan filter dari request ke query builder.
      */
@@ -379,21 +404,6 @@ class PresensiController extends Controller
                     ->orWhere('presensi.status', 'like', "%{$search}%");
             });
         }
-    }
-
-    /**
-     * Mengambil filter dari request untuk ekspor.
-     */
-    private function getFiltersFromRequest(Request $request)
-    {
-        $bulan = $request->input('bulan', now()->month);
-        $tahun = $request->input('tahun', now()->year);
-
-        $monthString = sprintf('%04d-%02d', $tahun, $bulan);
-
-        $bulanTeks = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F Y');
-
-        return compact('bulan', 'tahun', 'monthString', 'bulanTeks');
     }
 
     /**
@@ -487,14 +497,24 @@ class PresensiController extends Controller
     public function exportExcel(Request $request)
     {
         try {
-            $filters = $this->getFiltersFromRequest($request);
-            $rekapData = $this->getRekapAbsensiSiswa($filters['month_string'], $request);
+            // --- Logika dari getFiltersFromRequest digabung langsung ke sini ---
+            $bulan = $request->input('bulan', now()->month);
+            $tahun = $request->input('tahun', now()->year);
+
+            // Membuat variabel $monthString dan $bulanTeks secara langsung
+            $monthString = sprintf('%04d-%02d', $tahun, $bulan);
+            $bulanTeks = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F Y');
+            // ----------------------------------------------------------------
+
+            // Menggunakan $monthString yang sudah pasti terdefinisi
+            $rekapData = $this->getRekapAbsensiSiswa($monthString, $request);
 
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
 
+            // Menggunakan $bulanTeks yang sudah pasti terdefinisi
             $sheet->setCellValue('A1', 'REKAP ABSENSI SISWA')->mergeCells('A1:E1');
-            $sheet->setCellValue('A2', strtoupper($filters['bulan_teks']))->mergeCells('A2:E2');
+            $sheet->setCellValue('A2', strtoupper($bulanTeks))->mergeCells('A2:E2');
             $sheet->fromArray(['NAMA SISWA', 'Hadir', 'Sakit', 'Izin', 'TK (Tanpa Keterangan)'], null, 'A4');
 
             $rowData = array_map(fn($siswa) => [$siswa['nama'], $siswa['hadir'], $siswa['sakit'], $siswa['izin'], $siswa['tidak_hadir']], $rekapData);
@@ -507,13 +527,68 @@ class PresensiController extends Controller
             $sheet->getColumnDimension('A')->setWidth(35);
 
             $writer = new Xlsx($spreadsheet);
-            $filename = 'Rekap_Absensi_' . str_replace(' ', '_', $filters['bulan_teks']) . '.xlsx';
+            $filename = 'Rekap_Absensi_' . str_replace(' ', '_', $bulanTeks) . '.xlsx';
 
             return response()->streamDownload(fn() => $writer->save('php://output'), $filename);
         } catch (\Exception $e) {
-            Log::error('Export Excel error: ' . $e->getMessage());
+            // Tampilkan pesan error yang lebih detail saat development
+            Log::error('Export Excel error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
             return back()->with('error', 'Gagal membuat file Excel: ' . $e->getMessage());
         }
+    }
+
+    public function exportPDF(Request $request)
+    {
+        try {
+            $bulan = $request->input('bulan', now()->month);
+            $tahun = $request->input('tahun', now()->year);
+            $monthString = sprintf('%04d-%02d', $tahun, $bulan);
+            $bulanTeks = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F Y');
+
+            $rekapData = $this->getRekapAbsensiSiswa($monthString, $request);
+
+            $totals = [
+                'totalHadir' => array_sum(array_column($rekapData, 'hadir')),
+                'totalSakit' => array_sum(array_column($rekapData, 'sakit')),
+                'totalIzin'  => array_sum(array_column($rekapData, 'izin')),
+                'totalTK'    => array_sum(array_column($rekapData, 'tidak_hadir')),
+            ];
+
+            $pdf = PDF::loadView('administrator.presensi.exports.rekap_pdf', array_merge(
+                ['rekapData' => $rekapData, 'bulanTeks' => $bulanTeks],
+                $totals
+            ));
+
+            $filename = 'Rekap_Absensi_' . str_replace(' ', '_', $bulanTeks) . '.pdf';
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Export PDF error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat file PDF: ' . $e->getMessage());
+        }
+    }
+    public function generateAlpa()
+    {
+        if (!isAdmin()) {
+            return back()->with('error', 'Hanya admin yang bisa menjalankan fitur ini.');
+        }
+        $today = today()->toDateString();
+        $presentStudentIds = Presensi::where('tanggal_presensi', $today)->distinct()->pluck('user_id');
+        $absentStudentIds = User::where('group_id', 4)->whereNotIn('id', $presentStudentIds)->pluck('id');
+        if ($absentStudentIds->isEmpty()) {
+            return back()->with('info', 'Semua siswa sudah melakukan presensi hari ini.');
+        }
+        $alpaStatusId = PresensiStatus::where('status', 'Alpa')->value('id');
+        $dataToInsert = [];
+        $now = now();
+        foreach ($absentStudentIds as $userId) {
+            foreach (['pagi', 'sore'] as $sesi) {
+                $dataToInsert[] = ['user_id' => $userId, 'tanggal_presensi' => $today, 'sesi' => $sesi, 'status' => 'Alpa', 'presensi_status_id' => $alpaStatusId, 'keterangan' => 'Generated by system', 'created_at' => $now, 'updated_at' => $now,];
+            }
+        }
+        if (!empty($dataToInsert)) {
+            Presensi::insert($dataToInsert);
+        }
+        return back()->with('success', "Berhasil generate status Alpa untuk " . $absentStudentIds->count() . " siswa.");
     }
     private function processBase64Image(string $imageData): ?string
     { /* ... (Logika dari file original) ... */
