@@ -61,7 +61,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect(route("user.create"))
+            return redirect(route("admin.user.create"))
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -117,7 +117,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect(route("user.edit", $id))
+            return redirect(route("admin.user.edit", $id))
                 ->withErrors($validator)
                 ->withInput();
         }

@@ -50,8 +50,8 @@
     <canvas id="canvas" style="display: none;"></canvas>
 
     @if (auth()->user()->sekolah && auth()->user()->sekolah->logo)
-        <img id="schoolLogo" class="hidden-logo"
-            src="{{ asset('uploads/sekolah_logo/' . auth()->user()->sekolah->logo) }}" crossorigin="anonymous"
-            alt="Logo Sekolah">
+        <img id="schoolLogo" src="{{ asset('uploads/sekolah_logo/' . auth()->user()->sekolah->logo) }}"
+            crossorigin="anonymous" alt="Logo Sekolah" style="display:none;">
     @endif
+
 </div>

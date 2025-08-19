@@ -72,6 +72,8 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::post('/sakit', [PresensiController::class, 'sakit'])->name('sakit');
         Route::get('/rekap', [PresensiController::class, 'rekap'])->name('rekap');
 
+
+
         // Camera presensi routes
         Route::post('/camera', [PresensiController::class, 'PresensiCamera'])->name('camera');
 
@@ -82,6 +84,30 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         // DataTables endpoints
         Route::get('/data/hari-ini', [PresensiController::class, 'dataHariIni'])->name('data.hari_ini');
         Route::get('/data/semua', [PresensiController::class, 'dataSemua'])->name('data.semua');
+        // New unified routes
+        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])->name('data.unified');
+        Route::get('/stats', [PresensiController::class, 'getStats'])->name('stats');
+        Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])->name('sekolah.list');
+
+        // Export routes
+        Route::post('/export/excel', [PresensiController::class, 'exportExcel'])
+            ->name('export.excel');
+
+
+        Route::get('/export/pdf', [PresensiController::class, 'exportPDF'])
+            ->name('export.pdf');
+
+        // Data routes untuk DataTables
+        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])
+            ->name('data.unified');
+
+        Route::get('/stats', [PresensiController::class, 'getStats'])
+            ->name('stats');
+
+        Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])
+            ->name('sekolah.list');
+
+
 
         // Approval routes  
         Route::get('/approval/data', [PresensiController::class, 'approvalData'])->name('approval.data');
@@ -98,7 +124,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         // Additional operations
         Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
     });
-    
+
     // ===== TUGAS HARIAN ROUTES =====
     Route::prefix('tugas-harian')->name('tugas_harian.')->group(function () {
         Route::get('/', [TugasHarianController::class, 'index'])->name('index');
@@ -194,31 +220,31 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{colectData}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
-// Setting Tugas - FIXED ROUTES
-Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
-    // Main routes
-    Route::get('/', 'index')->name('index');
-    Route::get('/create', 'create')->name('create');
-    
-    // DataTables route untuk server-side processing  
-    Route::get('/data', 'data')->name('data');
-    
-    // Utility routes HARUS di atas parameter routes untuk menghindari konflik
-    Route::get('/available-users', 'getAvailableUsers')->name('getAvailableUsers');
-    Route::get('/statistics', 'getStatistics')->name('statistics');
-    Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
-    
-    // Bulk operations HARUS di atas route /{id}
-    Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
-    Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
-    Route::post('/destroy-all', 'destroyAll')->name('destroyAll');
-    
-    // CRUD operations - parameter routes di paling bawah
-    Route::post('/', 'store')->name('store');
-    Route::get('/get/{id}', 'getTeam')->name('getTeam');              // Specific route
-    Route::get('/{id}/edit', 'edit')->name('edit');                   // Edit form route
-    Route::put('/{id}', 'update')->name('update');                    // Update route
-    Route::delete('/{id}', 'destroy')->name('destroy');               // Delete route
-});
+        // Setting Tugas - FIXED ROUTES
+        Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
+            // Main routes
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+
+            // DataTables route untuk server-side processing  
+            Route::get('/data', 'data')->name('data');
+
+            // Utility routes HARUS di atas parameter routes untuk menghindari konflik
+            Route::get('/available-users', 'getAvailableUsers')->name('getAvailableUsers');
+            Route::get('/statistics', 'getStatistics')->name('statistics');
+            Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
+
+            // Bulk operations HARUS di atas route /{id}
+            Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
+            Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
+            Route::post('/destroy-all', 'destroyAll')->name('destroyAll');
+
+            // CRUD operations - parameter routes di paling bawah
+            Route::post('/', 'store')->name('store');
+            Route::get('/get/{id}', 'getTeam')->name('getTeam');              // Specific route
+            Route::get('/{id}/edit', 'edit')->name('edit');                   // Edit form route
+            Route::put('/{id}', 'update')->name('update');                    // Update route
+            Route::delete('/{id}', 'destroy')->name('destroy');               // Delete route
+        });
     });
 });

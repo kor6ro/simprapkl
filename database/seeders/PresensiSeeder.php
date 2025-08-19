@@ -29,8 +29,8 @@ class PresensiSeeder extends Seeder
             ->pluck('id');
 
         // Range tanggal: mulai 1 Juli 2025 sampai hari ini
-        $startDate = Carbon::create(2025, 7, 1);
-        $endDate   = now()->startOfDay();
+        $startDate = Carbon::create(2025, 5, 1);
+        $endDate   = Carbon::create(2025, 7, 31);
 
         foreach ($userIds as $userId) {
             $date = $startDate->copy();

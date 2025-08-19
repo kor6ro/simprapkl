@@ -99,19 +99,64 @@
             padding: 0.4rem 0.8rem;
         }
 
-        .izin-sakit-form {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
+        .filter-section {
+            background: #f8f9fa;
             border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .filter-toggle-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .filter-controls {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .filter-controls.show {
+            display: block;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
         }
 
-        .hidden-logo {
-            display: none;
+        .stat-item {
+            text-align: center;
+            padding: 10px;
         }
 
-        /* Approval tab specific styles */
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
         .approval-pending-badge {
             background: linear-gradient(45deg, #ffc107, #fd7e14);
             animation: pulse 2s infinite;
@@ -130,6 +175,62 @@
                 opacity: 1;
             }
         }
+
+        .table-actions {
+            white-space: nowrap;
+        }
+
+        .btn-group-sm>.btn,
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        /* Custom DataTables Header */
+        .dataTables_wrapper .dataTables_filter {
+            float: right;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .dataTables_wrapper .dataTables_length {
+            float: left;
+        }
+
+        .custom-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .custom-search {
+            min-width: 250px;
+        }
+
+        @media (max-width: 768px) {
+            .custom-table-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-filter-container {
+                justify-content: center;
+            }
+
+            .custom-search {
+                min-width: 200px;
+            }
+        }
     </style>
 @endsection
 
@@ -137,7 +238,13 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">📱 Presensi Digital</h4>
+                <h4 class="mb-sm-0 font-size-18">📱 Presensi Digital - Admin Dashboard</h4>
+                <div class="page-title-right">
+                    <button class="btn btn-danger btn-sm" onclick="generateAlpa()"
+                        title="Generate Alpa untuk siswa yang belum presensi hari ini">
+                        <i class="fas fa-exclamation-triangle"></i> Generate Alpa
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -156,55 +263,224 @@
         </div>
     @endif
 
-    {{-- Status Presensi + Tombol --}}
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">📋 Status Presensi Hari Ini</h5>
+    {{-- Stats Cards --}}
+    @if (Auth::user()->group_id == 2)
+        <div class="stats-card">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-hadir">-</span>
+                        <span class="stat-label">Hadir Hari Ini</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-terlambat">-</span>
+                        <span class="stat-label">Terlambat</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-izin">-</span>
+                        <span class="stat-label">Izin</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-sakit">-</span>
+                        <span class="stat-label">Sakit</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-alpa">-</span>
+                        <span class="stat-label">Alpa</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <span class="stat-number approval-pending-badge" id="stat-pending">
+                            {{ \App\Models\Presensi::where('approval_status', 'pending')->count() }}
+                        </span>
+                        <span class="stat-label">Pending Approval</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
+    @endif
 
-            <div class="presensi-status-card">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>Sesi Pagi</h6>
-                        @if ($statusPresensi['pagi_status'])
-                            <span class="badge bg-success session-badge">✓ {{ $statusPresensi['pagi_status'] }}</span>
-                            @if ($statusPresensi['pagi_jam'])
-                                <br><small class="text-muted">Jam: {{ $statusPresensi['pagi_jam'] }}</small>
+    {{-- Status Presensi Pribadi (untuk siswa yang login sebagai admin) --}}
+    @if (Auth::user()->group_id == 4)
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">📋 Status Presensi Hari Ini</h5>
+            </div>
+            <div class="card-body">
+                <div class="presensi-status-card">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Sesi Pagi</h6>
+                            @if ($statusPresensi['pagi_status'])
+                                <span class="badge bg-success session-badge">✓ {{ $statusPresensi['pagi_status'] }}</span>
+                                @if ($statusPresensi['pagi_jam'])
+                                    <br><small class="text-muted">Jam: {{ $statusPresensi['pagi_jam'] }}</small>
+                                @endif
+                            @else
+                                <span class="badge bg-secondary session-badge">Belum Presensi</span>
                             @endif
-                        @else
-                            <span class="badge bg-secondary session-badge">Belum Presensi</span>
-                        @endif
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Sesi Sore</h6>
-                        @if ($statusPresensi['sore_status'])
-                            <span class="badge bg-success session-badge">✓ {{ $statusPresensi['sore_status'] }}</span>
-                            @if ($statusPresensi['sore_jam'])
-                                <br><small class="text-muted">Jam: {{ $statusPresensi['sore_jam'] }}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Sesi Sore</h6>
+                            @if ($statusPresensi['sore_status'])
+                                <span class="badge bg-success session-badge">✓ {{ $statusPresensi['sore_status'] }}</span>
+                                @if ($statusPresensi['sore_jam'])
+                                    <br><small class="text-muted">Jam: {{ $statusPresensi['sore_jam'] }}</small>
+                                @endif
+                            @else
+                                <span class="badge bg-secondary session-badge">Belum Presensi</span>
                             @endif
-                        @else
-                            <span class="badge bg-secondary session-badge">Belum Presensi</span>
-                        @endif
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Status Saat Ini</h6>
+                            <div class="alert alert-info mb-0 py-2">{{ $statusPresensi['message'] }}</div>
+                            @if ($statusPresensi['current_session'])
+                                <small class="text-muted">Sesi: {{ ucfirst($statusPresensi['current_session']) }}</small>
+                            @endif
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <h6>Status Saat Ini</h6>
-                        <div class="alert alert-info mb-0 py-2">{{ $statusPresensi['message'] }}</div>
-                        @if ($statusPresensi['current_session'])
-                            <small class="text-muted">Sesi: {{ ucfirst($statusPresensi['current_session']) }}</small>
-                        @endif
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    @if ($statusPresensi['can_presensi'])
+                        <button class="btn btn-primary btn-sm" onclick="showPresensiModal()">📷 Presensi</button>
+                    @endif
+                    <button class="btn btn-warning btn-sm" onclick="showIzinModal()">🏥 Izin/Sakit</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Single Unified Table dengan Filter Terintegrasi --}}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">📊 Data Presensi Lengkap</h5>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-success" onclick="exportRekapExcel()">
+                    <i class="fas fa-file-excel"></i> Export Rekap Excel
+                </button>
+                <button class="btn btn-outline-danger" onclick="exportRekapPDF()">
+                    <i class="fas fa-file-pdf"></i> Export Rekap PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {{-- Custom Header dengan Search dan Filter --}}
+            <div class="custom-table-header">
+                <div class="search-filter-container">
+                    <div class="input-group custom-search">
+                        <input type="text" class="form-control" id="custom-search"
+                            placeholder="Cari nama, sekolah, status...">
+                        <button class="btn btn-outline-secondary" type="button" onclick="performSearch()"><i
+                                class="fas fa-search"></i></button>
+                    </div>
+                    <button class="filter-toggle-btn" id="toggle-filters" onclick="toggleFilters()">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0">Tampilkan:</label>
+                    <select id="custom-length" class="form-select" style="width: auto;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-muted">entri</span>
+                </div>
+            </div>
+
+            {{-- Filter Controls (Hidden by default) --}}
+            <div class="filter-controls" id="filter-controls">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Tanggal</label>
+                        <select id="filter-tanggal" class="form-select form-select-sm">
+                            <option value="">Pilih Rentang</option>
+                            <option value="today">Hari Ini</option>
+                            <option value="yesterday">Kemarin</option>
+                            <option value="week">7 Hari Terakhir</option>
+                            <option value="month">30 Hari Terakhir</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Bulan/Tahun</label>
+                        <input type="month" id="filter-bulan" class="form-control form-control-sm">
+                    </div>
+                    {{-- ... (Filter-filter lainnya tetap sama) ... --}}
+                    <div class="col-md-2"><label class="form-label">Status</label><select id="filter-status"
+                            class="form-select form-select-sm">
+                            <option value="">Semua Status</option>
+                            <option value="Tepat Waktu">Tepat Waktu</option>
+                            <option value="Terlambat">Terlambat</option>
+                            <option value="Sangat Terlambat">Sangat Terlambat</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Sakit">Sakit</option>
+                            <option value="Alpa">Alpa</option>
+                        </select></div>
+                    <div class="col-md-2"><label class="form-label">Sesi</label><select id="filter-sesi"
+                            class="form-select form-select-sm">
+                            <option value="">Semua Sesi</option>
+                            <option value="pagi">Pagi</option>
+                            <option value="sore">Sore</option>
+                        </select></div>
+                    <div class="col-md-2"><label class="form-label">Approval</label><select id="filter-approval"
+                            class="form-select form-select-sm">
+                            <option value="">Semua</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Disetujui</option>
+                            <option value="rejected">Ditolak</option>
+                            <option value="none">Tidak Ada</option>
+                        </select></div>
+                    <div class="col-md-2"><label class="form-label">Sekolah</label><select id="filter-sekolah"
+                            class="form-select form-select-sm">
+                            <option value="">Semua Sekolah</option>
+                        </select></div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" onclick="applyFilters()"><i class="fas fa-check"></i>
+                                Terapkan</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="resetFilters()"><i
+                                    class="fas fa-times"></i> Reset</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Tombol di bagian bawah card-body --}}
-            <div class="mt-3 d-flex gap-2">
-                @if ($statusPresensi['can_presensi'])
-                    <button class="btn btn-primary btn-sm" onclick="showPresensiModal()">📷 Presensi</button>
-                @endif
-                <button class="btn btn-warning btn-sm" onclick="showIzinModal()">🏥 Izin/Sakit</button>
+            {{-- DataTable --}}
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered table-striped table-hover" id="table-unified" style="width:100%">
+                    {{-- ... (Thead Anda tetap sama) ... --}}
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="3%">#</th>
+                            <th width="12%">Nama</th>
+                            <th width="10%">Sekolah</th>
+                            <th width="8%">Tanggal</th>
+                            <th width="5%">Sesi</th>
+                            <th width="5%">Jam</th>
+                            <th width="10%">Status</th>
+                            <th width="8%">Approval</th>
+                            <th width="15%">Keterangan</th>
+                            <th width="8%">Bukti Foto</th>
+                            <th width="16%">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
-
         </div>
     </div>
 
@@ -238,142 +514,15 @@
         </div>
     </div>
 
-    {{-- Tabs Navigation --}}
-    <ul class="nav nav-tabs" id="presensiTab" role="tablist">
-        <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#hari-ini">Hari Ini</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#semua">Semua</button>
-        </li>
-        @if (Auth::user()->group_id == 2)
-            <li class="nav-item">
-                <button class="nav-link position-relative" data-bs-toggle="tab" data-bs-target="#approval">
-                    ✅ Approval
-                    @php
-                        $pendingCount = \App\Models\Presensi::where('approval_status', 'pending')->count();
-                    @endphp
-                    @if ($pendingCount > 0)
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            {{ $pendingCount }}
-                        </span>
-                    @endif
-                </button>
-            </li>
-        @endif
-    </ul>
-
-    {{-- Tab Content --}}
-    <div class="tab-content mt-3">
-        {{-- Tab Hari Ini --}}
-        <div class="tab-pane fade show active" id="hari-ini">
-            <table class="table table-bordered" id="table-hari-ini" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nama</th>
-                        <th>Sekolah</th>
-                        <th>Status</th>
-                        <th>Bukti Foto</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-
-        {{-- Tab Semua --}}
-        <div class="tab-pane fade" id="semua">
-            <table class="table table-bordered table-striped" id="table-semua" style="width:100%">
-                <thead>
-                    <tr>
-                        <th width="5%">#</th>
-                        <th>Nama</th>
-                        <th>Sekolah</th>
-                        <th width="10%">Tanggal</th>
-                        <th width="12%">Status Harian</th>
-                        <th width="20%">Detail Sesi</th>
-                        <th width="10%">Bukti Foto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- DataTables akan mengisi ini -->
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Tab Approval (Admin only) --}}
-        @if (Auth::user()->group_id == 2)
-            <div class="tab-pane fade" id="approval">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <h5 class="text-warning">⏳ Permintaan Approval</h5>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-danger btn-sm me-2" onclick="generateAlpa()"
-                            title="Generate Alpa untuk siswa yang belum presensi hari ini">
-                            <i class="fas fa-exclamation-triangle"></i> Generate Alpa
-                        </button>
-                        <small class="text-muted">Total pending: <span
-                                class="badge bg-warning">{{ $pendingCount ?? 0 }}</span></small>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="table-approval">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Siswa</th>
-                                <th>Sekolah</th>
-                                <th>Sesi</th>
-                                <th>Status Awal</th>
-                                <th>Status Diminta</th>
-                                <th>Alasan</th>
-                                <th>Bukti</th>
-                                <th>Waktu Request</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- DataTables akan mengisi ini -->
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- History Section --}}
-                <div class="mt-4">
-                    <h5 class="text-info">📚 History Approval (7 Hari Terakhir)</h5>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="table-approval-history">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Siswa</th>
-                                    <th>Status Diminta</th>
-                                    <th>Keputusan</th>
-                                    <th>Catatan Admin</th>
-                                    <th>Diproses Oleh</th>
-                                    <th>Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- DataTables akan mengisi ini -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        @endif
-    </div>
-
-    {{-- Modal Request Approval untuk Tanggal Tertentu --}}
-    <div class="modal fade" id="requestApprovalDateModal" tabindex="-1">
+    {{-- Modal Request Approval --}}
+    <div class="modal fade" id="requestApprovalModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">📝 Request Perubahan Status Alpa</h5>
+                    <h5 class="modal-title">📝 Request Perubahan Status</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="requestApprovalDateForm" method="POST" action="{{ route('presensi.request.approval.date') }}"
+                <form id="requestApprovalForm" method="POST" action="{{ route('presensi.request.approval.date') }}"
                     enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="tanggal_presensi" id="requestTanggal">
@@ -381,8 +530,7 @@
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            Anda akan meminta perubahan status <span class="badge bg-danger">Alpa</span>
-                            untuk tanggal <strong id="displayTanggal"></strong>
+                            Request perubahan status untuk tanggal <strong id="displayTanggal"></strong>
                         </div>
 
                         <div class="mb-3">
@@ -396,14 +544,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Alasan/Keterangan <span class="text-danger">*</span></label>
-                            <textarea name="keterangan" class="form-control" rows="4"
-                                placeholder="Jelaskan alasan kenapa tidak bisa presensi..." minlength="20" required></textarea>
+                            <textarea name="keterangan" class="form-control" rows="4" placeholder="Jelaskan alasan..." minlength="20"
+                                required></textarea>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Bukti Pendukung (Foto)</label>
                             <input type="file" name="bukti_foto" class="form-control" accept="image/*">
-                            <small class="text-muted">Upload foto sebagai bukti (surat dokter, surat izin, dll)</small>
                         </div>
                     </div>
 
@@ -416,12 +563,12 @@
         </div>
     </div>
 
-    {{-- Modal Approval Notes --}}
+    {{-- Modal Approval Details --}}
     <div class="modal fade" id="approvalModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Detail Approval</h5>
+                    <h5 class="modal-title">✅ Process Approval</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -440,14 +587,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Catatan Admin (opsional)</label>
+                            <label class="form-label">Alasan Siswa</label>
+                            <textarea id="studentReason" class="form-control" rows="3" readonly></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Catatan Admin</label>
                             <textarea name="notes" class="form-control" rows="3" placeholder="Tambahkan catatan jika diperlukan"></textarea>
                         </div>
 
                         <div class="d-flex gap-2 justify-content-end">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                Batal
-                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                             <button type="button" class="btn btn-danger" onclick="submitApproval('reject')">
                                 <i class="fas fa-times me-1"></i> Tolak
                             </button>
@@ -466,7 +616,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Bukti Foto</h5>
+                    <h5 class="modal-title">🖼️ Bukti Foto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
@@ -480,119 +630,153 @@
 
 @section('js')
     <script>
+        let unifiedTable;
         let currentPresensiId = null;
 
         $(function() {
-            // Debug: Pastikan jQuery dan DataTables loaded
-            console.log('Initializing DataTables...');
+            initializeUnifiedTable();
+            loadStats();
+            loadSekolahFilter();
+            setupEventListeners();
+        });
 
-            // DataTable untuk Hari Ini
-            $('#table-hari-ini').DataTable({
+        function setupEventListeners() {
+            // Custom search dengan debounce
+            let searchTimeout;
+            $('#custom-search').on('keyup', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
+            // Custom length change
+            $('#custom-length').on('change', function() {
+                unifiedTable.page.len($(this).val()).draw();
+            });
+
+            // Enter key pada search
+            $('#custom-search').on('keypress', function(e) {
+                if (e.which === 13) {
+                    performSearch();
+                }
+            });
+
+            // Auto apply filter saat berubah (opsional)
+            $('#filter-tanggal, #filter-bulan, #filter-status, #filter-sesi, #filter-approval, #filter-sekolah')
+                .on('change', function() {
+                    // Uncomment jika ingin auto apply
+                    // applyFilters();
+                });
+        }
+
+        function initializeUnifiedTable() {
+            unifiedTable = $('#table-unified').DataTable({
                 processing: true,
                 serverSide: true,
+                searching: false, // Disable default search karena kita pakai custom
+                lengthChange: false, // Disable default length change
                 ajax: {
-                    url: '{{ route('presensi.data.hari_ini') }}',
+                    url: '{{ route('presensi.data.unified') }}',
+                    data: function(d) {
+                        // Filter parameters
+                        d.filter_tanggal = $('#filter-tanggal').val();
+                        d.filter_bulan = $('#filter-bulan').val();
+                        d.filter_status = $('#filter-status').val();
+                        d.filter_sesi = $('#filter-sesi').val();
+                        d.filter_approval = $('#filter-approval').val();
+                        d.filter_sekolah = $('#filter-sekolah').val();
+
+                        // Custom search
+                        d.search = {
+                            value: $('#custom-search').val(),
+                            regex: false
+                        };
+
+                        // Length
+                        d.length = $('#custom-length').val();
+                    },
                     error: function(xhr, error, code) {
-                        console.error('Ajax error hari ini:', xhr.responseText);
+                        console.error('Ajax error unified:', xhr.responseText);
+                        showToast('Error loading data', 'error');
                     }
                 },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        width: '3%'
                     },
                     {
                         data: 'nama',
-                        name: 'user.name'
+                        name: 'user.name',
+                        width: '12%'
                     },
                     {
                         data: 'sekolah',
-                        name: 'user.sekolah.nama'
+                        name: 'user.sekolah.nama',
+                        width: '10%'
+                    },
+                    {
+                        data: 'tanggal',
+                        name: 'tanggal_presensi',
+                        width: '8%'
+                    },
+                    {
+                        data: 'sesi_badge',
+                        name: 'sesi',
+                        orderable: false,
+                        width: '5%'
+                    },
+                    {
+                        data: 'jam_presensi',
+                        name: 'jam_presensi',
+                        width: '5%'
                     },
                     {
                         data: 'status_badge',
                         name: 'status',
                         orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'bukti_foto',
-                        name: 'bukti_foto',
-                        orderable: false,
-                        searchable: false
-                    }
-                ]
-            });
-
-            // DataTable untuk Semua
-            $('#table-semua').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: '{{ route('presensi.data.semua') }}',
-                    error: function(xhr, error, code) {
-                        console.error('Ajax error semua:', xhr.responseText);
-                        alert('Error loading data. Check console for details.');
-                    }
-                },
-                columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
-                        orderable: false,
                         searchable: false,
-                        width: '5%'
-                    },
-                    {
-                        data: 'nama',
-                        name: 'user.name',
-                        title: 'Nama'
-                    },
-                    {
-                        data: 'sekolah',
-                        name: 'user.sekolah.nama',
-                        title: 'Sekolah'
-                    },
-                    {
-                        data: 'tanggal',
-                        name: 'tanggal_presensi',
-                        title: 'Tanggal',
                         width: '10%'
                     },
                     {
-                        data: 'status_badge',
-                        name: 'status_badge',
+                        data: 'approval_badge',
+                        name: 'approval_status',
                         orderable: false,
                         searchable: false,
-                        title: 'Keterangan',
-                        width: '12%'
-
+                        width: '8%'
                     },
                     {
-                        data: 'detail_sesi',
-                        name: 'detail_sesi',
-                        orderable: false,
-                        searchable: false,
-                        title: 'Detail Sesi',
-                        width: '20%'
+                        data: 'keterangan',
+                        name: 'keterangan',
+                        width: '15%'
                     },
                     {
                         data: 'bukti_foto',
                         name: 'bukti_foto',
                         orderable: false,
                         searchable: false,
-                        title: 'Bukti Foto',
-                        width: '10%'
+                        width: '8%'
+                    },
+                    {
+                        data: 'aksi',
+                        name: 'aksi',
+                        orderable: false,
+                        searchable: false,
+                        width: '16%'
                     }
                 ],
                 order: [
-                    [3, 'desc']
-                ], // Sort by tanggal descending
+                    [3, 'desc'],
+                    [4, 'asc']
+                ],
                 pageLength: 25,
+                scrollX: true,
+                dom: '<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 language: {
-                    processing: "Memuat data...",
+                    processing: '<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>',
                     lengthMenu: "Tampilkan _MENU_ data per halaman",
-                    zeroRecords: "Data tidak ditemukan",
+                    zeroRecords: '<div class="text-center py-4"><i class="fas fa-search fa-2x text-muted mb-3"></i><br><h5>Data tidak ditemukan</h5><p class="text-muted">Coba ubah kriteria pencarian atau filter</p></div>',
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
                     infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
                     infoFiltered: "(difilter dari _MAX_ total data)",
@@ -603,165 +787,145 @@
                         next: "Selanjutnya",
                         previous: "Sebelumnya"
                     }
+                },
+                drawCallback: function(settings) {
+                    // Update info setelah draw
+                    updateTableInfo(settings);
                 }
             });
+        }
 
-            // DataTable untuk Approval (hanya jika admin)
+        function updateTableInfo(settings) {
+            const api = new $.fn.dataTable.Api(settings);
+            const info = api.page.info();
+
+            // Custom info update bisa ditambahkan di sini jika diperlukan
+            console.log('Table updated:', info);
+        }
+
+        function performSearch() {
+            unifiedTable.ajax.reload();
+        }
+
+        function toggleFilters() {
+            const filterControls = document.getElementById('filter-controls');
+            const toggleBtn = document.getElementById('toggle-filters');
+
+            if (filterControls.classList.contains('show')) {
+                filterControls.classList.remove('show');
+                toggleBtn.innerHTML = '<i class="fas fa-filter"></i> Filter';
+            } else {
+                filterControls.classList.add('show');
+                toggleBtn.innerHTML = '<i class="fas fa-filter-circle-xmark"></i> Tutup Filter';
+            }
+        }
+
+        function applyFilters() {
+            unifiedTable.ajax.reload();
+            loadStats();
+            showToast('Filter berhasil diterapkan', 'success');
+        }
+
+        function resetFilters() {
+            $('#filter-tanggal, #filter-bulan, #filter-status, #filter-sesi, #filter-approval, #filter-sekolah').val('');
+            $('#custom-search').val('');
+            applyFilters();
+            showToast('Filter berhasil direset', 'info');
+        }
+
+        function loadStats() {
             @if (Auth::user()->group_id == 2)
-                $('#table-approval').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    ajax: {
-                        url: '{{ route('presensi.approval.data') }}',
-                        error: function(xhr, error, code) {
-                            console.error('Ajax error approval:', xhr.responseText);
-                        }
-                    },
-                    columns: [{
-                            data: 'tanggal',
-                            name: 'tanggal_presensi'
-                        },
-                        {
-                            data: 'nama',
-                            name: 'user.name'
-                        },
-                        {
-                            data: 'sekolah',
-                            name: 'user.sekolah.nama'
-                        },
-                        {
-                            data: 'sesi',
-                            name: 'sesi'
-                        },
-                        {
-                            data: 'status_awal',
-                            name: 'status_awal',
-                            orderable: false
-                        },
-                        {
-                            data: 'requested_status',
-                            name: 'requested_status'
-                        },
-                        {
-                            data: 'keterangan',
-                            name: 'keterangan'
-                        },
-                        {
-                            data: 'bukti_foto',
-                            name: 'bukti_foto',
-                            orderable: false
-                        },
-                        {
-                            data: 'waktu_request',
-                            name: 'updated_at'
-                        },
-                        {
-                            data: 'aksi',
-                            name: 'aksi',
-                            orderable: false,
-                            searchable: false
-                        }
-                    ],
-                    order: [
-                        [8, 'desc']
-                    ], // Sort by waktu request descending
-                    pageLength: 10
-                });
-
-                // DataTable untuk Approval History
-                $('#table-approval-history').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    ajax: {
-                        url: '{{ route('presensi.approval.history') }}',
-                        error: function(xhr, error, code) {
-                            console.error('Ajax error approval history:', xhr.responseText);
-                        }
-                    },
-                    columns: [{
-                            data: 'tanggal',
-                            name: 'tanggal_presensi'
-                        },
-                        {
-                            data: 'nama',
-                            name: 'user.name'
-                        },
-                        {
-                            data: 'requested_status',
-                            name: 'requested_status'
-                        },
-                        {
-                            data: 'approval_status',
-                            name: 'approval_status'
-                        },
-                        {
-                            data: 'approval_notes',
-                            name: 'approval_notes'
-                        },
-                        {
-                            data: 'approved_by',
-                            name: 'approvedBy.name'
-                        },
-                        {
-                            data: 'approved_at',
-                            name: 'approved_at'
-                        }
-                    ],
-                    order: [
-                        [6, 'desc']
-                    ], // Sort by approved_at descending
-                    pageLength: 10
-                });
-            @endif
-
-            // Handle form submissions
-
-            $('#approvalForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var formData = $(this).serialize();
-                var actionUrl = $(this).attr('action');
-
                 $.ajax({
-                    url: actionUrl,
-                    method: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        $('#approvalModal').modal('hide');
-                        $('#table-approval').DataTable().ajax.reload();
-                        $('#table-approval-history').DataTable().ajax.reload();
-                        // Update pending count badge
-                        location.reload();
+                    url: '{{ route('presensi.stats') }}',
+                    method: 'GET',
+                    success: function(data) {
+                        $('#stat-hadir').text(data.hadir || 0);
+                        $('#stat-terlambat').text(data.terlambat || 0);
+                        $('#stat-izin').text(data.izin || 0);
+                        $('#stat-sakit').text(data.sakit || 0);
+                        $('#stat-alpa').text(data.alpa || 0);
+                        $('#stat-pending').text(data.pending || 0);
                     },
-                    error: function(xhr) {
-                        alert('Gagal memproses approval: ' + xhr.responseJSON.message);
+                    error: function() {
+                        console.error('Error loading stats');
                     }
                 });
+            @endif
+        }
+
+        function loadSekolahFilter() {
+            $.ajax({
+                url: '{{ route('presensi.sekolah.list') }}',
+                success: function(data) {
+                    let options = '<option value="">Semua Sekolah</option>';
+                    data.forEach(function(sekolah) {
+                        options += `<option value="${sekolah.id}">${sekolah.nama}</option>`;
+                    });
+                    $('#filter-sekolah').html(options);
+                },
+                error: function() {
+                    console.error('Error loading sekolah list');
+                }
             });
-        });
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            $('body').append(toastHtml);
+            const toastEl = $('.toast').last()[0];
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+
+            // Remove element after hidden
+            $(toastEl).on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
 
         // Modal Functions
         function showPresensiModal() {
-            var modal = new bootstrap.Modal(document.getElementById('presensiModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('presensiModal')).show();
         }
 
         function showIzinModal() {
-            var modal = new bootstrap.Modal(document.getElementById('izinModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('izinModal')).show();
         }
 
-        function requestApprovalForDate(tanggal) {
+        function requestApprovalForDate(tanggal, presensiId) {
             document.getElementById('requestTanggal').value = tanggal;
             document.getElementById('displayTanggal').textContent = new Date(tanggal).toLocaleDateString('id-ID');
-            document.getElementById('requestApprovalDateForm').reset();
-            document.getElementById('requestTanggal').value = tanggal; // Set lagi setelah reset
-
-            new bootstrap.Modal(document.getElementById('requestApprovalDateModal')).show();
+            new bootstrap.Modal(document.getElementById('requestApprovalModal')).show();
         }
 
-        // Quick approve/reject functions
-        function processApproval(presensiId, action) {
+        function showApprovalModal(presensiId, studentName, requestedStatus, keterangan) {
+            currentPresensiId = presensiId;
+
+            document.getElementById('studentName').value = studentName;
+            document.getElementById('requestedStatus').value = requestedStatus;
+            document.getElementById('studentReason').value = keterangan || '-';
+            document.getElementById('approvalForm').action = `/presensi/approval/${presensiId}`;
+
+            new bootstrap.Modal(document.getElementById('approvalModal')).show();
+        }
+
+        function submitApproval(action) {
+            document.getElementById('approvalAction').value = action;
+            document.getElementById('approvalForm').submit();
+        }
+
+        function processQuickApproval(presensiId, action) {
             if (!confirm(`Yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} permintaan ini?`)) {
                 return;
             }
@@ -769,57 +933,264 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/presensi/approval/${presensiId}`;
-
             form.innerHTML = `
                 @csrf
                 <input type="hidden" name="action" value="${action}">
             `;
-
             document.body.appendChild(form);
             form.submit();
         }
 
-        // Show approval modal with details
-        function showApprovalModal(presensiId, studentName, requestedStatus) {
-            currentPresensiId = presensiId;
-
-            document.getElementById('studentName').value = studentName;
-            document.getElementById('requestedStatus').value = requestedStatus;
-            document.getElementById('approvalForm').action = `/presensi/approval/${presensiId}`;
-
-            new bootstrap.Modal(document.getElementById('approvalModal')).show();
+        function showImage(url) {
+            document.getElementById('modalImage').src = url;
+            new bootstrap.Modal(document.getElementById('imageModal')).show();
         }
 
-        // Submit approval with notes
-        function submitApproval(action) {
-            document.getElementById('approvalAction').value = action;
-            document.getElementById('approvalForm').submit();
+        function editPresensi(id) {
+            showToast('Fitur edit akan dikembangkan', 'info');
         }
 
-        // Generate Alpa function
+        function deletePresensi(id) {
+            if (confirm('Yakin ingin menghapus data presensi ini?')) {
+                showToast('Fitur delete akan dikembangkan', 'info');
+            }
+        }
+
         function generateAlpa() {
-            if (!confirm(
-                    'Yakin ingin generate presensi Alpa untuk siswa yang belum presensi hari ini?\n\nIni akan membuat status Alpa otomatis untuk semua siswa yang belum melakukan presensi pagi dan sore.'
-                )) {
+            if (!confirm('Yakin ingin generate presensi Alpa untuk siswa yang belum presensi hari ini?')) {
                 return;
             }
 
-            // Show loading
             const btn = event.target;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             btn.disabled = true;
 
-            // Create form and submit
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{{ route('presensi.generate.alpa') }}';
             form.innerHTML = '@csrf';
-
-            // Add hidden form to body and submit
             document.body.appendChild(form);
             form.submit();
         }
+
+        // Update function exportExcel() dan exportPDF() di file JavaScript presensi
+
+        function exportExcel() {
+            const filters = getActiveFilters();
+
+            // Tambahkan loading state
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+
+            const params = new URLSearchParams();
+
+            // Add filters
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) params.append(key, filters[key]);
+            });
+
+            // Add rekap format flag
+            params.append('format', 'rekap');
+
+            // Create form untuk POST request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route('presensi.export.excel') }}';
+            form.style.display = 'none';
+
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            form.appendChild(csrfInput);
+
+            // Add parameters
+            params.forEach((value, key) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+
+            showToast('Sedang memproses export Excel...', 'info');
+
+            // Submit form
+            form.submit();
+
+            // Reset button after a delay
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                document.body.removeChild(form);
+            }, 3000);
+        }
+
+        function exportPDF() {
+            const filters = getActiveFilters();
+
+            // Tambahkan loading state
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+
+            const params = new URLSearchParams();
+
+            // Add filters
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) params.append(key, filters[key]);
+            });
+
+            // Add rekap format flag
+            params.append('format', 'rekap');
+
+            showToast('Sedang memproses export PDF...', 'info');
+
+            // Open in new window untuk PDF
+            const url = `{{ route('presensi.export.pdf') }}?${params.toString()}`;
+            window.open(url, '_blank');
+
+            // Reset button
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+
+        // Helper function untuk mengambil filter aktif
+        function getActiveFilters() {
+            return {
+                filter_tanggal: $('#filter-tanggal').val(),
+                filter_bulan: $('#filter-bulan').val(),
+                filter_status: $('#filter-status').val(),
+                filter_sesi: $('#filter-sesi').val(),
+                filter_approval: $('#filter-approval').val(),
+                filter_sekolah: $('#filter-sekolah').val(),
+                search: $('#custom-search').val(),
+                // Tambahkan parameter untuk rekap
+                bulan: extractMonthFromFilter(),
+                tahun: extractYearFromFilter()
+            };
+        }
+
+        // Helper functions untuk extract bulan dan tahun
+        function extractMonthFromFilter() {
+            const filterBulan = $('#filter-bulan').val();
+            if (filterBulan) {
+                return filterBulan.split('-')[1]; // Extract month from YYYY-MM
+            }
+            return new Date().getMonth() + 1; // Current month
+        }
+
+        function extractYearFromFilter() {
+            const filterBulan = $('#filter-bulan').val();
+            if (filterBulan) {
+                return filterBulan.split('-')[0]; // Extract year from YYYY-MM
+            }
+            return new Date().getFullYear(); // Current year
+        }
+
+        // Function untuk export rekap khusus (tanpa filter detail)
+        function exportRekapExcel() {
+            const bulan = extractMonthFromFilter();
+            const tahun = extractYearFromFilter();
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route('presensi.export.excel') }}';
+            form.style.display = 'none';
+
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            form.appendChild(csrfInput);
+
+            // Add bulan and tahun
+            const bulanInput = document.createElement('input');
+            bulanInput.type = 'hidden';
+            bulanInput.name = 'bulan';
+            bulanInput.value = bulan;
+            form.appendChild(bulanInput);
+
+            const tahunInput = document.createElement('input');
+            tahunInput.type = 'hidden';
+            tahunInput.name = 'tahun';
+            tahunInput.value = tahun;
+            form.appendChild(tahunInput);
+
+            // Add format flag
+            const formatInput = document.createElement('input');
+            formatInput.type = 'hidden';
+            formatInput.name = 'format';
+            formatInput.value = 'rekap';
+            form.appendChild(formatInput);
+
+            document.body.appendChild(form);
+
+            showToast('Memproses export Excel...', 'info');
+            form.submit();
+
+            setTimeout(() => {
+                document.body.removeChild(form);
+            }, 3000);
+        }
+
+        function exportRekapPDF() {
+            const bulan = extractMonthFromFilter();
+            const tahun = extractYearFromFilter();
+
+            const params = new URLSearchParams({
+                bulan: bulan,
+                tahun: tahun,
+                format: 'rekap'
+            });
+
+            showToast('Memproses export PDF...', 'info');
+            window.open(`{{ route('presensi.export.pdf') }}?${params.toString()}`, '_blank');
+        }
+
+        // Update button export di HTML untuk menggunakan function baru
+        function updateExportButtons() {
+            // Update existing export buttons langsung tanpa dropdown
+            const exportContainer = document.querySelector('.btn-group');
+            if (exportContainer) {
+                exportContainer.innerHTML = `
+            <button type="button" class="btn btn-outline-success" onclick="exportRekapExcel()">
+                <i class="fas fa-file-excel"></i> Export Rekap Excel
+            </button>
+            <button type="button" class="btn btn-outline-danger" onclick="exportRekapPDF()">
+                <i class="fas fa-file-pdf"></i> Export Rekap PDF
+            </button>
+        `;
+            }
+        }
+
+
+        // Call update function when page loads
+        $(document).ready(function() {
+            updateExportButtons();
+        });
+
+        // Auto refresh stats setiap 5 menit
+        @if (Auth::user()->group_id == 2)
+            setInterval(loadStats, 300000);
+        @endif
+
+        // Set current month as default untuk filter bulan
+        $(document).ready(function() {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            $('#filter-bulan').val(currentMonth);
+        });
     </script>
     @include('administrator.presensi.partials.camera_script')
 @endsection
