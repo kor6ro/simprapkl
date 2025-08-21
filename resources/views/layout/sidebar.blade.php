@@ -18,8 +18,8 @@
                     </a>
                 </li>
 
-                {{-- Master Data (Admin Saja) --}}
-               @if (isRole('Admin') || isRole('Karyawan'))
+                {{-- Master Data (Admin & Karyawan) --}}
+                @can('view-master-data')
                     <li class="menu-title">Master Data</li>
                     <li class="{{ Route::is('admin.sekolah.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.sekolah.index') }}" class="waves-effect">
@@ -33,23 +33,22 @@
                             <span>Group</span>
                         </a>
                     </li>
-                    <!-- TEMPORARY FIX: Ganti di sidebar -->
                     <li class="{{ Request::is('admin/presensi-setting*') ? 'mm-active' : '' }}">
                         <a href="{{ url('admin/presensi-setting') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Setting Presensi</span>
                         </a>
                     </li>
-
                     <li class="{{ Route::is('admin.setting_tugas') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.setting_tugas.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
                             <span>Setting Tugas</span>
                         </a>
                     </li>
-                @endif
-                {{-- Manajemen User (Admin & Pembimbing) --}}
-               @if (isRole('Admin') || isRole('Pembimbing') || isRole('Karyawan'))
+                @endcan
+
+                {{-- Manajemen User (Admin, Pembimbing, Karyawan) --}}
+                @can('manage-users')
                     <li class="menu-title">Manajement User</li>
                     <li class="{{ Route::is('admin.user.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('admin.user.index') }}" class="waves-effect">
@@ -57,14 +56,16 @@
                             <span>User</span>
                         </a>
                     </li>
-                @endif
+                @endcan
+
                 {{-- Manajemen Data (Semua Role) --}}
-                @if (isRole('Admin') || isRole('Pembimbing') || isRole('Siswa') || isRole('Karyawan'))
+                @canany(['is-admin', 'is-pembimbing', 'is-siswa', 'is-karyawan'])
                     <li class="{{ Route::is('presensi.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('presensi.index') }}" class="waves-effect">
                             <i class="cil-calendar"></i>
                             <span>Presensi</span>
                         </a>
+                    </li>
                     <li class="{{ Route::is('tugasharian.*') ? 'mm-active' : '' }}">
                         <a href="{{ route('tugas_harian.index') }}" class="waves-effect">
                             <i class="cil-list"></i>
@@ -89,7 +90,7 @@
                             <span>Collect Data</span>
                         </a>
                     </li>
-                @endif
+                @endcanany
 
             </ul>
         </div>

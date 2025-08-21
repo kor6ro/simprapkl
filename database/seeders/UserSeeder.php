@@ -46,7 +46,7 @@ class UserSeeder extends Seeder
                 "group_id" => "5",
                 "alamat" => "pacitan",
             ],
-             [
+            [
                 "name" => "Karyawan2",
                 "username" => "Karyawan2",
                 "email" => "Karyawan2@gmail.com",
@@ -56,7 +56,7 @@ class UserSeeder extends Seeder
                 "group_id" => "5",
                 "alamat" => "pacitan",
             ],
-             [
+            [
                 "name" => "karyawan3",
                 "username" => "Karyawan3",
                 "email" => "Karyawan3@gmail.com",
@@ -66,7 +66,7 @@ class UserSeeder extends Seeder
                 "group_id" => "5",
                 "alamat" => "pacitan",
             ],
-             [
+            [
                 "name" => "Karyawan4",
                 "username" => "Karyawan4",
                 "email" => "Karyawan4@gmail.com",
@@ -76,7 +76,7 @@ class UserSeeder extends Seeder
                 "group_id" => "5",
                 "alamat" => "pacitan",
             ],
-             [
+            [
                 "name" => "Karyawan5",
                 "username" => "Karyawan5",
                 "email" => "Karyawan5@gmail.com",
@@ -219,6 +219,8 @@ class UserSeeder extends Seeder
 
         ];
 
-        User::insert($data);
+        foreach ($data as $user) {
+            User::create($user);
+        }
     }
 }

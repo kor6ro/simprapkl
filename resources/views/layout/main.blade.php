@@ -282,7 +282,6 @@
     <script src="{{ asset('assets/js/plugins/datatables.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/datatables.bootstrap4.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/sweetalert2.min.js') }}"></script>
-
     <script src="{{ asset('assets/js/scripts/cookies.js') }}"></script>
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
