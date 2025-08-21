@@ -8,7 +8,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold">Edit Tim</h4>
-    <a href="{{ route('admin.setting_tugas.index') }}" class="btn btn-secondary btn-sm">🔙 Kembali</a>
+    <a href="{{ route('admin.setting_tugas.index') }}" class="btn btn-secondary btn-sm"> Kembali</a>
 </div>
 
 <div class="card">
@@ -52,7 +52,7 @@
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">💾 Simpan Perubahan</button>
+                    <button type="submit" class="btn btn-primary w-100">Simpan Perubahan</button>
                 </div>
             </div>
         </form>

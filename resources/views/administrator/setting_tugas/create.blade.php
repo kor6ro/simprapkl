@@ -20,7 +20,7 @@
                 <div class="col-md-3">
                     <label class="form-label">Ketua Tim:</label>
                     <select class="form-select" name="ketua_id" required>
-                        <option value="">-- Pilih Ketua --</option>
+                        <option value="">Pilih Ketua</option>
                         @foreach($availableAdmins as $karyawan)
                             <option value="{{ $karyawan->id }}">{{ $karyawan->name }}</option>
                         @endforeach
@@ -30,7 +30,7 @@
                 <div class="col-md-2">
                     <label class="form-label">Jenis Tim:</label>
                     <select class="form-select" name="divisi" required>
-                        <option value="">-- Pilih Jenis --</option>
+                        <option value=""> Pilih Jenis</option>
                         <option value="sales">SALES</option>
                         <option value="teknisi">TEKNISI</option>
                     </select>
@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100">💾 Simpan Tim</button>
+                    <button type="submit" class="btn btn-success w-100"> Simpan Tim</button>
                 </div>
             </div>
         </form>

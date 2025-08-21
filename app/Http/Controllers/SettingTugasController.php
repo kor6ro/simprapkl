@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
-
+use Carbon\Carbon; 
 class SettingTugasController extends Controller
 {
     /**
@@ -27,27 +27,44 @@ class SettingTugasController extends Controller
      * DataTables server-side processing.
      * PERUBAHAN: Menambahkan logika untuk memfilter data.
      */
-    public function data(Request $request)
-    {
-        $query = SettingTugas::with('ketua', 'anggota')
-            ->whereDate('tanggal', today())
-            ->select('setting_tugas.*');
+   // app/Http/Controllers/SettingTugasController.php
 
-        // Terapkan filter jika ada input dari request
-        if ($request->filled('ketua_id')) {
-            $query->where('ketua_id', $request->ketua_id);
+// Ganti method data() Anda dengan yang ini
+public function data(Request $request)
+{
+    // Query dasar tetap sama
+    $query = SettingTugas::with('ketua', 'anggota')
+        ->select('setting_tugas.*');
+
+    // Filter berdasarkan bulan/tahun
+    if ($request->filled('bulan')) {
+        try {
+            $date = Carbon::parse($request->bulan);
+            $query->whereYear('tanggal', $date->year)
+                  ->whereMonth('tanggal', $date->month);
+        } catch (\Exception $e) {
+            // Abaikan jika format salah
+            Log::error('Invalid month format: ' . $request->bulan);
         }
-
-        if ($request->filled('divisi')) {
-            $query->where('divisi', $request->divisi);
-        }
-
-        return DataTables::of($query)
-            ->addColumn('ketua_name', fn($tim) => $tim->ketua->name ?? 'N/A')
-            ->addColumn('anggota_names', fn($tim) => $tim->anggota->pluck('name')->toArray())
-            ->editColumn('created_at', fn($tim) => $tim->created_at->format('d/m/Y H:i'))
-            ->make(true);
+    } else {
+        // Jika tidak ada filter bulan, default ke hari ini
+        $query->whereDate('tanggal', today());
     }
+
+    // Terapkan filter lain jika ada
+    if ($request->filled('ketua_id')) {
+        $query->where('ketua_id', $request->ketua_id);
+    }
+    if ($request->filled('divisi')) {
+        $query->where('divisi', $request->divisi);
+    }
+
+    return DataTables::of($query)
+        ->addColumn('ketua_name', fn($tim) => $tim->ketua->name ?? 'N/A')
+        ->addColumn('anggota_names', fn($tim) => $tim->anggota->pluck('name')->toArray())
+        ->editColumn('created_at', fn($tim) => $tim->created_at->toIso8601String()) // Kirim format standar ke JS
+        ->make(true);
+}
 
     // ... (Sisa fungsi lainnya seperti create, store, edit, update, destroy tetap sama) ...
 

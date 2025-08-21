@@ -1,9 +1,4 @@
 @extends('layout.main')
-@section('css')
-    <style>
-
-    </style>
-@endsection
 @section('content')
     <div class="row">
         <div class="col-12">

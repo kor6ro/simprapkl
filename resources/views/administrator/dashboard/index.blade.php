@@ -12,34 +12,54 @@
         {{-- Dashboard Admin --}}
         <div class="row">
             <div class="col-xl-3 col-md-6">
-                <div class="card">
+                <div class="card dashboard-card today-presence">
                     <div class="card-body">
-                        <p>Total Presensi Hari Ini</p>
-                        <h4>{{ $todayPresensi }}</h4>
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-content">
+                            <p class="card-title">Total Presensi Hari Ini</p>
+                            <h4 class="card-value">{{ $todayPresensi }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card">
+                <div class="card dashboard-card total-users">
                     <div class="card-body">
-                        <p>Total Pengguna</p>
-                        <h4>{{ $totalUsers }}</h4>
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-content">
+                            <p class="card-title">Total Pengguna</p>
+                            <h4 class="card-value">{{ $totalUsers }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card">
+                <div class="card dashboard-card morning-presence">
                     <div class="card-body">
-                        <p>Presensi Pagi</p>
-                        <h4>{{ $pagiPresensi }}</h4>
+                        <div class="card-icon">
+                            <i class="fas fa-sun"></i>
+                        </div>
+                        <div class="card-content">
+                            <p class="card-title">Presensi Pagi</p>
+                            <h4 class="card-value">{{ $pagiPresensi }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card">
+                <div class="card dashboard-card evening-presence">
                     <div class="card-body">
-                        <p>Presensi Sore</p>
-                        <h4>{{ $sorePresensi }}</h4>
+                        <div class="card-icon">
+                            <i class="fas fa-moon"></i>
+                        </div>
+                        <div class="card-content">
+                            <p class="card-title">Presensi Sore</p>
+                            <h4 class="card-value">{{ $sorePresensi }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -244,37 +264,5 @@
         }
     </script>
 
-    <style>
-        #rekapAbsensiTable {
-            border-collapse: collapse;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-
-        #rekapAbsensiTable th,
-        #rekapAbsensiTable td {
-            border: 1px solid #000;
-            padding: 6px 8px;
-        }
-
-        #rekapAbsensiTable th {
-            background-color: #d9e1f2;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        #rekapAbsensiTable td {
-            background-color: #fff;
-        }
-
-        #rekapAbsensiTable tfoot th {
-            background-color: #bdd7ee;
-            font-weight: bold;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-    </style>
+   
 @endsection
