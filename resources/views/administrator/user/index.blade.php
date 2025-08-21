@@ -34,6 +34,7 @@
                         <th scope="col">Validasi</th>
                         <th scope="col">Sekolah Id</th>
                         <th scope="col">Group Id</th>
+                        <th scope="col">SID</th>
                         <th scope="col">Alamat</th>
                         <th scope="col">Created At</th>
                         <th scope="col">Aksi</th>
@@ -116,8 +117,14 @@
                 },
                 {
                     data: 'group.nama',
-                    searchable: false,
+                    searchable: true,
                     orderable: false,
+                    visible: true,
+                },
+                {
+                    data: 'kode_siswa',
+                    searchable: true,
+                    orderable: true,
                     visible: true,
                 },
                 {

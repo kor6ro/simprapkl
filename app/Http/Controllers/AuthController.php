@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ResetPasswordMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -66,10 +67,7 @@ class AuthController extends Controller
 
         $url = route('password_reset', ['token' => $token]);
 
-        Mail::raw("Klik link berikut untuk reset password: $url", function ($message) use ($request) {
-            $message->to($request->email);
-            $message->subject('Reset Password');
-        });
+        Mail::to($request->email)->send(new ResetPasswordMail($url));
 
 
         return back()->with('status', 'Link reset password telah dikirim keemail.');

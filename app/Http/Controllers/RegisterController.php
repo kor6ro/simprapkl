@@ -32,7 +32,7 @@ class RegisterController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect(route("login"))
+            return redirect(route("register.form"))
                 ->withErrors($validator)
                 ->withInput();
         }
