@@ -24,7 +24,7 @@ class CreateUserTable extends Migration
             $table->string("alamat");
             $table->foreignId("sekolah_id")->references("id")->on("sekolah");
             $table->foreignId("group_id")->references("id")->on("group");
-            $table->string("kode_siswa")->nullable();
+            $table->string("id_pkl")->nullable();
             $table->timestamps();
         });
         Schema::enableForeignKeyConstraints();

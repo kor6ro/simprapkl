@@ -10,11 +10,11 @@ class SettingTugas extends Model
     use HasFactory;
 
     protected $table = 'setting_tugas';
-    
+
     protected $fillable = [
         // 'nama_tim', // <-- HAPUS BARIS INI
         'ketua_id',
-        'divisi', 
+        'divisi',
         'tanggal',
         'deskripsi'
     ];

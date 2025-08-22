@@ -99,8 +99,8 @@ class UserController extends Controller
 
         return DataTables::of($user)
             ->addIndexColumn()
-            ->editColumn('kode_siswa', function ($row) {
-                return $row->kode_siswa ?? '-'; // tampil "-" kalau null
+            ->editColumn('id_pkl', function ($row) {
+                return $row->id_pkl ?? '-'; // tampil "-" kalau null
             })
             ->make(true);
     }

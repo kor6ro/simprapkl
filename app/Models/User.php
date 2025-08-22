@@ -23,7 +23,7 @@ class User extends Authenticatable
         "sekolah_id",
         "group_id",
         "alamat",
-        "kode_siswa",
+        "id_pkl",
         "created_at",
         "updated_at",
     ];
@@ -52,7 +52,7 @@ class User extends Authenticatable
             ->whereDate('tanggal', today());
     }
 
-    // hanya tampilkan kode_siswa kalau group_id = 4 (siswa)
+    // hanya tampilkan id_pkl kalau group_id = 4 (siswa)
     public function getKodeSiswaAttribute($value)
     {
         if ($this->group_id == 4) {
@@ -66,13 +66,20 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function ($user) {
-            if ($user->group_id == 4 && empty($user->kode_siswa)) {
-                // hitung jumlah siswa yang sudah ada
-                $lastNumber = User::where('group_id', 4)->count();
-                $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            if ($user->group_id == 4 && empty($user->id_pkl)) {
 
-                // contoh format: Sid0001, Sid0002, dst.
-                $user->kode_siswa = 'Sid' . $nextNumber;
+                $lastNumber = User::where('group_id', 4)->count();
+                $nextNumber = str_pad($lastNumber + 28, 5, '0', STR_PAD_LEFT);
+                $baseId = 'G1-INT' . $nextNumber;
+
+                $formattedName = strtoupper(str_replace(' ', '_', $user->name));
+                // Baris ini opsional, untuk membersihkan karakter selain huruf, angka, dan underscore
+                $formattedName = preg_replace('/[^A-Z0-9_]/', '', $formattedName);
+
+                $formattedSchool = strtoupper(str_replace(' ', '_', $user->sekolah->nama));
+                $formattedSchool = preg_replace('/[^A-Z0-9_]/', '', $formattedSchool);
+
+                $user->id_pkl = $baseId . '_' . $formattedName . '_' . $formattedSchool;
             }
         });
     }
