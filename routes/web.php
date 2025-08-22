@@ -20,7 +20,7 @@ use App\Http\Controllers\SettingTugasController;
 use App\Http\Controllers\TugasHarianController;
 use App\Models\Presensi;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\JenisKegiatanController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -132,6 +132,21 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::post('/lapor', [TugasHarianController::class, 'laporTugas'])->name('lapor');
     });
 
+    Route::prefix('admin')->name('admin.')->group(function () {
+    // ... rute lain seperti user, group, divisi
+
+    // Jenis Kegiatan Management
+    Route::controller(JenisKegiatanController::class)->prefix('jenis-kegiatan')->name('jenis_kegiatan.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{jenisKegiatan}/edit', 'edit')->name('edit');
+        Route::put('/{jenisKegiatan}', 'update')->name('update');
+        Route::delete('/{jenisKegiatan}', 'destroy')->name('destroy');
+        Route::post('/fetch', 'fetch')->name('fetch');
+    });
+
+});
     // ===== MANAGEMENT ROUTES =====
     Route::prefix('admin')->name('admin.')->group(function () {
 
