@@ -8,21 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('setting_tugas_anggota', function (Blueprint $table) {
+        Schema::create('tim_anggota', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('setting_tugas_id');
+            $table->unsignedBigInteger('tim_id');
             $table->unsignedBigInteger('user_id');
             $table->timestamps();
 
-            $table->foreign('setting_tugas_id')->references('id')->on('setting_tugas')->onDelete('cascade');
+            $table->foreign('tim_id')->references('id')->on('tim')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('user')->onDelete('cascade');
 
-            $table->unique(['setting_tugas_id', 'user_id']);
+            $table->unique(['tim_id', 'user_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('setting_tugas_anggota');
+        Schema::dropIfExists('tim_anggota');
     }
 };

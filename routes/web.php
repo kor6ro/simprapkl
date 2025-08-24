@@ -19,8 +19,12 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SettingTugasController;
 use App\Http\Controllers\TugasHarianController;
 use App\Models\Presensi;
+use App\Http\Controllers\DivisiController; 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JenisKegiatanController;
+use App\Http\Controllers\TimController; 
+use App\Models\Tim;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -134,18 +138,6 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
     // ... rute lain seperti user, group, divisi
-
-    // Jenis Kegiatan Management
-    Route::controller(JenisKegiatanController::class)->prefix('jenis-kegiatan')->name('jenis_kegiatan.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{jenisKegiatan}/edit', 'edit')->name('edit');
-        Route::put('/{jenisKegiatan}', 'update')->name('update');
-        Route::delete('/{jenisKegiatan}', 'destroy')->name('destroy');
-        Route::post('/fetch', 'fetch')->name('fetch');
-    });
-
 });
     // ===== MANAGEMENT ROUTES =====
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -213,6 +205,16 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{laporan}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
+            // Tim Management (digunakan oleh menu "Atur Tim")
+        Route::controller(TimController::class)->prefix('tim')->name('tim.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/data', 'data')->name('data'); // Rute untuk DataTables
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{tim}/edit', 'edit')->name('edit');
+        Route::put('/{tim}', 'update')->name('update');
+        Route::delete('/{tim}', 'destroy')->name('destroy');
+    });
 
         // Report Images Management
         Route::controller(LaporanGambarController::class)->prefix('laporan-gambar')->name('laporan_gambar.')->group(function () {
@@ -235,31 +237,27 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             Route::delete('/{colectData}', 'destroy')->name('destroy');
             Route::post('/fetch', 'fetch')->name('fetch');
         });
-        // Setting Tugas - FIXED ROUTES
-        Route::controller(SettingTugasController::class)->prefix('setting-tugas')->name('setting_tugas.')->group(function () {
-            // Main routes
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
+             // Jenis Kegiatan Management
+        Route::controller(JenisKegiatanController::class)->prefix('jenis-kegiatan')->name('jenis_kegiatan.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{jenisKegiatan}/edit', 'edit')->name('edit');
+        Route::put('/{jenisKegiatan}', 'update')->name('update');
+        Route::delete('/{jenisKegiatan}', 'destroy')->name('destroy');
+        Route::post('/fetch', 'fetch')->name('fetch');
+    });
+    // / Divisi Management
+    Route::controller(DivisiController::class)->prefix('divisi')->name('divisi.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{divisi}/edit', 'edit')->name('edit');
+        Route::put('/{divisi}', 'update')->name('update');
+        Route::delete('/{divisi}', 'destroy')->name('destroy');
+        Route::post('/fetch', 'fetch')->name('fetch');
+    });
 
-            // DataTables route untuk server-side processing  
-            Route::get('/data', 'data')->name('data');
 
-            // Utility routes HARUS di atas parameter routes untuk menghindari konflik
-            Route::get('/available-users', 'getAvailableUsers')->name('getAvailableUsers');
-            Route::get('/statistics', 'getStatistics')->name('statistics');
-            Route::get('/edit-all', 'getAllTeamsForEdit')->name('getAllTeamsForEdit');
-
-            // Bulk operations HARUS di atas route /{id}
-            Route::post('/bulk-store', 'storeBulk')->name('storeBulk');
-            Route::put('/bulk-update', 'updateBulk')->name('updateBulk');
-            Route::post('/destroy-all', 'destroyAll')->name('destroyAll');
-
-            // CRUD operations - parameter routes di paling bawah
-            Route::post('/', 'store')->name('store');
-            Route::get('/get/{id}', 'getTeam')->name('getTeam');              // Specific route
-            Route::get('/{id}/edit', 'edit')->name('edit');                   // Edit form route
-            Route::put('/{id}', 'update')->name('update');                    // Update route
-            Route::delete('/{id}', 'destroy')->name('destroy');               // Delete route
-        });
     });
 });

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\JenisKegiatan;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -23,7 +24,9 @@ class DatabaseSeeder extends Seeder
             PresensiSettingSeeder::class,
             PresensiStatusSeeder::class,
             PresensiSeeder::class,
-            TeamSeeder::class
+            DivisiSeeder::class,
+            TimSeeder::class,
+            JenisKegiatanSeeder::class
         ]);
 
         Schema::enableForeignKeyConstraints();
