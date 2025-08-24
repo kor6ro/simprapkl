@@ -23,8 +23,11 @@ class PresensiController extends Controller
     /**
      * Halaman utama presensi (1 halaman, multi-tab).
      */
+    // app/Http/Controllers/PresensiController.php
+
     public function index()
     {
+        // Logika ini dipertahankan karena digunakan oleh elemen halaman lain (di luar tabel)
         $user    = Auth::user();
         $today   = now()->toDateString();
         $setting = PresensiSetting::first();
@@ -36,9 +39,94 @@ class PresensiController extends Controller
         $statusPresensi = $this->getStatusPresensiHariIni($presensiHariIni, $setting);
         $sekolahList = Sekolah::select('id', 'nama')->orderBy('nama')->get();
 
+        // Tugas fungsi index() sekarang hanya menampilkan view dengan data yang diperlukan
         return view('administrator.presensi.index', compact('statusPresensi', 'setting', 'sekolahList'));
     }
 
+    // app/Http/Controllers/PresensiController.php
+
+    public function create()
+    {
+        // Hanya user siswa (group_id 4) yang bisa dipilih
+        $users = User::where('group_id', 4)->with('sekolah')->orderBy('name')->get();
+        $presensiStatus = PresensiStatus::all();
+        return view('administrator.presensi.create', compact('users', 'presensiStatus'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'tanggal_presensi' => 'required|date',
+            'sesi' => 'required|in:pagi,sore',
+            'status' => 'required|string',
+            'jam_presensi' => 'nullable|date_format:H:i',
+            'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        // Cek duplikasi
+        $existing = Presensi::where('user_id', $request->user_id)
+            ->where('tanggal_presensi', $request->tanggal_presensi)
+            ->where('sesi', $request->sesi)
+            ->first();
+
+        if ($existing) {
+            return back()->with('error', 'Data presensi untuk siswa, tanggal, dan sesi yang sama sudah ada.')->withInput();
+        }
+
+        $buktiPath = null;
+        if ($request->hasFile('bukti_foto')) {
+            $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+        }
+
+        $statusId = PresensiStatus::where('status', $request->status)->value('id');
+
+        Presensi::create([
+            'user_id' => $request->user_id,
+            'tanggal_presensi' => $request->tanggal_presensi,
+            'sesi' => $request->sesi,
+            'jam_presensi' => $request->jam_presensi,
+            'status' => $request->status,
+            'presensi_status_id' => $statusId,
+            'keterangan' => $request->keterangan,
+            'bukti_foto' => $buktiPath
+        ]);
+
+        return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil ditambahkan.');
+    }
+
+    public function edit(Presensi $presensi)
+    {
+        $presensiStatus = PresensiStatus::all();
+        return view('administrator.presensi.edit', compact('presensi', 'presensiStatus'));
+    }
+
+    public function update(Request $request, Presensi $presensi)
+    {
+        $request->validate([
+            'tanggal_presensi' => 'required|date',
+            'sesi' => 'required|in:pagi,sore',
+            'status' => 'required|string',
+            'jam_presensi' => 'nullable|date_format:H:i',
+            'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $data = $request->only(['tanggal_presensi', 'sesi', 'jam_presensi', 'status', 'keterangan']);
+
+        if ($request->hasFile('bukti_foto')) {
+            // Hapus foto lama jika ada
+            if ($presensi->bukti_foto) {
+                Storage::disk('public')->delete($presensi->bukti_foto);
+            }
+            $data['bukti_foto'] = $request->file('bukti_foto')->store('uploads/presensi', 'public');
+        }
+
+        $data['presensi_status_id'] = PresensiStatus::where('status', $request->status)->value('id');
+
+        $presensi->update($data);
+
+        return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil diperbarui.');
+    }
     /**
      * [OPTIMIZED] Menyediakan data untuk DataTable Unified.
      */
@@ -80,6 +168,8 @@ class PresensiController extends Controller
                 return '-';
             })
             ->addColumn('aksi', fn($row) => $this->renderAksiColumn($row))
+            ->addColumn('is_admin', fn() => isAdmin()) // Mengirim flag jika user adalah admin
+            ->addColumn('is_owner', fn($row) => $row->user_id === Auth::id()) // Mengirim flag jika user adalah pemilik data
             ->rawColumns(['sesi_badge', 'status_badge', 'approval_badge', 'keterangan', 'bukti_foto', 'aksi'])
             ->make(true);
     }
@@ -392,6 +482,15 @@ class PresensiController extends Controller
         }
         if ($request->filled('filter_sekolah')) {
             $query->where('user.sekolah_id', $request->filter_sekolah);
+        }
+
+        if ($request->filled('filter_approval')) {
+            if ($request->filter_approval === 'pending_all') {
+                // Gabungkan dua status pending menjadi satu filter
+                $query->whereIn('presensi.approval_status', ['pending', 'pending_update']);
+            } else {
+                $query->where('presensi.approval_status', $request->filter_approval);
+            }
         }
 
         // === PENCARIAN GLOBAL ===

@@ -1,244 +1,129 @@
 @extends('layout.main')
-@section('css')
-    <style>
-        table th {
-            width: 30%;
-        }
 
-        video {
-            object-fit: cover;
-        }
-
-        .hidden-logo {
-            display: none;
-        }
-    </style>
-@endsection
 @section('content')
-    <div class="container">
-        <h4 class="mb-4">Presensi</h4>
-        @if (session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
-        <!-- Tombol Modal Presensi Kamera -->
-        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalPresensiKamera">
-            + Ambil Presensi dengan Kamera
-        </button>
-        <!-- Form Presensi Sakit/Izin -->
-        <form action="{{ route('presensi.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <table class="table table-bordered">
-                <tr>
-                    <th>Nama</th>
-                    <td>{{ auth()->user()->name }}</td>
-                </tr>
-                <tr>
-                    <th>Tanggal</th>
-                    <td>
-                        <input type="date" name="tanggal_presensi" class="form-control" value="{{ date('Y-m-d') }}"
-                            readonly>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Tidak Dapat Hadir</th>
-                    <td>
-                        <select name="presensi_status_id" class="form-control" required>
-                            <option value="">Pilih Alasan</option>
-                            @foreach ($presensistatus as $status)
-                                @if (in_array(strtolower($status->status), ['izin', 'sakit']))
-                                    <option value="{{ $status->id }}">{{ $status->status }}</option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Keterangan</th>
-                    <td>
-                        <textarea name="keterangan" class="form-control" rows="3" placeholder="Isi jika diperlukan..."></textarea>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Upload Bukti</th>
-                    <td>
-                        <input type="file" name="bukti" class="form-control">
-                        <small class="text-muted">Format: .jpg, .jpeg, .png, max 2MB</small>
-                    </td>
-                </tr>
-            </table>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-success">Kirim</button>
-                <a href="{{ route('presensi.index') }}" class="btn btn-secondary">Batal</a>
-            </div>
-        </form>
-    </div>
-    <!-- Modal Presensi Kamera -->
-    <div class="modal fade" id="modalPresensiKamera" tabindex="-1" aria-labelledby="modalPresensiKameraLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Form Presensi Kamera</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    @if (session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @elseif(session('error'))
-                        <div class="alert alert-danger">{{ session('error') }}</div>
-                    @endif
-                    <form method="POST" action="{{ route('presensi.store') }}">
-                        @csrf
-                        <!-- Default status hadir (bisa ubah sesuai ID) -->
-                        <input type="hidden" name="presensi_status_id"
-                            value="{{ $presensistatus->firstWhere('status', 'hadir')->id ?? 1 }}">
-                        <div class="mb-3">
-                            <label class="form-label">Preview Webcam</label><br>
-                            <video id="video" width="100%" height="240" class="border" autoplay></video>
-                            <canvas id="canvas" style="display:none;"></canvas>
-                            <button type="button" class="btn btn-sm btn-secondary mt-2" id="snap">Ambil Foto</button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Hasil Foto:</label><br>
-                            <img id="preview" src="" class="img-thumbnail" style="max-width: 100%; height: auto;">
-                        </div>
-                        <input type="hidden" name="image" id="image">
-                        <div class="mb-3">
-                            <label for="keterangan" class="form-label">Keterangan</label>
-                            <textarea name="keterangan" class="form-control" rows="3" placeholder="Contoh: Masuk pagi ini."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit Presensi</button>
-                    </form>
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0 font-size-18">Presensi</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item">
+                            <a href="#">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active">Tambah Presensi</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>
+    <div class="card card-primary">
+        <div class="card-body">
+            <h4 class="card-title text-primary mb-4">Tambah Presensi</h4>
+            <form action="{{ route('presensi.store') }}" method="post" enctype="multipart/form-data">
+                @csrf
+                {{-- Form fields (Siswa, Tanggal, Sesi, Status, dll.) --}}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">Siswa</label>
+                            <select name="user_id" id="user_id" class="form-select @error('user_id') is-invalid @enderror"
+                                required>
+                                <option value="">Pilih Siswa</option>
+                                @foreach ($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }} - {{ $user->sekolah->nama ?? 'Belum ada sekolah' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('user_id')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="tanggal_presensi" class="form-label">Tanggal Presensi</label>
+                            <input type="date" name="tanggal_presensi" id="tanggal_presensi"
+                                class="form-control @error('tanggal_presensi') is-invalid @enderror"
+                                value="{{ old('tanggal_presensi', date('Y-m-d')) }}" required>
+                            @error('tanggal_presensi')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="sesi" class="form-label">Sesi</label>
+                            <select name="sesi" id="sesi" class="form-select @error('sesi') is-invalid @enderror"
+                                required>
+                                <option value="pagi" {{ old('sesi') == 'pagi' ? 'selected' : '' }}>Pagi</option>
+                                <option value="sore" {{ old('sesi') == 'sore' ? 'selected' : '' }}>Sore</option>
+                            </select>
+                            @error('sesi')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="jam_presensi" class="form-label">Jam Presensi</label>
+                            <input type="time" name="jam_presensi" id="jam_presensi"
+                                class="form-control @error('jam_presensi') is-invalid @enderror"
+                                value="{{ old('jam_presensi') }}">
+                            <small class="text-muted">Kosongkan jika Izin/Sakit/Alpa</small>
+                            @error('jam_presensi')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select @error('status') is-invalid @enderror"
+                                required>
+                                <option value="">Pilih Status</option>
+                                @foreach ($presensiStatus as $status)
+                                    <option value="{{ $status->status }}"
+                                        {{ old('status') == $status->status ? 'selected' : '' }}>
+                                        {{ $status->status }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('status')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="bukti_foto" class="form-label">Upload Bukti (Opsional)</label>
+                            <input type="file" name="bukti_foto"
+                                class="form-control @error('bukti_foto') is-invalid @enderror" id="bukti_foto">
+                            @error('bukti_foto')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="keterangan" class="form-label">Keterangan</label>
+                    <textarea name="keterangan" id="keterangan" class="form-control" rows="3">{{ old('keterangan') }}</textarea>
+                </div>
 
-    <!-- Hidden logo sekolah -->
-    @if (auth()->user()->sekolah && auth()->user()->sekolah->logo)
-        <img id="schoolLogo" class="hidden-logo" src="{{ asset('uploads/sekolah_logo/' . auth()->user()->sekolah->logo) }}"
-            crossorigin="anonymous" alt="Logo Sekolah">
-    @else
-        <!-- Fallback logo jika tidak ada logo sekolah -->
-        <img id="schoolLogo" class="hidden-logo" src="{{ asset('logo/smkn1pacitan.png') }}" crossorigin="anonymous"
-            alt="Logo Default">
-    @endif
-@endsection
-@section('js')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const modal = document.getElementById('modalPresensiKamera');
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const snap = document.getElementById('snap');
-            const imageInput = document.getElementById('image');
-            const preview = document.getElementById('preview');
-            const schoolLogo = document.getElementById('schoolLogo');
-            let stream = null;
-
-            // Saat modal dibuka, aktifkan kamera
-            modal.addEventListener('shown.bs.modal', () => {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({
-                            video: true
-                        })
-                        .then(s => {
-                            stream = s;
-                            video.srcObject = stream;
-                            video.play();
-                        })
-                        .catch(err => {
-                            alert("Gagal mengakses kamera: " + err.message);
-                        });
-                }
-            });
-
-            // Saat modal ditutup, matikan kamera
-            modal.addEventListener('hidden.bs.modal', () => {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                    video.srcObject = null;
-                    preview.src = '';
-                    imageInput.value = '';
-                }
-            });
-
-            // Ambil foto
-            snap.addEventListener('click', () => {
-                if (!video.videoWidth || !video.videoHeight) {
-                    alert("Kamera belum siap, silakan tunggu beberapa detik.");
-                    return;
-                }
-
-                // Set ukuran canvas sesuai video
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                // Add overlay information
-                const now = new Date();
-                const timestampText = `Presensi: ${now.toLocaleString()}`;
-                const locationText = '{{ auth()->user()->sekolah->nama ?? 'SMKN 1 Pacitan' }} - SimPraPKL';
-                const userText = 'User: {{ auth()->user()->name }}';
-
-                // Background overlay
-                const overlayHeight = 80;
-                const overlayWidth = Math.min(400, canvas.width - 20);
-
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.fillRect(10, canvas.height - overlayHeight - 10, overlayWidth, overlayHeight);
-
-                // Text styling
-                ctx.fillStyle = "white";
-                ctx.font = "bold 14px Arial";
-                ctx.textAlign = 'left';
-
-                // Draw overlay text
-                const textY = canvas.height - overlayHeight + 15;
-                const lineHeight = 18;
-                ctx.fillText(timestampText, 20, textY);
-                ctx.fillText(locationText, 20, textY + lineHeight);
-                ctx.fillText(userText, 20, textY + (lineHeight * 2));
-
-                // Add school logo if available
-                if (schoolLogo && schoolLogo.complete && schoolLogo.naturalHeight !== 0) {
-                    try {
-                        const logoSize = Math.min(60, canvas.width * 0.1);
-                        const logoX = canvas.width - logoSize - 15;
-                        const logoY = 15;
-
-                        // Draw logo with rounded corners effect
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.clip();
-                        ctx.drawImage(schoolLogo, logoX, logoY, logoSize, logoSize);
-                        ctx.restore();
-
-                        console.log('School logo added to photo');
-                    } catch (logoError) {
-                        console.error('Error drawing school logo:', logoError);
-
-                        // Fallback: draw simple logo without rounded corners
-                        try {
-                            const logoSize = Math.min(50, canvas.width * 0.08);
-                            const logoX = canvas.width - logoSize - 20;
-                            const logoY = 20;
-                            ctx.drawImage(schoolLogo, logoX, logoY, logoSize, logoSize);
-                        } catch (fallbackError) {
-                            console.error('Fallback logo drawing also failed:', fallbackError);
-                        }
-                    }
-                } else {
-                    console.log('School logo not available or not loaded properly');
-                }
-
-                // Hasil base64
-                const imageData = canvas.toDataURL('image/png');
-                imageInput.value = imageData;
-                preview.src = imageData;
-            });
-        });
-    </script>
+                {{-- Tombol navigasi --}}
+                <div class="button-navigate mt-3">
+                    <a href="{{ route('presensi.index') }}" class="btn btn-secondary">
+                        <i class="fa fa-arrow-left me-1"></i> Kembali
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 @endsection

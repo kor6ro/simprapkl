@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\administrator\PenilaianController as AdministratorPenilaianController;
 use App\Http\Controllers\RegisterSiswaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SettingTugasController;
 use App\Http\Controllers\TugasHarianController;
 use App\Models\Presensi;
+use App\Http\Controllers\PenilaianController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +56,7 @@ Route::get('/logout', [AuthController::class, 'logout'])->name('logout')->middle
 // ===== AUTHENTICATED ROUTES =====
 Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
+
     // ===== DASHBOARD ROUTES =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -65,61 +68,35 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     });
 
     Route::prefix('presensi')->name('presensi.')->group(function () {
-        // Main presensi routes
+        // Main page
         Route::get('/', [PresensiController::class, 'index'])->name('index');
-        Route::post('/checkin', [PresensiController::class, 'checkin'])->name('checkin');
-        Route::post('/checkout', [PresensiController::class, 'checkout'])->name('checkout');
-        Route::post('/sakit', [PresensiController::class, 'sakit'])->name('sakit');
-        Route::get('/rekap', [PresensiController::class, 'rekap'])->name('rekap');
 
+        // CRUD operations (disesuaikan untuk Route Model Binding)
+        Route::get('/create', [PresensiController::class, 'create'])->name('create');
+        Route::post('/', [PresensiController::class, 'store'])->name('store'); // Menggunakan URL dasar untuk store
+        Route::get('/{presensi}/edit', [PresensiController::class, 'edit'])->name('edit'); // Menggunakan {presensi}
+        Route::put('/{presensi}', [PresensiController::class, 'update'])->name('update'); // Menggunakan {presensi}
+        Route::delete('/{presensi}', [PresensiController::class, 'destroy'])->name('destroy'); // Menggunakan {presensi}
 
-
-        // Camera presensi routes
+        // Camera & Izin/Sakit submission (untuk siswa)
         Route::post('/camera', [PresensiController::class, 'PresensiCamera'])->name('camera');
-
-        // Izin/Sakit manual submission
         Route::post('/izin-sakit', [PresensiController::class, 'submitIzinSakit'])->name('izin-sakit');
         Route::post('/request-approval-date', [PresensiController::class, 'requestApprovalDate'])->name('request.approval.date');
 
-        // DataTables endpoints
+        // Data Endpoints (duplikasi dihapus dan diperbaiki)
+        Route::post('/data/unified', [PresensiController::class, 'dataUnified'])->name('data.unified');
         Route::get('/data/hari-ini', [PresensiController::class, 'dataHariIni'])->name('data.hari_ini');
-        Route::get('/data/semua', [PresensiController::class, 'dataSemua'])->name('data.semua');
-        // New unified routes
-        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])->name('data.unified');
         Route::get('/stats', [PresensiController::class, 'getStats'])->name('stats');
         Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])->name('sekolah.list');
 
         // Export routes
-        Route::post('/export/excel', [PresensiController::class, 'exportExcel'])
-            ->name('export.excel');
+        Route::post('/export/excel', [PresensiController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/pdf', [PresensiController::class, 'exportPDF'])->name('export.pdf');
 
-
-        Route::get('/export/pdf', [PresensiController::class, 'exportPDF'])
-            ->name('export.pdf');
-
-        // Data routes untuk DataTables
-        Route::get('/data/unified', [PresensiController::class, 'dataUnified'])
-            ->name('data.unified');
-
-        Route::get('/stats', [PresensiController::class, 'getStats'])
-            ->name('stats');
-
-        Route::get('/sekolah/list', [PresensiController::class, 'getSekolahList'])
-            ->name('sekolah.list');
-
-
-
-        // Approval routes  
+        // Approval routes
         Route::get('/approval/data', [PresensiController::class, 'approvalData'])->name('approval.data');
         Route::get('/approval/history', [PresensiController::class, 'approvalHistory'])->name('approval.history');
         Route::post('/approval/{id}', [PresensiController::class, 'processApproval'])->name('approval.process');
-
-        // CRUD operations
-        Route::get('/create', [PresensiController::class, 'create'])->name('create');
-        Route::post('/store', [PresensiController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [PresensiController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [PresensiController::class, 'update'])->name('update');
-        Route::delete('/{id}', [PresensiController::class, 'destroy'])->name('destroy');
 
         // Additional operations
         Route::post('/generate-alpa', [PresensiController::class, 'generateAlpa'])->name('generate.alpa');
@@ -134,6 +111,10 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     // ===== MANAGEMENT ROUTES =====
     Route::prefix('admin')->name('admin.')->group(function () {
+
+        // --- Route untuk Fitur Penilaian ---
+        Route::post('penilaian/fetch', [PenilaianController::class, 'fetch'])->name('penilaian.fetch');
+        Route::resource('penilaian', PenilaianController::class);
 
         // Admin Dashboard
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

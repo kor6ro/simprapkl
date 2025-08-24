@@ -61,6 +61,21 @@ class User extends Authenticatable
         return null;
     }
 
+    // app/Models/User.php (di dalam class User)
+
+    public function penilaian()
+    {
+        return $this->hasOne(Penilaian::class, 'siswa_id');
+    }
+    public function penilai()
+    {
+        return $this->belongsTo(User::class, 'penilai_id');
+    }
+    public function siswaBimbingan()
+    {
+        return $this->hasMany(User::class, 'penilai_id');
+    }
+
     protected static function boot()
     {
         parent::boot();

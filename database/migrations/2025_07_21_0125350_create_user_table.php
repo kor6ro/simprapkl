@@ -25,6 +25,10 @@ class CreateUserTable extends Migration
             $table->foreignId("sekolah_id")->references("id")->on("sekolah");
             $table->foreignId("group_id")->references("id")->on("group");
             $table->string("id_pkl")->nullable();
+            $table->foreignId('penilai_id')
+                ->nullable()
+                ->constrained('user')
+                ->onDelete('set null');
             $table->timestamps();
         });
         Schema::enableForeignKeyConstraints();
