@@ -39,10 +39,22 @@
                             <span>Setting Presensi</span>
                         </a>
                     </li>
-                    <li class="{{ Route::is('admin.setting_tugas') ? 'mm-active' : '' }}">
-                        <a href="{{ route('admin.setting_tugas.index') }}" class="waves-effect">
+                    <li class="{{ Route::is('admin.tim') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.tim.index') }}" class="waves-effect">
                             <i class="cil-settings"></i>
-                            <span>Setting Tugas</span>
+                            <span>Tugas</span>
+                        </a>
+                    </li>
+                    <li class="{{ Route::is('admin.jenis-kegiatan') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.jenis_kegiatan.index') }}" class="waves-effect">
+                            <i class="cil-settings"></i>
+                            <span>Jenis Kegiatan</span>
+                        </a>
+                    </li>
+                     <li class="{{ Route::is('admin.divisi') ? 'mm-active' : '' }}">
+                        <a href="{{ route('admin.divisi.index') }}" class="waves-effect">
+                            <i class="cil-settings"></i>
+                            <span>Divisi</span>
                         </a>
                     </li>
                 @endcan
@@ -64,18 +76,6 @@
                         <a href="{{ route('presensi.index') }}" class="waves-effect">
                             <i class="cil-calendar"></i>
                             <span>Presensi</span>
-                        </a>
-                    </li>
-                    <li class="{{ Route::is('tugasharian.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('tugas_harian.index') }}" class="waves-effect">
-                            <i class="cil-list"></i>
-                            <span>Tugas Hari Ini</span>
-                        </a>
-                    </li>
-                    <li class="{{ Route::is('admin.task_breakdown.*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('admin.task_breakdown.index') }}" class="waves-effect">
-                            <i class="cil-task"></i>
-                            <span>Task Breakdown</span>
                         </a>
                     </li>
                     <li class="{{ Route::is('admin.laporan.*') ? 'mm-active' : '' }}">

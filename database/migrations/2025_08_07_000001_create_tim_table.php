@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('setting_tugas', function (Blueprint $table) {
+        Schema::create('tim', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ketua_id');
-            $table->enum('divisi', ['teknisi', 'sales']);
-            $table->text('deskripsi')->nullable();
+            
+            // <-- PERUBAHAN UTAMA DI SINI
+            $table->foreignId('divisi_id')->constrained('divisi')->onDelete('cascade');
+            
             $table->date('tanggal');
             $table->timestamps();
             
             $table->foreign('ketua_id')->references('id')->on('user')->onDelete('cascade');
-            
-            // Aturan unik sudah kita hapus, jadi biarkan seperti ini
         });
     }
 
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('setting_tugas');
+        Schema::dropIfExists('tim');
     }
 };
