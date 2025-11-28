@@ -15,8 +15,8 @@
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "phpoffice/phpspreadsheet": "^5.0",
-        "yajra/laravel-datatables-oracle": "*"
+        "maatwebsite/excel": "^3.1",
+        "yajra/laravel-datatables-oracle": "^11.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -34,7 +34,6 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/Helpers/userview.php"
         ]
     },
     "autoload-dev": {

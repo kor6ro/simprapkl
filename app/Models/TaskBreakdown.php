@@ -5,11 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TaskBreakDown extends Model
+class TaskBreakdown extends Model
 {
     use HasFactory;
 
-    protected $table = "task_break_down";
+    // Tentukan nama tabel secara eksplisit
+    protected $table = 'task_breakdown';
 
-    protected $fillable = ["nama", "file_upload", "created_at", "updated_at"];
+    // Izinkan kolom-kolom ini untuk diisi secara massal
+    protected $fillable = [
+        'applicable_date',
+        'tipe',
+        'deskripsi_tugas',
+        'task_breakdown',
+    ];
 }

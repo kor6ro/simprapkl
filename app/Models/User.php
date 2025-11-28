@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Tim;
 
 class User extends Authenticatable
 {
@@ -14,18 +16,21 @@ class User extends Authenticatable
 
     protected $table = "user";
 
+    /**
+     * PERBAIKAN: Menghapus created_at dan updated_at karena sudah otomatis.
+     */
     protected $fillable = [
         "name",
         "username",
         "email",
         "password",
         "validasi",
+        "photo_profile",
         "sekolah_id",
+        "program_keahlian_id",
         "group_id",
         "alamat",
         "id_pkl",
-        "created_at",
-        "updated_at",
     ];
 
     //Relasi ke sekolah
@@ -40,40 +45,33 @@ class User extends Authenticatable
         return $this->belongsTo(Group::class, "group_id");
     }
 
+    public function programKeahlian()
+    {
+        return $this->belongsTo(ProgramKeahlian::class, 'program_keahlian_id');
+    }
+
     //relasi ke presensi siswa
     public function presensi()
     {
         return $this->hasMany(Presensi::class);
     }
-
-    public function divisiHarianToday()
+    public function periodePkl()
     {
-        return $this->hasOne(SiswaDivisiHarian::class, 'siswa_id')
-            ->whereDate('tanggal', today());
+        return $this->belongsToMany(PeriodePkl::class, 'periode_pkl_user', 'user_id', 'periode_pkl_id');
+    }
+      public function timKetua(): BelongsToMany
+    {
+        return $this->belongsToMany(Tim::class, 'tim_ketua', 'user_id', 'tim_id');
     }
 
-    // hanya tampilkan id_pkl kalau group_id = 4 (siswa)
-    public function getKodeSiswaAttribute($value)
+    public function tim()
     {
-        if ($this->group_id == 4) {
-            return $value;
-        }
-        return null;
+        return $this->belongsToMany(Tim::class, 'tim_anggota', 'user_id', 'tim_id');
     }
-
-    // app/Models/User.php (di dalam class User)
 
     public function penilaian()
     {
         return $this->hasOne(Penilaian::class, 'siswa_id');
-    }
-    public function penilai()
-    {
-        return $this->belongsTo(User::class, 'penilai_id');
-    }
-    public function siswaBimbingan()
-    {
-        return $this->hasMany(User::class, 'penilai_id');
     }
 
     protected static function boot()
@@ -83,18 +81,23 @@ class User extends Authenticatable
         static::creating(function ($user) {
             if ($user->group_id == 4 && empty($user->id_pkl)) {
 
-                $lastNumber = User::where('group_id', 4)->count();
-                $nextNumber = str_pad($lastNumber + 28, 5, '0', STR_PAD_LEFT);
-                $baseId = 'G1-INT' . $nextNumber;
+                $sekolah = Sekolah::find($user->sekolah_id);
 
-                $formattedName = strtoupper(str_replace(' ', '_', $user->name));
-                // Baris ini opsional, untuk membersihkan karakter selain huruf, angka, dan underscore
-                $formattedName = preg_replace('/[^A-Z0-9_]/', '', $formattedName);
+                if ($sekolah) {
+                    $lastNumber = User::where('group_id', 4)->count();
+                    $nextNumber = str_pad($lastNumber + 28, 5, '0', STR_PAD_LEFT);
+                    $baseId = 'G1-INT' . $nextNumber;
 
-                $formattedSchool = strtoupper(str_replace(' ', '_', $user->sekolah->nama));
-                $formattedSchool = preg_replace('/[^A-Z0-9_]/', '', $formattedSchool);
+                    // Format nama user
+                    $formattedName = strtoupper(str_replace(' ', '_', $user->name));
+                    $formattedName = preg_replace('/[^A-Z0-9_]/', '', $formattedName);
 
-                $user->id_pkl = $baseId . '_' . $formattedName . '_' . $formattedSchool;
+                    // 3. Gunakan nama dari model sekolah yang sudah kita ambil.
+                    $formattedSchool = strtoupper(str_replace(' ', '_', $sekolah->nama));
+                    $formattedSchool = preg_replace('/[^A-Z0-9_]/', '', $formattedSchool);
+
+                    $user->id_pkl = $baseId . '_' . $formattedName . '_' . $formattedSchool;
+                }
             }
         });
     }

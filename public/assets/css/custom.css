@@ -27,3 +27,39 @@ table .row-action {
 .sidebarcostum{
     background-color: #f8f9fa;
 }
+
+#page-topbar .dropdown .dropdown-menu-lg[aria-labelledby="page-header-notifications-dropdown"] {
+    width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
+}
+
+.notification-item .avatar-xs {
+    /* Paksa jadi kotak sempurna (32px) */
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+
+    /* INI KUNCINYA: Jangan biarkan flex-box menyusutkannya! */
+    flex-shrink: 0 !important;
+}
+
+/* Kita juga pastikan si lingkaran (span.avatar-title)
+mengisi kotak itu dengan sempurna
+*/
+.notification-item .avatar-xs .avatar-title {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pastikan ukuran ikon di dalamnya (jika pakai font icon <i>)
+tidak terlalu besar
+*/
+.notification-item .avatar-xs .avatar-title i {
+    font-size: 16px; /* 16px cukup untuk kotak 32px */
+    line-height: 1;
+}

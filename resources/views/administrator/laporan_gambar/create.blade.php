@@ -12,7 +12,7 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item">
-                            <a href="#">Home</a>
+                            <a href="{{ route('dashboard') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item active">Tambah Laporan Gambar</li>
                     </ol>
@@ -51,7 +51,7 @@
                 </div>
                 <div class="button-navigate mt-3">
                     <a href="{{ route('laporan_gambar.index') }}" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali
+                        <i class="fa fa-arrow-left me-1"></i> Batal
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-save me-1"></i> Simpan

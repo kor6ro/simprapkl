@@ -7,694 +7,885 @@ use App\Models\Presensi;
 use App\Models\PresensiSetting;
 use App\Models\PresensiStatus;
 use App\Models\User;
+use App\Notifications\SiswaMengajukanIzin;
+use App\Notifications\SiswaDinyatakanAlpa;
+use App\Notifications\KonfirmasiPresensiBerhasil;
+use App\Notifications\HasilApprovalIzin;
+use App\Notifications\SiswaMengajukanUlangIzin;
 use App\Models\Sekolah;
+use App\Models\PeriodePkl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Notification;
 use Carbon\Carbon;
 use Yajra\DataTables\Facades\DataTables;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PDF;
+
+
 
 class PresensiController extends Controller
 {
-    /**
-     * Halaman utama presensi (1 halaman, multi-tab).
-     */
-    // app/Http/Controllers/PresensiController.php
 
-    public function index()
+public function index()
     {
-        // Logika ini dipertahankan karena digunakan oleh elemen halaman lain (di luar tabel)
-        $user    = Auth::user();
-        $today   = now()->toDateString();
-        $setting = PresensiSetting::first();
+        $user = Auth::user();
+        
+        $statusPresensi = [
+            'can_presensi' => false,
+            'message' => 'Hanya siswa yang dapat melakukan presensi.'
+        ];
 
-        $presensiHariIni = Presensi::where('user_id', $user->id)
-            ->where('tanggal_presensi', $today)
-            ->get();
+        if ($user->group_id == 4) {
+            $setting = PresensiSetting::first();
 
-        $statusPresensi = $this->getStatusPresensiHariIni($presensiHariIni, $setting);
-        $sekolahList = Sekolah::select('id', 'nama')->orderBy('nama')->get();
+            $presensiHariIni = Presensi::where('user_id', $user->id)
+                ->whereDate('presensi_at', now())
+                ->get();
 
-        // Tugas fungsi index() sekarang hanya menampilkan view dengan data yang diperlukan
-        return view('administrator.presensi.index', compact('statusPresensi', 'setting', 'sekolahList'));
+            $statusPresensi = $this->getStatusPresensiHariIni($presensiHariIni, $setting);
+        }
+
+        $periodePkls = PeriodePkl::orderBy('awal_periode', 'desc')->get();
+
+        return view('administrator.presensi.index', compact('statusPresensi', 'periodePkls'));
     }
-
-    // app/Http/Controllers/PresensiController.php
 
     public function create()
     {
-        // Hanya user siswa (group_id 4) yang bisa dipilih
-        $users = User::where('group_id', 4)->with('sekolah')->orderBy('name')->get();
-        $presensiStatus = PresensiStatus::all();
+        $users = User::where('group_id', 4)->orderBy('name')->get();
+        $presensiStatus = PresensiStatus::orderBy('id')->get();
         return view('administrator.presensi.create', compact('users', 'presensiStatus'));
     }
 
+    /**
+     * Menampilkan form untuk mengedit data presensi.
+     */
+    public function edit(Presensi $presensi)
+    {
+
+        $presensiStatus = PresensiStatus::orderBy('id')->get();
+
+        return view('administrator.presensi.edit', compact('presensi', 'presensiStatus'));
+    }
+
+    /**
+     * Menyimpan data presensi baru yang diinput manual oleh admin.
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:user,id',
             'tanggal_presensi' => 'required|date',
+            'jam_presensi' => 'nullable|date_format:H:i', // Validasi untuk input jam
             'sesi' => 'required|in:pagi,sore',
-            'status' => 'required|string',
-            'jam_presensi' => 'nullable|date_format:H:i',
+            'status' => 'required|string|exists:presensi_status,status',
+            'keterangan' => 'nullable|string',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        // Cek duplikasi
-        $existing = Presensi::where('user_id', $request->user_id)
-            ->where('tanggal_presensi', $request->tanggal_presensi)
+        if (Presensi::where('user_id', $request->user_id)
+            ->whereDate('presensi_at', $request->tanggal_presensi)
             ->where('sesi', $request->sesi)
-            ->first();
-
-        if ($existing) {
+            ->exists()
+        ) {
             return back()->with('error', 'Data presensi untuk siswa, tanggal, dan sesi yang sama sudah ada.')->withInput();
         }
 
-        $buktiPath = null;
-        if ($request->hasFile('bukti_foto')) {
-            $buktiPath = $request->file('bukti_foto')->store('uploads/presensi', 'public');
-        }
+        $buktiPath = $request->hasFile('bukti_foto') ? $request->file('bukti_foto')->store('uploads/presensi', 'public') : null;
+        $statusModel = PresensiStatus::where('status', $request->status)->firstOrFail();
 
-        $statusId = PresensiStatus::where('status', $request->status)->value('id');
+        // Logika penggabungan tanggal dan jam yang benar
+        $presensi_at = null;
+        if ($request->filled('tanggal_presensi') && $request->filled('jam_presensi')) {
+            $presensi_at = Carbon::parse($request->tanggal_presensi . ' ' . $request->jam_presensi);
+        } elseif ($request->filled('tanggal_presensi')) {
+            $presensi_at = Carbon::parse($request->tanggal_presensi);
+        }
 
         Presensi::create([
             'user_id' => $request->user_id,
-            'tanggal_presensi' => $request->tanggal_presensi,
+            'presensi_at' => $presensi_at,
             'sesi' => $request->sesi,
-            'jam_presensi' => $request->jam_presensi,
-            'status' => $request->status,
-            'presensi_status_id' => $statusId,
+            'status' => $statusModel->status,
+            'presensi_status_id' => $statusModel->id,
             'keterangan' => $request->keterangan,
-            'bukti_foto' => $buktiPath
+            'bukti_foto' => $buktiPath,
+            'approval_status' => 'approved',
+            'approved_by' => auth()->id(),
+            'approved_at' => now()
         ]);
 
         return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil ditambahkan.');
     }
 
-    public function edit(Presensi $presensi)
-    {
-        $presensiStatus = PresensiStatus::all();
-        return view('administrator.presensi.edit', compact('presensi', 'presensiStatus'));
-    }
-
+    /**
+     * Mengupdate data presensi. Logika ini membedakan antara admin dan siswa (dengan grace period).
+     */
     public function update(Request $request, Presensi $presensi)
     {
         $request->validate([
             'tanggal_presensi' => 'required|date',
-            'sesi' => 'required|in:pagi,sore',
-            'status' => 'required|string',
             'jam_presensi' => 'nullable|date_format:H:i',
+            'sesi' => 'required|in:pagi,sore',
+            'status' => 'required|string|exists:presensi_status,status',
+            'keterangan' => 'nullable|string',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $data = $request->only(['tanggal_presensi', 'sesi', 'jam_presensi', 'status', 'keterangan']);
+        $user = auth()->user();
 
+        if ($user->group_id > 2) {
+            return redirect()->route('presensi.index')->with('error', 'Anda tidak memiliki izin untuk mengubah data ini.');
+        }
+        $presensi_at = null;
+        if ($request->filled('tanggal_presensi') && $request->filled('jam_presensi')) {
+            $presensi_at = Carbon::parse($request->tanggal_presensi . ' ' . $request->jam_presensi);
+        } elseif ($request->filled('tanggal_presensi')) {
+            $presensi_at = Carbon::parse($request->tanggal_presensi);
+        }
+
+        $statusModel = PresensiStatus::where('status', $request->status)->firstOrFail();
+        $data = [
+            'presensi_at' => $presensi_at,
+            'sesi' => $request->sesi,
+            'status' => $statusModel->status,
+            'presensi_status_id' => $statusModel->id,
+            'keterangan' => $request->keterangan,
+            'approval_status' => 'approved',
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+            'requested_status' => null,
+        ];
+
+        // 3. Handle upload foto jika ada
         if ($request->hasFile('bukti_foto')) {
             // Hapus foto lama jika ada
             if ($presensi->bukti_foto) {
                 Storage::disk('public')->delete($presensi->bukti_foto);
             }
+            // Simpan foto baru
             $data['bukti_foto'] = $request->file('bukti_foto')->store('uploads/presensi', 'public');
         }
 
-        $data['presensi_status_id'] = PresensiStatus::where('status', $request->status)->value('id');
-
         $presensi->update($data);
 
-        return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil diperbarui.');
+        return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil diperbarui oleh Admin.');
     }
     /**
-     * [OPTIMIZED] Menyediakan data untuk DataTable Unified.
+     * Menghapus data presensi.
      */
-    public function dataUnified(Request $request)
+    public function destroy(Presensi $presensi)
     {
-        $query = Presensi::query()
-            ->leftJoin('user', 'presensi.user_id', '=', 'user.id')
-            ->leftJoin('sekolah', 'user.sekolah_id', '=', 'sekolah.id')
-            ->select('presensi.*')
-            ->with(['user:id,name,sekolah_id', 'user.sekolah:id,nama']);
-
-        if (isSiswa()) {
-            $query->where('presensi.user_id', Auth::id());
+        try {
+            if ($presensi->bukti_foto) {
+                Storage::disk('public')->delete($presensi->bukti_foto);
+            }
+            $presensi->delete();
+            return redirect()->route('presensi.index')->with('success', 'Data presensi berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error('Gagal menghapus presensi: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus data.');
         }
-
-        $this->applyFiltersToQuery($query, $request);
-
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->addColumn('nama', fn($row) => $row->user->name ?? '-')
-            ->addColumn('sekolah', fn($row) => $row->user->sekolah->nama ?? '-')
-            ->addColumn('tanggal', fn($row) => Carbon::parse($row->tanggal_presensi)->format('d/m/Y'))
-            ->addColumn('sesi_badge', fn($row) => '<span class="badge bg-' . ($row->sesi === 'pagi' ? 'info' : 'warning') . '">' . ucfirst($row->sesi) . '</span>')
-            ->addColumn('jam_presensi', fn($row) => $row->jam_presensi ? Carbon::parse($row->jam_presensi)->format('H:i') : '-')
-            ->addColumn('status_badge', fn($row) => $this->renderStatusBadge($row))
-            ->addColumn('approval_badge', fn($row) => $this->renderApprovalBadge($row))
-            ->addColumn('keterangan', function ($row) {
-                $keterangan = $row->keterangan ?? '-';
-                if (strlen($keterangan) > 50) {
-                    return '<div class="text-truncate" style="max-width: 150px;" title="' . e($keterangan) . '">' . e(substr($keterangan, 0, 50)) . '...</div>';
-                }
-                return e($keterangan);
-            })
-            ->addColumn('bukti_foto', function ($row) {
-                if ($row->bukti_foto && $row->bukti_foto !== 'default.jpg') {
-                    $url = asset('storage/' . $row->bukti_foto);
-                    return '<button class="btn btn-sm btn-outline-primary" onclick="showImage(\'' . $url . '\')"><i class="fas fa-eye"></i></button>';
-                }
-                return '-';
-            })
-            ->addColumn('aksi', fn($row) => $this->renderAksiColumn($row))
-            ->addColumn('is_admin', fn() => isAdmin()) // Mengirim flag jika user adalah admin
-            ->addColumn('is_owner', fn($row) => $row->user_id === Auth::id()) // Mengirim flag jika user adalah pemilik data
-            ->rawColumns(['sesi_badge', 'status_badge', 'approval_badge', 'keterangan', 'bukti_foto', 'aksi'])
-            ->make(true);
     }
 
-    // ===================================================================
-    // KODE ORIGINAL ANDA YANG DIPERTAHANKAN UNTUK KOMPATIBILITAS
-    // ===================================================================
-
-    /**
-     * DataTables: Presensi Hari Ini (detail per sesi)
-     * Method ini dipertahankan jika ada bagian lain yang masih menggunakannya.
-     */
-    public function dataHariIni()
-    {
-        $today = now()->toDateString();
-        $data = Presensi::with(['user.sekolah', 'presensiStatus'])->whereDate('tanggal_presensi', $today)->orderBy('presensi.created_at', 'desc');
-        if (Auth::user()->group_id == 4) {
-            $data->where('user_id', Auth::id());
-        }
-        return DataTables::of($data)
-            ->addIndexColumn()
-            ->addColumn('nama', fn($row) => $row->user->name ?? '-')
-            ->addColumn('sekolah', fn($row) => $row->user->sekolah->nama ?? '-')
-            ->addColumn('status_badge', fn($row) => $this->renderStatusBadge($row))
-            ->addColumn('bukti_foto', function ($row) {
-                if ($row->bukti_foto && $row->bukti_foto !== 'default.jpg') {
-                    $url = asset('storage/' . $row->bukti_foto);
-                    return '<a href="' . $url . '" target="_blank"><img src="' . $url . '" width="60" class="rounded"></a>';
-                }
-                return '-';
-            })
-            ->rawColumns(['status_badge', 'bukti_foto'])
-            ->make(true);
-    }
-
-    /**
-     * Presensi otomatis (kamera) – input: base64 image
-     */
     public function PresensiCamera(Request $request)
     {
-        Log::info('=== CAMERA PRESENSI AUTO START ===', ['user_id' => auth()->id()]);
-        $request->validate(['image_data' => 'required|string', 'keterangan' => 'nullable|string|max:255']);
-        $user = Auth::user();
+        $request->validate(['image_data' => 'required|string']);
+
+        $user = Auth::user()->group_id == 4 ? Auth::user() : null;
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Hanya siswa yang dapat melakukan presensi.'], 403);
+        }
+
         $today = now()->toDateString();
         $now = now();
-        $setting = PresensiSetting::first();
-        if (!$setting) {
-            return response()->json(['success' => false, 'message' => 'Pengaturan presensi belum dikonfigurasi'], 422);
-        }
-        $currentTime = $now->format('H:i');
-        $sesi = PresensiHelper::getCurrentSession($setting, $currentTime);
+        $setting = PresensiSetting::firstOrFail();
+
+        $sesi = PresensiHelper::getCurrentSession($setting);
+
         if (!$sesi) {
-            return response()->json(['success' => false, 'message' => 'Presensi hanya dapat dilakukan pada jam kerja'], 422);
+            return response()->json(['success' => false, 'message' => 'Presensi hanya dapat dilakukan pada jam kerja yang ditentukan.'], 422);
         }
-        if (Presensi::where('user_id', $user->id)->where('tanggal_presensi', $today)->where('sesi', $sesi)->exists()) {
-            return response()->json(['success' => false, 'message' => "Anda sudah melakukan presensi {$sesi} hari ini"], 422);
+
+        if (Presensi::where('user_id', $user->id)->whereDate('presensi_at', $today)->where('sesi', $sesi)->exists()) {
+            return response()->json(['success' => false, 'message' => "Anda sudah melakukan presensi {$sesi} hari ini."], 422);
         }
+
+        $path = null;
         try {
-            $imageFile = $this->processBase64Image($request->image_data);
-            if (!$imageFile) throw new \Exception('Gagal memproses gambar');
-            $fileName = 'camera_' . date('Y-m-d_H-i-s') . '_' . $user->id . '_' . uniqid() . '.jpg';
-            $path = 'uploads/presensi/' . $fileName;
-            if (!Storage::disk('public')->put($path, $imageFile)) {
-                throw new \Exception('Gagal menyimpan gambar');
-            }
-            $jamPresensi = $now->format('H:i:s');
-            $status = $this->getStatusByTime($jamPresensi, $sesi, $setting);
-            $statusId = PresensiStatus::where('status', $status)->value('id');
-            Presensi::create(['user_id' => $user->id, 'tanggal_presensi' => $today, 'sesi' => $sesi, 'jam_presensi' => $jamPresensi, 'status' => $status, 'presensi_status_id' => $statusId, 'bukti_foto' => $path, 'keterangan' => $request->keterangan ?? "Presensi {$sesi} otomatis",]);
-            return response()->json(['success' => true, 'message' => "Presensi {$sesi} berhasil! Status: {$status}"]);
+            $path = PresensiHelper::storeBase64Image($request->image_data, $user->id);
+
+            // Ambil timestamp saat ini
+            $waktuSekarang = now();
+
+            $statusKode = PresensiHelper::getStatusByTime($waktuSekarang->format('H:i:s'), $sesi, $setting);
+            $statusModel = PresensiStatus::where('kode', $statusKode)->firstOrFail();
+
+        $presensiRecord = Presensi::create([
+            'user_id' => $user->id,
+            'presensi_at' => $waktuSekarang,
+            'sesi' => $sesi,
+            'status' => $statusModel->status,
+            'presensi_status_id' => $statusModel->id,
+            'bukti_foto' => $path,
+            'keterangan' => "Presensi {$sesi} via kamera",
+        ]);
+
+        $user->notify(new KonfirmasiPresensiBerhasil($presensiRecord));
+
+            return response()->json(['success' => true, 'message' => "Presensi {$sesi} berhasil! Status: {$statusModel->status}"]);
         } catch (\Exception $e) {
-            Log::error('Camera presensi error', ['error' => $e->getMessage()]);
-            if (isset($path) && Storage::disk('public')->exists($path)) {
+            // Jika terjadi error, hapus gambar yang mungkin sudah terlanjur disimpan
+            if ($path && Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
-            return response()->json(['success' => false, 'message' => 'Gagal menyimpan presensi: ' . $e->getMessage()], 500);
+
+            Log::error('Camera presensi error untuk user: ' . $user->id, ['error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan internal. Gagal menyimpan presensi.'], 500);
         }
     }
 
-    /**
-     * Submit Izin/Sakit
-     */
-    public function submitIzinSakit(Request $request)
+    public function submitAbsenceRequest(Request $request)
     {
-        $request->validate(['jenis' => 'required|in:Izin,Sakit', 'keterangan' => 'required|string|min:10|max:255', 'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048']);
-        $user = Auth::user();
-        $today = now()->toDateString();
-        if (Presensi::where('user_id', $user->id)->where('tanggal_presensi', $today)->exists()) {
-            return back()->with('error', 'Anda sudah melakukan presensi hari ini');
+        $rules = [
+            'jenis' => 'required|in:IZIN_TERENCANA,IZIN_MENDESAK,SAKIT',
+            'durasi' => 'required|in:FULL_DAY,PAGI_ONLY,SORE_ONLY',
+            'keterangan' => 'required|string|min:20|max:255',
+            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+        ];
+
+        if ($request->jenis == 'IZIN_TERENCANA') {
+            $rules['tanggal_mulai'] = 'required|date|after_or_equal:today';
+            $rules['tanggal_selesai'] = 'required|date|after_or_equal:tanggal_mulai';
+        } else {
+            $rules['tanggal_single'] = 'required|date';
         }
+        $request->validate($rules);
+
+         $user = Auth::user();
+        $buktiPath = null;
         try {
-            $buktiPath = $request->hasFile('bukti_foto') ? $request->file('bukti_foto')->store('uploads/presensi', 'public') : null;
-            $jenis = $request->jenis;
-            $statusId = PresensiStatus::where('status', $jenis)->value('id');
-            foreach (['pagi', 'sore'] as $sesi) {
-                Presensi::create(['user_id' => $user->id, 'tanggal_presensi' => $today, 'sesi' => $sesi, 'status' => $jenis, 'presensi_status_id' => $statusId, 'bukti_foto' => $buktiPath, 'keterangan' => $request->keterangan, 'jam_presensi' => null,]);
+            DB::beginTransaction();
+            $statusModel = PresensiStatus::where('kode', $request->jenis)->firstOrFail();
+            $buktiPath = $request->file('bukti_foto')->store('uploads/presensi/absences', 'public');
+
+            $targetSessions = ($request->durasi == 'PAGI_ONLY') ? ['pagi'] : (($request->durasi == 'SORE_ONLY') ? ['sore'] : ['pagi', 'sore']);
+            $dates = ($request->jenis == 'IZIN_TERENCANA') ? Carbon::parse($request->tanggal_mulai)->toPeriod($request->tanggal_selesai) : [Carbon::parse($request->tanggal_single)];
+
+            $firstPresensiRecord = null; // Variabel untuk menyimpan record pertama
+
+            foreach ($dates as $date) {
+                $tanggal = $date->toDateString();
+                if ($date->isWeekend()) continue;
+
+                foreach ($targetSessions as $sesi) {
+                    $payload = [
+                        'status' => $statusModel->status,
+                        'presensi_status_id' => $statusModel->id,
+                        'bukti_foto' => $buktiPath,
+                        'keterangan' => $request->keterangan,
+                        'approval_status' => 'pending',
+                        'requested_status' => $statusModel->status,
+                        'presensi_at' => $date->copy()->setTimeFrom(now()),
+                    ];
+
+                    $existing = Presensi::where('user_id', $user->id)
+                        ->where('sesi', $sesi)
+                        ->whereDate('presensi_at', $tanggal)
+                        ->first();
+
+                    if ($existing) {
+                        $existing->update($payload);
+                        if (!$firstPresensiRecord) $firstPresensiRecord = $existing->fresh(); // Simpan record pertama
+                    } else {
+                        $newRecord = Presensi::create(array_merge(['user_id' => $user->id, 'sesi' => $sesi], $payload));
+                        if (!$firstPresensiRecord) $firstPresensiRecord = $newRecord; // Simpan record pertama
+                    }
+                }
             }
-            return back()->with('success', "Pengajuan {$jenis} berhasil disubmit!");
+
+            if ($firstPresensiRecord) {
+                $penerimaNotifikasi = User::whereIn('group_id', [1, 2, 5, 6, 7])->get();
+                Notification::send($penerimaNotifikasi, new SiswaMengajukanIzin($user, $firstPresensiRecord));
+            }
+            
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Pengajuan berhasil dikirim dan menunggu persetujuan.']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // [PERBAIKAN 4] Tangani error validasi secara spesifik
+            DB::rollBack();
+            if ($buktiPath) Storage::disk('public')->delete($buktiPath);
+            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            Log::error('Izin/Sakit submit error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
+            DB::rollBack();
+            if ($buktiPath) Storage::disk('public')->delete($buktiPath);
+            Log::error('Submit Absence Request error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan internal. Silakan coba lagi.'], 500);
         }
     }
 
-    /**
-     * Siswa meminta perubahan status Alpa
-     */
-    public function requestApprovalDate(Request $request)
-    {
-        $request->validate(['tanggal_presensi' => 'required|date', 'requested_status' => 'required|in:Izin,Sakit', 'keterangan' => 'required|string|min:20', 'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048']);
-        $userId = Auth::id();
-        $tanggal = $request->tanggal_presensi;
-        if (!Presensi::where('user_id', $userId)->where('tanggal_presensi', $tanggal)->where('status', 'Alpa')->exists()) {
-            return back()->with('error', 'Tidak ada status Alpa pada tanggal tersebut');
-        }
-        if (Presensi::where('user_id', $userId)->where('tanggal_presensi', $tanggal)->where('approval_status', 'pending')->exists()) {
-            return back()->with('error', 'Anda sudah memiliki permintaan approval untuk tanggal ini');
-        }
-        try {
-            $buktiPath = $request->hasFile('bukti_foto') ? $request->file('bukti_foto')->store('uploads/presensi/approval', 'public') : null;
-            Presensi::where('user_id', $userId)->where('tanggal_presensi', $tanggal)->where('status', 'Alpa')->update(['requested_status' => $request->requested_status, 'keterangan' => $request->keterangan, 'bukti_foto' => $buktiPath, 'approval_status' => 'pending']);
-            return back()->with('success', 'Permintaan perubahan status berhasil dikirim. Menunggu approval admin.');
-        } catch (\Exception $e) {
-            \Log::error('Request approval error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal mengirim permintaan. Silakan coba lagi.');
-        }
-    }
-
-    /**
-     * Admin memproses permintaan approve/reject
-     */
-    public function processApproval(Request $request, $presensiId)
-    {
-        if (!isAdmin()) {
-            return back()->with('error', 'Anda tidak memiliki akses untuk melakukan approval');
-        }
-        $request->validate(['action' => 'required|in:approve,reject', 'notes' => 'nullable|string|max:255']);
-        $presensi = Presensi::findOrFail($presensiId);
+public function processApproval(Request $request, Presensi $presensi)
+{
+    $request->validate(['action' => 'required|in:approve,reject', 'notes' => 'nullable|string|max:255']);
+    try {
+        DB::beginTransaction();
+        
         if ($presensi->approval_status !== 'pending') {
-            return back()->with('error', 'Permintaan ini sudah diproses sebelumnya');
+            throw new \Exception('Permintaan ini sudah diproses sebelumnya.');
         }
-        try {
-            $isApproved = $request->action === 'approve';
-            $newStatus = $isApproved ? $presensi->requested_status : 'Alpa';
-            $statusId = PresensiStatus::where('status', $newStatus)->value('id');
-            Presensi::where('user_id', $presensi->user_id)->where('tanggal_presensi', $presensi->tanggal_presensi)->where('approval_status', 'pending')
-                ->update(['status' => $newStatus, 'presensi_status_id' => $statusId, 'approval_status' => $isApproved ? 'approved' : 'rejected', 'approval_notes' => $request->notes, 'approved_by' => Auth::id(), 'approved_at' => now()]);
-            return back()->with('success', 'Permintaan perubahan status ' . ($isApproved ? 'disetujui' : 'ditolak'));
-        } catch (\Exception $e) {
-            Log::error('Approval process error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal memproses approval. Silakan coba lagi.');
+        
+        $isApproved = $request->action == 'approve';
+        $newApprovalStatus = $isApproved ? 'approved' : 'rejected';
+        
+        $statusModel = PresensiStatus::where('status', $presensi->requested_status)->first() ?? PresensiStatus::where('kode', 'ALPA')->firstOrFail();
+
+        $relatedPresensi = collect();
+        if ($presensi->bukti_foto) {
+            $relatedPresensi = Presensi::where('user_id', $presensi->user_id)
+                ->where('bukti_foto', $presensi->bukti_foto)
+                ->where('approval_status', 'pending') 
+                ->get();
+        }
+        
+        // Fallback jika tidak ada (seharusnya tidak terjadi, tapi untuk aman)
+        if ($relatedPresensi->isEmpty()) {
+             $relatedPresensi = Presensi::where('user_id', $presensi->user_id)
+                ->whereDate('presensi_at', $presensi->presensi_at->toDateString())
+                ->where('approval_status', 'pending')->get();
+        }
+
+        // Update semua data yang terkait
+        foreach ($relatedPresensi as $record) {
+            $record->update([
+                'status' => $statusModel->status,
+                'presensi_status_id' => $statusModel->id,
+                'approval_status' => $newApprovalStatus,
+                'approval_notes' => $request->notes,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'requested_status' => null
+            ]);
+        }
+                
+        $siswa = $presensi->user;
+        if ($siswa) {
+            $siswa->notify(new HasilApprovalIzin($presensi, $isApproved));
+        }
+
+        DB::commit();
+        $message = "Pengajuan {$presensi->requested_status} (dan " . ($relatedPresensi->count() - 1) . " data terkait) telah " . ($isApproved ? 'disetujui' : 'ditolak');
+        return response()->json(['success' => true, 'message' => $message]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Approval process error: ' . $e->getMessage());
+        return response()->json(['error' => true, 'message' => 'Gagal memproses approval: ' . $e->getMessage()], 500);
+    }
+}
+
+public function dataUnified(Request $request)
+{
+    $query = Presensi::query()
+        ->join('user', 'presensi.user_id', '=', 'user.id')
+        ->with(['user.sekolah', 'presensiStatus'])
+        ->select('presensi.*');
+
+    $user = Auth::user();
+
+    if ($user->group_id == 4) { // Jika Siswa
+        $query->where('presensi.user_id', $user->id);
+    } elseif ($user->group_id == 3) { // Jika Pembimbing Sekolah
+        $query->whereHas('user', function ($q) use ($user) {
+            $q->where('sekolah_id', $user->sekolah_id)
+              ->where('program_keahlian_id', $user->program_keahlian_id);
+        });
+    }
+
+    $this->applyFiltersToQuery($query, $request);
+
+    // [MODIFIKASI] Buat instance DataTables tanpa 'action' dulu
+    $dataTable = DataTables::of($query)
+        ->addIndexColumn()
+        ->addColumn('nama', fn($row) => $row->user?->name ?? '-')
+        ->addColumn('sekolah', fn($row) => $row->user?->sekolah?->nama ?? '-')
+        ->addColumn('tanggal', fn($row) => $row->presensi_at ? \Carbon\Carbon::parse($row->presensi_at)->format('d/m/Y') : '-')
+        ->addColumn('sesi_badge', fn($row) => '<span class="badge bg-' . ($row->sesi == 'pagi' ? 'info' : 'warning') . '">' . ucfirst($row->sesi) . '</span>')
+        ->addColumn('jam', fn($row) => $row->presensi_at ? \Carbon\Carbon::parse($row->presensi_at)->format('H:i') : '-')
+        ->addColumn('status_badge', fn($row) => PresensiHelper::renderStatusBadge($row))
+        ->addColumn('approval_badge', fn($row) => PresensiHelper::renderApprovalBadge($row))
+        ->addColumn('keterangan', fn($row) => $row->keterangan)
+        ->addColumn('bukti_foto', fn($row) => $row->bukti_foto ? '<button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#imageViewerModal" data-image-url="' . asset('storage/' . $row->bukti_foto) . '"><i class="fa fa-eye"></i></button>' : '-')
+        ->rawColumns(['sesi_badge', 'status_badge', 'approval_badge', 'bukti_foto']); // 'action' dihapus sementara
+
+    // =================================================================
+    // [MODIFIKASI] Logika Optimasi yang Diperbaiki
+    // =================================================================
+    
+    // 1. Ambil data yang sudah difilter/dipaginasi oleh Yajra
+    // Kita clone query yang sudah difilter (termasuk limit/offset)
+    $filteredData = $dataTable->getFilteredQuery()->get();
+
+    // 2. Kumpulkan batch keys HANYA dari data di halaman ini
+    $batchKeys = [];
+    foreach ($filteredData as $row) {
+        if (in_array($row->approval_status, ['pending', 'pending_update']) && $row->bukti_foto) {
+            $batchKeys[$row->bukti_foto] = $row->user_id;
         }
     }
 
-    /**
-     * DataTables untuk approval pending
-     */
-    public function approvalData()
-    {
-        if (!isAdmin()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+    // 3. Jalankan SATU query untuk menemukan semua ID "utama"
+    $primaryIds = collect();
+    if (!empty($batchKeys)) {
+        $queryBuilder = DB::table('presensi')->selectRaw('MAX(id) as id');
+        
+        $first = true;
+        foreach ($batchKeys as $bukti_foto => $user_id) {
+            $clause = $first ? 'where' : 'orWhere';
+            $queryBuilder->$clause(function($q) use ($user_id, $bukti_foto) {
+                $q->where('user_id', $user_id)
+                  ->where('bukti_foto', $bukti_foto);
+            });
+            $first = false;
         }
-        $data = Presensi::with(['user.sekolah'])->where('approval_status', 'pending')->orderBy('updated_at', 'desc');
-        // ... (Logika DataTables dari file original bisa dimasukkan di sini jika ada kustomisasi)
-        return DataTables::of($data)->make(true);
+        // Pastikan hanya ambil dari data 'pending'
+        $primaryIds = $queryBuilder->whereIn('approval_status', ['pending', 'pending_update']) 
+                                   ->groupBy('user_id', 'bukti_foto')
+                                   ->pluck('id');
     }
 
-    /**
-     * DataTables untuk histori approval
-     */
-    public function approvalHistory()
-    {
-        if (!isAdmin()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-        $data = Presensi::with(['user', 'approvedBy'])->whereIn('approval_status', ['approved', 'rejected'])->orderBy('approved_at', 'desc');
-        // ... (Logika DataTables dari file original bisa dimasukkan di sini jika ada kustomisasi)
-        return DataTables::of($data)->make(true);
-    }
+    return $dataTable->addColumn('action', function($row) use ($user, $primaryIds) {
+        $actions = '';
 
-    /**
-     * Mendapatkan statistik untuk dashboard
-     */
-    public function getStats(Request $request)
-    {
-        if (!isAdmin()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-        $today = now()->toDateString();
-        try {
-            $stats = [
-                'hadir' => Presensi::whereDate('tanggal_presensi', $today)->whereIn('status', ['Tepat Waktu', 'Terlambat', 'Sangat Terlambat', 'Terlalu Awal'])->distinct('user_id')->count(),
-                'terlambat' => Presensi::whereDate('tanggal_presensi', $today)->whereIn('status', ['Terlambat', 'Sangat Terlambat'])->distinct('user_id')->count(),
-                'izin' => Presensi::whereDate('tanggal_presensi', $today)->where('status', 'Izin')->distinct('user_id')->count(),
-                'sakit' => Presensi::whereDate('tanggal_presensi', $today)->where('status', 'Sakit')->distinct('user_id')->count(),
-                'alpa' => Presensi::whereDate('tanggal_presensi', $today)->where('status', 'Alpa')->distinct('user_id')->count(),
-                'pending' => Presensi::where('approval_status', 'pending')->count()
-            ];
-            return response()->json($stats);
-        } catch (\Exception $e) {
-            Log::error('Error getting stats: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load stats'], 500);
-        }
-    }
+        if (in_array($user->group_id, [1, 2, 5, 6, 7])) {
+            
+            if (in_array($row->approval_status, ['pending', 'pending_update']) && $row->bukti_foto) {
+                
+                if ($primaryIds->contains($row->id)) {
+                    $actions .= '<button class="btn btn-success btn-sm me-1 action-btn" data-action="approve" data-id="'.$row->id.'" title="Setujui (Semua Sesi Terkait)"><i class="fa fa-check"></i></button>';
+                    $actions .= '<button class="btn btn-secondary btn-sm me-1 action-btn" data-action="reject" data-id="'.$row->id.'" title="Tolak (Semua Sesi Terkait)"><i class="fa fa-times"></i></button>';
+                } else {
+                    $actions .= '<span class="text-muted" title="Tindakan ada di baris pertama pengajuan ini">(terkait)</span>';
+                }
+                
+                 $actions .= '<a href="'.url('presensi').'/'.$row->id.'/edit" class="btn btn-warning btn-sm me-1" title="Edit"><i class="fa fa-edit"></i></a>';
+                 $actions .= '<button class="btn btn-danger btn-sm action-btn" data-action="delete" data-id="'.$row->id.'" title="Hapus"><i class="fa fa-trash"></i></button>';
 
-    /**
-     * Mendapatkan daftar sekolah untuk filter
-     */
+            } else {
+                 $actions .= '<a href="'.url('presensi').'/'.$row->id.'/edit" class="btn btn-warning btn-sm me-1" title="Edit"><i class="fa fa-edit"></i></a>';
+                 $actions .= '<button class="btn btn-danger btn-sm action-btn" data-action="delete" data-id="'.$row->id.'" title="Hapus"><i class="fa fa-trash"></i></button>';
+            }
+
+        } 
+        elseif ($user->group_id == 4 && $row->user_id == $user->id) {
+            if (in_array($row->approval_status, ['pending', 'rejected'])) {
+                
+                if ($primaryIds->contains($row->id) || !$row->bukti_foto) {
+                     $actions .= '<a href="'.route('presensi.edit_absence', $row->id).'" class="btn btn-warning btn-sm me-1" title="Edit Pengajuan"><i class="fa fa-edit"></i> Edit</a>';
+                } else {
+                     $actions .= '<span class="text-muted" title="Edit melalui baris pertama pengajuan">(terkait)</span>';
+                }
+            }
+        }
+        
+        return $actions ?: '-';
+    })
+    // [MODIFIKASI TAMBAHAN]
+    ->editColumn('approval_badge', function($row) use ($primaryIds) {
+        $baseBadge = PresensiHelper::renderApprovalBadge($row);
+        // Cek apakah ini batch pending
+        if (in_array($row->approval_status, ['pending', 'pending_update']) && $row->bukti_foto) {
+            // Jika ini BUKAN primary ID, tambahkan teks (Terkait)
+            if (!$primaryIds->contains($row->id)) {
+                 // Ini akan menambahkan teks kecil di bawah badge
+                 return $baseBadge . ' <span class="text-muted d-block" style="font-size: 0.8em;">(Terkait)</span>';
+            }
+        }
+        // Jika tidak, kembalikan badge aslinya
+        return $baseBadge;
+    })
+    ->rawColumns(['sesi_badge', 'status_badge', 'approval_badge', 'bukti_foto', 'action']) 
+    ->make(true);
+
+}
     public function getSekolahList()
     {
         return response()->json(Sekolah::select('id', 'nama')->orderBy('nama')->get());
     }
 
-    private function getRekapAbsensiSiswa($monthString, Request $request)
+    public function exportPDF(Request $request)
     {
-        $startDate = Carbon::createFromFormat('Y-m', $monthString)->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
-        $totalHariKerja = $startDate->diffInWeekdays($endDate);
+        $reportType = $request->input('report_type', 'detail');
+        if ($reportType == 'rekap') {
+            return $this->exportPDFRekap($request);
+        }
+        return $this->exportPDFDetail($request);
+    }
 
-        // Menggunakan whereHas yang lebih aman dan sesuai dengan Eloquent
-        $presensiBulanan = Presensi::with('user') // Eager load relasi user
-            ->whereBetween('tanggal_presensi', [$startDate, $endDate])
-            ->whereHas('user', function ($query) use ($request) {
-                $query->where('group_id', 4);
+    private function exportPDFDetail(Request $request)
+    {
+        $availableColumns = [
+            'sekolah' => 'Sekolah',
+            'tanggal' => 'Tanggal',
+            'sesi' => 'Sesi',
+            'presensi_at' => 'Jam',
+            'status' => 'Status',
+            'approval_status' => 'Approval',
+            'keterangan' => 'Keterangan',
+        ];
+        $selectedKeys = $request->input('columns', array_keys($availableColumns));
+        $selectedColumns = array_filter($availableColumns, fn($key) => in_array($key, $selectedKeys), ARRAY_FILTER_USE_KEY);
 
-                if ($request->filled('filter_sekolah')) {
-                    $query->where('sekolah_id', $request->filter_sekolah);
-                }
-            })
+        $query = Presensi::query()
+            ->join('user', 'presensi.user_id', '=', 'user.id')
+            ->with('user.sekolah');
+
+        $this->applyFiltersToQuery($query, $request);
+
+        $dataPresensi = $query
+            ->select('presensi.*')
+            ->orderBy('user.name', 'asc')
+            ->orderBy('presensi.presensi_at', 'asc')
             ->get();
 
-        $allSiswaQuery = User::where('group_id', 4);
-        if ($request->filled('filter_sekolah')) {
-            $allSiswaQuery->where('sekolah_id', $request->filter_sekolah);
-        }
-        $allSiswa = $allSiswaQuery->pluck('name', 'id');
+        $bulanTeks = $request->filled('filter_bulan') ? Carbon::parse($request->filter_bulan)->translatedFormat('F Y') : 'Semua Data';
+        $namaSekolah = $request->filled('filter_sekolah') ? Sekolah::find($request->filter_sekolah)?->nama : 'Semua Sekolah';
 
-        $rekap = $presensiBulanan
-            ->groupBy('user_id')
-            ->map(function ($presensiUser) use ($totalHariKerja) {
-                $harian = $presensiUser->groupBy('tanggal_presensi')
-                    ->map(fn($h) => PresensiHelper::hitungStatusHarianFromCollection($h));
+        $pdfData = [
+            'data' => $dataPresensi,
+            'selectedColumns' => $selectedColumns,
+            'judul' => 'Laporan Detail Presensi Siswa',
+            'periode' => $bulanTeks,
+            'sekolah' => $namaSekolah,
+        ];
 
-                $summary = $harian->countBy();
-
-                $hadir = ($summary['hadir'] ?? 0) + ($summary['telat'] ?? 0);
-                $sakit = $summary['sakit'] ?? 0;
-                $izin = $summary['izin'] ?? 0;
-
-                return [
-                    'nama' => $presensiUser->first()->user->name,
-                    'hadir' => $hadir,
-                    'sakit' => $sakit,
-                    'izin'  => $izin,
-                    'tidak_hadir'  => max(0, $totalHariKerja - ($hadir + $sakit + $izin)),
-                ];
-            });
-
-        $siswaTanpaPresensi = $allSiswa->diffKeys($rekap);
-        foreach ($siswaTanpaPresensi as $id => $name) {
-            $rekap[$id] = [
-                'nama' => $name,
-                'hadir' => 0,
-                'sakit' => 0,
-                'izin' => 0,
-                'tidak_hadir' => $totalHariKerja
-            ];
-        }
-        return $rekap->sortBy('nama')->values()->toArray();
+        $pdf = PDF::loadView('administrator.presensi.exports.rekap_pdf', $pdfData)->setPaper('a4', 'landscape');
+        return $pdf->stream('Laporan_Detail_Presensi.pdf');
     }
-    /**
-     * Menerapkan filter dari request ke query builder.
-     */
+
+    private function exportPDFRekap(Request $request)
+    {
+        $rekapData = $this->getRekapData($request);
+        $bulanTeks = $request->filled('filter_bulan') ? Carbon::parse($request->filter_bulan)->translatedFormat('F Y') : 'Semua Data';
+        $namaSekolah = $request->filled('filter_sekolah') ? Sekolah::find($request->filter_sekolah)?->nama : 'Semua Sekolah';
+
+        $pdfData = [
+            'rekapData' => $rekapData,
+            'judul' => 'Laporan Rekapitulasi Presensi',
+            'periode' => $bulanTeks,
+            'sekolah' => $namaSekolah,
+        ];
+
+        $pdf = PDF::loadView('administrator.presensi.exports.rekap_presensi_pdf', $pdfData)->setPaper('a4', 'portrait');
+        return $pdf->stream('Rekap_Presensi.pdf');
+    }
+
+    //===============================================
+    // METHOD BANTUAN (PRIVATE HELPERS)
+    //===============================================
+
+    private function getRekapData(Request $request)
+    {
+        $query = Presensi::query()
+            ->with('user:id,name', 'presensiStatus:id,kategori')
+            ->join('user', 'presensi.user_id', '=', 'user.id');
+
+        $this->applyFiltersToQuery($query, $request);
+        $allPresensi = $query->get();
+
+        return $allPresensi->groupBy('user_id')->map(function ($presensiUser) {
+            // << PERUBAHAN PADA PENGELOMPOKAN >>
+            $presensiPerHari = $presensiUser->groupBy(fn($item) => $item->presensi_at ? $item->presensi_at->toDateString() : null);
+
+            $rekapHarian = ['hadir' => 0, 'telat' => 0, 'sakit' => 0, 'izin' => 0, 'alpa' => 0];
+
+            foreach ($presensiPerHari as $tanggal => $entriSatuHari) {
+                if (is_null($tanggal)) continue; // Lewati jika tidak ada tanggal
+                $statusHarian = PresensiHelper::hitungStatusHarianFromCollection($entriSatuHari);
+                if (isset($rekapHarian[$statusHarian])) {
+                    $rekapHarian[$statusHarian]++;
+                }
+            }
+
+            return [
+                'nama' => $presensiUser->first()->user->name,
+                'hadir' => $rekapHarian['hadir'] + $rekapHarian['telat'],
+                'sakit' => $rekapHarian['sakit'],
+                'izin' => $rekapHarian['izin'],
+                'alpa' => $rekapHarian['alpa'],
+            ];
+        })->sortBy('nama')->values();
+    }
+
     private function applyFiltersToQuery($query, Request $request)
     {
-        // === LOGIKA FILTER TANGGAL YANG DIPERBAIKI ===
-        // Prioritaskan filter_bulan. Jika ada, abaikan filter_tanggal.
         if ($request->filled('filter_bulan')) {
             try {
                 $date = Carbon::parse($request->filter_bulan);
-                $query->whereYear('presensi.tanggal_presensi', $date->year)
-                    ->whereMonth('presensi.tanggal_presensi', $date->month);
+                $query->whereYear('presensi.presensi_at', $date->year)
+                    ->whereMonth('presensi.presensi_at', $date->month);
             } catch (\Exception $e) {
-                Log::error('Invalid date format for filter_bulan: ' . $request->filter_bulan);
-            }
-        }
-        // Jika filter_bulan tidak diisi, baru jalankan filter_tanggal
-        elseif ($request->filled('filter_tanggal')) {
-            match ($request->filter_tanggal) {
-                'today'     => $query->whereDate('presensi.tanggal_presensi', today()),
-                'yesterday' => $query->whereDate('presensi.tanggal_presensi', today()->subDay()),
-                'week'      => $query->whereBetween('presensi.tanggal_presensi', [today()->subDays(6), today()]),
-                'month'     => $query->whereBetween('presensi.tanggal_presensi', [today()->subDays(29), today()]),
-                default     => null,
-            };
-        }
-
-        if ($request->filled('filter_status')) {
-            $query->where('presensi.status', $request->filter_status);
-        }
-        if ($request->filled('filter_sesi')) {
-            $query->where('presensi.sesi', $request->filter_sesi);
-        }
-        if ($request->filled('filter_approval')) {
-            if ($request->filter_approval === 'none') {
-                $query->whereNull('presensi.approval_status');
-            } else {
-                $query->where('presensi.approval_status', $request->filter_approval);
+                Log::warning('Filter bulan tidak valid: ' . $request->filter_bulan);
             }
         }
         if ($request->filled('filter_sekolah')) {
-            $query->where('user.sekolah_id', $request->filter_sekolah);
+            $query->whereHas('user', fn($q) => $q->where('sekolah_id', $request->filter_sekolah));
+        }
+
+        if ($request->filled('filter_periode')) {
+            $query->whereHas('user.periodePkl', function ($q) use ($request) {
+                $q->where('periode_pkl.id', $request->filter_periode);
+            });
         }
 
         if ($request->filled('filter_approval')) {
-            if ($request->filter_approval === 'pending_all') {
-                // Gabungkan dua status pending menjadi satu filter
+            $status = $request->filter_approval;
+            if ($status == 'pending_all') {
                 $query->whereIn('presensi.approval_status', ['pending', 'pending_update']);
+            } elseif ($status == 'none') {
+                $query->whereNull('presensi.approval_status');
             } else {
-                $query->where('presensi.approval_status', $request->filter_approval);
+                $query->where('presensi.approval_status', $status);
             }
         }
 
-        // === PENCARIAN GLOBAL ===
         if ($request->input('search.value')) {
             $search = $request->input('search.value');
-            // Grouping 'OR' condition for search
-            $query->where(function ($q) use ($search) {
-                $q->where('user.name', 'like', "%{$search}%")
-                    ->orWhere('sekolah.nama', 'like', "%{$search}%")
-                    ->orWhere('presensi.status', 'like', "%{$search}%");
-            });
+            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"));
         }
     }
 
-    /**
-     * Membuat HTML untuk kolom aksi di DataTables.
-     */
-    private function renderAksiColumn(Presensi $row)
-    {
-        $actions = '<div class="btn-group btn-group-sm table-actions" role="group">';
-        if ($row->status === 'Alpa' && Auth::id() == $row->user_id && !$row->approval_status) {
-            $actions .= '<button class="btn btn-outline-warning" onclick="requestApprovalForDate(\'' . $row->tanggal_presensi . '\')" title="Request Perubahan"><i class="fas fa-edit"></i></button>';
-        }
-        if ($row->approval_status === 'pending' && isAdmin()) {
-            $actions .= '<button class="btn btn-outline-success" onclick="processQuickApproval(' . $row->id . ', \'approve\')" title="Setujui"><i class="fas fa-check"></i></button>';
-            $actions .= '<button class="btn btn-outline-danger" onclick="processQuickApproval(' . $row->id . ', \'reject\')" title="Tolak"><i class="fas fa-times"></i></button>';
-        }
-        if (isAdmin()) {
-            $actions .= '<button class="btn btn-outline-primary" onclick="editPresensi(' . $row->id . ')" title="Edit"><i class="fas fa-pencil-alt"></i></button>';
-        }
-        $actions .= '</div>';
-        return ($actions === '<div class="btn-group btn-group-sm table-actions" role="group"></div>') ? '-' : $actions;
-    }
-
-    /**
-     * Membuat HTML untuk badge status presensi.
-     */
-    private function renderStatusBadge($row): string
-    {
-        if ($row->approval_status === 'pending') {
-            return '<span class="badge bg-warning">' . e($row->requested_status) . ' (Menunggu)</span>';
-        }
-        $status = $row->status ?? '-';
-        $map = ['Tepat Waktu' => 'success', 'Terlambat' => 'warning', 'Sangat Terlambat' => 'danger', 'Terlalu Awal' => 'info', 'Izin' => 'primary', 'Sakit' => 'secondary', 'Alpa' => 'danger'];
-        return '<span class="badge bg-' . ($map[$status] ?? 'light') . '">' . e($status) . '</span>';
-    }
-
-    /**
-     * Membuat HTML untuk badge status approval.
-     */
-    private function renderApprovalBadge($row): string
-    {
-        if (!$row->approval_status) {
-            return '<span class="badge bg-light text-muted">-</span>';
-        }
-        $map = ['pending' => ['class' => 'warning', 'text' => 'Menunggu'], 'approved' => ['class' => 'success', 'text' => 'Disetujui'], 'rejected' => ['class' => 'danger', 'text' => 'Ditolak']];
-        $config = $map[$row->approval_status] ?? ['class' => 'secondary', 'text' => ucfirst($row->approval_status)];
-        return '<span class="badge bg-' . $config['class'] . '">' . e($config['text']) . '</span>';
-    }
-
-    // Helper-helper lain dari file original
     private function getStatusPresensiHariIni($presensiHariIni, $setting)
     {
-        $now           = now();
-        $currentTime   = $now->format('H:i');
-        $pagiData      = $presensiHariIni->where('sesi', 'pagi')->first();
-        $soreData      = $presensiHariIni->where('sesi', 'sore')->first();
-
         $status = [
-            'can_presensi'    => false,
+            'can_presensi' => false,
             'current_session' => null,
-            'message'         => '',
-            'pagi_status'     => $pagiData?->status,
-            'sore_status'     => $soreData?->status,
-            'pagi_jam'        => $pagiData?->jam_presensi,
-            'sore_jam'        => $soreData?->jam_presensi,
+            'message' => 'Waktu presensi telah berakhir untuk hari ini.'
         ];
 
         if (!$setting) {
-            $status['message'] = 'Pengaturan presensi belum dikonfigurasi';
+            $status['message'] = 'Pengaturan presensi belum dikonfigurasi.';
             return $status;
         }
 
-        if ($currentTime >= $setting->pagi_mulai && $currentTime < $setting->sore_mulai) {
+        $now = now();
+
+        $pagiMulai = Carbon::parse($setting->pagi_mulai);
+        $soreMulai = Carbon::parse($setting->sore_mulai);
+        $soreSelesai = Carbon::parse($setting->sore_selesai);
+
+        $pagiData = $presensiHariIni->where('sesi', 'pagi')->first();
+        $soreData = $presensiHariIni->where('sesi', 'sore')->first();
+
+        if ($now->isBetween($pagiMulai, $soreMulai->copy()->subSecond())) {
             $status['current_session'] = 'pagi';
             $status['can_presensi'] = !$pagiData;
-            $status['message'] = $pagiData
-                ? "Presensi pagi sudah dilakukan ({$pagiData->status})"
-                : 'Silakan lakukan presensi pagi';
-        } elseif ($currentTime >= $setting->sore_mulai && $currentTime <= $setting->sore_selesai) {
+            $status['message'] = $pagiData ? "Presensi pagi sudah dilakukan ({$pagiData->status})" : 'Silakan lakukan presensi pagi.';
+        } elseif ($now->isBetween($soreMulai, $soreSelesai)) {
             $status['current_session'] = 'sore';
             $status['can_presensi'] = !$soreData;
-            $status['message'] = $soreData
-                ? "Presensi sore sudah dilakukan ({$soreData->status})"
-                : 'Silakan lakukan presensi sore';
-        } else {
-            $status['message'] = 'Waktu presensi sudah berakhir untuk hari ini';
+            $status['message'] = $soreData ? "Presensi sore sudah dilakukan ({$soreData->status})" : 'Silakan lakukan presensi sore.';
         }
 
         return $status;
     }
 
-    public function exportExcel(Request $request)
-    {
-        try {
-            // --- Logika dari getFiltersFromRequest digabung langsung ke sini ---
-            $bulan = $request->input('bulan', now()->month);
-            $tahun = $request->input('tahun', now()->year);
-
-            // Membuat variabel $monthString dan $bulanTeks secara langsung
-            $monthString = sprintf('%04d-%02d', $tahun, $bulan);
-            $bulanTeks = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F Y');
-            // ----------------------------------------------------------------
-
-            // Menggunakan $monthString yang sudah pasti terdefinisi
-            $rekapData = $this->getRekapAbsensiSiswa($monthString, $request);
-
-            $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-
-            // Menggunakan $bulanTeks yang sudah pasti terdefinisi
-            $sheet->setCellValue('A1', 'REKAP ABSENSI SISWA')->mergeCells('A1:E1');
-            $sheet->setCellValue('A2', strtoupper($bulanTeks))->mergeCells('A2:E2');
-            $sheet->fromArray(['NAMA SISWA', 'Hadir', 'Sakit', 'Izin', 'TK (Tanpa Keterangan)'], null, 'A4');
-
-            $rowData = array_map(fn($siswa) => [$siswa['nama'], $siswa['hadir'], $siswa['sakit'], $siswa['izin'], $siswa['tidak_hadir']], $rekapData);
-            $sheet->fromArray($rowData, null, 'A5');
-
-            $lastRow = count($rekapData) + 4;
-            $sheet->getStyle('A1:E4')->getFont()->setBold(true);
-            $sheet->getStyle('A4:E' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-            foreach (range('A', 'E') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
-            $sheet->getColumnDimension('A')->setWidth(35);
-
-            $writer = new Xlsx($spreadsheet);
-            $filename = 'Rekap_Absensi_' . str_replace(' ', '_', $bulanTeks) . '.xlsx';
-
-            return response()->streamDownload(fn() => $writer->save('php://output'), $filename);
-        } catch (\Exception $e) {
-            // Tampilkan pesan error yang lebih detail saat development
-            Log::error('Export Excel error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
-            return back()->with('error', 'Gagal membuat file Excel: ' . $e->getMessage());
-        }
+public function editAbsenceRequest(Presensi $presensi)
+{
+    if ($presensi->user_id !== Auth::id() || !in_array($presensi->approval_status, ['pending', 'rejected'])) {
+        abort(403, 'Anda tidak memiliki izin untuk mengubah pengajuan ini.');
     }
 
-    public function exportPDF(Request $request)
-    {
-        try {
-            $bulan = $request->input('bulan', now()->month);
-            $tahun = $request->input('tahun', now()->year);
-            $monthString = sprintf('%04d-%02d', $tahun, $bulan);
-            $bulanTeks = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F Y');
+    return view('administrator.presensi.edit_izin_siswa', compact('presensi'));
+}
 
-            $rekapData = $this->getRekapAbsensiSiswa($monthString, $request);
-
-            $totals = [
-                'totalHadir' => array_sum(array_column($rekapData, 'hadir')),
-                'totalSakit' => array_sum(array_column($rekapData, 'sakit')),
-                'totalIzin'  => array_sum(array_column($rekapData, 'izin')),
-                'totalTK'    => array_sum(array_column($rekapData, 'tidak_hadir')),
-            ];
-
-            $pdf = PDF::loadView('administrator.presensi.exports.rekap_pdf', array_merge(
-                ['rekapData' => $rekapData, 'bulanTeks' => $bulanTeks],
-                $totals
-            ));
-
-            $filename = 'Rekap_Absensi_' . str_replace(' ', '_', $bulanTeks) . '.pdf';
-            return $pdf->download($filename);
-        } catch (\Exception $e) {
-            Log::error('Export PDF error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat file PDF: ' . $e->getMessage());
-        }
+public function updateAbsenceRequest(Request $request, Presensi $presensi)
+{
+    // 1. Keamanan: Validasi awal tetap sama
+    if ($presensi->user_id !== Auth::id() || !in_array($presensi->approval_status, ['pending', 'rejected'])) {
+        return redirect()->route('presensi.index')->with('error', 'Anda tidak dapat mengubah pengajuan ini.');
     }
-    public function generateAlpa()
-    {
-        if (!isAdmin()) {
-            return back()->with('error', 'Hanya admin yang bisa menjalankan fitur ini.');
+
+    // 2. Validasi input juga tetap sama
+    $request->validate([
+        'keterangan' => 'required|string|min:20|max:255',
+        'bukti_foto' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048'
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $buktiPathBaru = null;
+
+        // 3. Handle file upload di luar loop untuk efisiensi
+        if ($request->hasFile('bukti_foto')) {
+            $buktiPathBaru = $request->file('bukti_foto')->store('uploads/presensi/absences', 'public');
         }
-        $today = today()->toDateString();
-        $presentStudentIds = Presensi::where('tanggal_presensi', $today)->distinct()->pluck('user_id');
-        $absentStudentIds = User::where('group_id', 4)->whereNotIn('id', $presentStudentIds)->pluck('id');
-        if ($absentStudentIds->isEmpty()) {
-            return back()->with('info', 'Semua siswa sudah melakukan presensi hari ini.');
-        }
-        $alpaStatusId = PresensiStatus::where('status', 'Alpa')->value('id');
-        $dataToInsert = [];
-        $now = now();
-        foreach ($absentStudentIds as $userId) {
-            foreach (['pagi', 'sore'] as $sesi) {
-                $dataToInsert[] = ['user_id' => $userId, 'tanggal_presensi' => $today, 'sesi' => $sesi, 'status' => 'Alpa', 'presensi_status_id' => $alpaStatusId, 'keterangan' => 'Generated by system', 'created_at' => $now, 'updated_at' => $now,];
+
+        // 4. [LOGIKA BARU] Cari semua data presensi (pagi & sore) milik siswa pada tanggal yang sama
+        $tanggalIzin = $presensi->presensi_at->toDateString();
+        $semuaSesiTerkait = Presensi::where('user_id', Auth::id())
+            ->whereDate('presensi_at', $tanggalIzin)
+            ->whereIn('approval_status', ['pending', 'rejected'])
+            ->get();
+
+        foreach ($semuaSesiTerkait as $sesi) {
+            $sesi->keterangan = $request->keterangan;
+            $sesi->approval_status = 'pending';
+            
+            $sesi->requested_status = $sesi->status; 
+
+            // Jika ada file baru diupload, update path & hapus file lama
+            if ($buktiPathBaru) {
+                if ($sesi->bukti_foto && $sesi->bukti_foto !== $buktiPathBaru) {
+                    Storage::disk('public')->delete($sesi->bukti_foto);
+                }
+                $sesi->bukti_foto = $buktiPathBaru;
             }
+            
+            $sesi->save();
         }
-        if (!empty($dataToInsert)) {
-            Presensi::insert($dataToInsert);
-        }
-        return back()->with('success', "Berhasil generate status Alpa untuk " . $absentStudentIds->count() . " siswa.");
+        $penerimaNotifikasi = User::whereIn('group_id', [1, 2, 5, 6, 7])->get();
+            $siswa = Auth::user();
+            Notification::send($penerimaNotifikasi, new SiswaMengajukanUlangIzin($siswa, $presensi));
+        DB::commit();
+
+        return redirect()->route('presensi.index')->with('success', 'Pengajuan izin berhasil diperbarui dan dikirim ulang untuk persetujuan.');
+
+    
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Update Absence Request error: ' . $e->getMessage());
+        return back()->with('error', 'Terjadi kesalahan saat memperbarui data. Silakan coba lagi.');
     }
-    private function processBase64Image(string $imageData): ?string
-    { /* ... (Logika dari file original) ... */
-        return base64_decode(explode(',', $imageData, 2)[1]);
-    }
-    private function getStatusByTime(string $jamPresensi, string $sesi, $setting)
+}
+
+    /**
+     * Mengambil daftar siswa aktif untuk form.
+     */
+    public function getSiswaList()
     {
-        return PresensiHelper::getStatusByTime($jamPresensi, $sesi, $setting);
+        $siswa = User::where('group_id', 4)->orderBy('name')->select('id', 'name as text')->get();
+        return response()->json($siswa);
+    }
+
+    public function batchCreateAlpa(Request $request)
+    {
+        $request->validate([
+            'tanggal_alpa' => 'required|date',
+            'target_type' => 'required|in:all_missing,specific',
+            'user_ids' => 'nullable|required_if:target_type,specific|array'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $tanggal = Carbon::parse($request->tanggal_alpa);
+            if ($tanggal->isWeekend()) {
+                return response()->json(['message' => 'Tidak dapat membuat presensi alpa pada hari libur (Sabtu/Minggu).'], 422);
+            }
+
+            $alpaStatus = PresensiStatus::where('kode', 'ALPA')->first();
+            if (!$alpaStatus) {
+                return response()->json(['message' => 'Status "ALPA" tidak ditemukan di database.'], 422);
+            }
+
+            $targetUserIds = [];
+            if ($request->target_type === 'specific') {
+                $targetUserIds = $request->user_ids;
+            } else { // 'all_missing'
+                $siswaAktifIds = User::where('group_id', 4)->pluck('id');
+                $sudahPresensiIds = Presensi::whereDate('presensi_at', $tanggal)->distinct()->pluck('user_id');
+                $targetUserIds = $siswaAktifIds->diff($sudahPresensiIds)->values()->all();
+            }
+
+            if (empty($targetUserIds)) {
+                return response()->json(['success' => true, 'message' => 'Tidak ada siswa yang perlu ditandai alpa untuk tanggal yang dipilih.'], 200);
+            }
+
+            $dataToInsert = [];
+            $sessions = ['pagi', 'sore'];
+            $now = now();
+
+            $existingRecords = Presensi::whereDate('presensi_at', $tanggal)
+                ->whereIn('user_id', $targetUserIds)
+                ->select('user_id', 'sesi')
+                ->get()
+                ->groupBy('user_id')
+                ->map(fn($group) => $group->pluck('sesi'));
+
+            foreach ($targetUserIds as $userId) {
+                foreach ($sessions as $sesi) {
+                    if (isset($existingRecords[$userId]) && $existingRecords[$userId]->contains($sesi)) {
+                        continue; // Lewati jika sudah ada data presensi untuk sesi ini
+                    }
+                    $dataToInsert[] = [
+                        'user_id' => $userId,
+                        'presensi_at' => $tanggal->copy()->setTimeFrom(now()),
+                        'sesi' => $sesi,
+                        'status' => $alpaStatus->status,
+                        'presensi_status_id' => $alpaStatus->id,
+                        'keterangan' => 'Dibuat otomatis oleh Admin.',
+                        'approval_status' => 'approved',
+                        'approved_by' => Auth::id(),
+                        'approved_at' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+
+            if (!empty($dataToInsert)) {
+                Presensi::insert($dataToInsert);
+            }
+                    $siswaYangDiAlpa = User::whereIn('id', $targetUserIds)->get();
+        foreach ($siswaYangDiAlpa as $siswa) {
+            $siswa->notify(new SiswaDinyatakanAlpa($tanggal));
+        }
+            
+            DB::commit();
+
+            $createdCount = count($dataToInsert);
+            return response()->json(['success' => true, 'message' => "Berhasil membuat {$createdCount} data presensi Alpa."]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Batch Create Alpa error: ' . $e->getMessage());
+            return response()->json(['message' => 'Terjadi kesalahan internal. Gagal membuat data.'], 500);
+        }
+    }
+
+        public function getAnalyticsData(Request $request)
+    {
+        // Gunakan query yang sama persis dengan filter tabel Anda
+        $query = Presensi::query()
+            ->join('user', 'presensi.user_id', '=', 'user.id')
+            ->select(
+                'presensi.status',
+                DB::raw('COUNT(presensi.id) as total')
+            )
+            ->groupBy('presensi.status');
+
+        $user = Auth::user();
+
+        // Terapkan filter scope (siswa/pembimbing)
+        if ($user->group_id == 4) {
+            $query->where('presensi.user_id', $user->id);
+        } elseif ($user->group_id == 3) {
+            $query->whereHas('user', function ($q) use ($user) {
+                $q->where('sekolah_id', $user->sekolah_id)
+                  ->where('program_keahlian_id', $user->program_keahlian_id);
+            });
+        }
+        
+        // Terapkan filter dari request (bulan, sekolah, dll)
+        $this->applyFiltersToQuery($query, $request);
+
+        $analyticsData = $query->pluck('total', 'status');
+
+        return response()->json($analyticsData);
     }
 }

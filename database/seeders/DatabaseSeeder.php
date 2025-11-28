@@ -20,13 +20,19 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SekolahSeeder::class,
             GroupSeeder::class,
+            JenisKegiatanSeeder::class,
+            ProgramKeahlianSeeder::class,
+            KriteriaPenilaianSeeder::class,
+            PeriodePKlSeeder::class,
             UserSeeder::class,
             PresensiSettingSeeder::class,
             PresensiStatusSeeder::class,
-            PresensiSeeder::class,
+            // PresensiSeeder::class,
+            // ColectDataSeeder::class,
             DivisiSeeder::class,
-            TimSeeder::class,
-            JenisKegiatanSeeder::class
+            // TimSeeder::class,
+            // LaporanSeeder::class
+            // CostumPeriodSeeder::class,
         ]);
 
         Schema::enableForeignKeyConstraints();

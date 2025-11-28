@@ -1,57 +1,49 @@
 @extends('layout.main')
-@section('css')
-    <style>
-    
-    </style>
-@endsection
+
 @section('content')
+    {{-- Judul Halaman dan Breadcrumb --}}
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Sekolah</h4>
+                <h4 class="mb-sm-0 font-size-18">Edit Sekolah</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('dashboard') }}">Home</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('admin.sekolah.index') }}">Sekolah</a>
-                        </li>
-                        <li class="breadcrumb-item active">Edit Sekolah</li>
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.sekolah.index') }}">Sekolah</a></li>
+                        <li class="breadcrumb-item active">Edit</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card card-primary">
+    {{-- Kartu Form Utama --}}
+    <div class="card">
         <div class="card-body">
-            <h4 class="card-title text-primary mb-4">Edit Sekolah</h4>
-
-            <form action="{{ route('admin.sekolah.update', $sekolah->id) }}" method="post" enctype="multipart/form-data">
+            <form action="{{ route('admin.sekolah.update', $sekolah->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="row">
-                     <!-- Form Nama Sekolah -->
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="nama_sekolah" class="form-label">Nama Sekolah</label>
+                    {{-- Form Nama Sekolah --}}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nama_sekolah" class="form-label">Nama Sekolah <span
+                                    class="text-danger">*</span></label>
                             <input type="text" name="nama_sekolah" id="nama_sekolah"
                                 class="form-control @error('nama_sekolah') is-invalid @enderror"
-                                value="{{ old('nama_sekolah', $data->nama_sekolah ?? '') }}"
-                                placeholder="Masukkan nama sekolah">
-                                    
+                                value="{{ old('nama_sekolah', $sekolah->nama_sekolah) }}"
+                                placeholder="Masukkan nama sekolah" required>
                             @error('nama_sekolah')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <!-- Form Upload Foto -->
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="logo" class="form-label">Upload Foto</label>
-                            <input class="form-control @error('logo') is-invalid @enderror" type="file"
-                                name="logo" id="logo" accept="image/*" style="margin-bottom: 0.5rem;">
+                    {{-- Form Upload Logo --}}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="logo" class="form-label">Ganti Logo (Opsional)</label>
+                            <input class="form-control @error('logo') is-invalid @enderror" type="file" name="logo"
+                                id="logo" accept="image/*">
                             @error('logo')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
@@ -59,31 +51,31 @@
                     </div>
                 </div>
 
-                <div class="button-navigate mt-3">
+                {{-- Tombol Aksi --}}
+                <div class="mt-4">
                     <a href="{{ route('admin.sekolah.index') }}" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali
+                        <i class="fa fa-arrow-left me-1"></i> Batal
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i> Update
+                        <i class="fas fa-save me-1"></i> Simpan Perubahan
                     </button>
                 </div>
             </form>
         </div>
     </div>
 @endsection
+
 @section('js')
     <script>
-        // Form validation
+        // Memperbaiki validasi form sederhana
         document.querySelector('form').addEventListener('submit', function(e) {
-            const namaInput = document.getElementById('nama');
+            // Menggunakan ID input yang benar yaitu 'nama_sekolah'
+            const namaInput = document.getElementById('nama_sekolah');
             if (!namaInput.value.trim()) {
                 e.preventDefault();
                 namaInput.focus();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Peringatan',
-                    text: 'Nama sekolah harus diisi!',
-                });
+                // Anda bisa menggunakan SweetAlert atau alert bawaan browser
+                alert('Nama sekolah harus diisi!');
             }
         });
     </script>

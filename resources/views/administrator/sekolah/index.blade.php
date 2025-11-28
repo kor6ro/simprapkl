@@ -35,7 +35,7 @@
             <table id="sekolah-table" class="table table-striped table-bordered nowrap" style="width:100%">
                 <thead>
                     <tr>
-                        <th scope="col">#</th>
+                        <th scope="col">No</th>
                         <th scope="col">Nama Sekolah</th>
                         <th scope="col">Logo Sekolah</th>
                         <th scope="col">Aksi</th>
@@ -91,8 +91,7 @@
                         });
                     }
                 },
-                columns: [
-                    {
+                columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -127,17 +126,17 @@
                         width: '150px',
                         render: function(data, type, row) {
                             return `
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-warning btn-sm btn-edit" 
-                                            data-id="${data}" title="Edit">
-                                        <i class="fa fa-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm btn-delete" 
-                                            data-id="${data}" title="Hapus">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </div>
-                            `;
+            <div class="row-action">
+                <button type="button" class="btn btn-warning btn-action btn-sm mx-1 btn-edit"
+                        data-id="${data}" title="Edit">
+                    <i class="fa fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-action btn-sm mx-1 btn-delete"
+                        data-id="${data}" title="Hapus">
+                    <i class="fa fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
                         }
                     }
                 ],
@@ -187,7 +186,7 @@
                     confirmButtonColor: '#d33',
                     cancelButtonColor: '#3085d6',
                     confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal'
+                    cancelButtonText: '> Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         var deleteUrl = `/admin/sekolah/${id}`;

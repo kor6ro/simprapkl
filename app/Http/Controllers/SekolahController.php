@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
 use Exception;
 
 class SekolahController extends Controller
@@ -150,12 +151,66 @@ class SekolahController extends Controller
 
             return DataTables::of($sekolah)
                 ->addIndexColumn()
+                ->addColumn('aksi', function ($row) {
+                    $editUrl = route('admin.sekolah.edit', $row->id);
+                    $destroyUrl = route('admin.sekolah.destroy', $row->id);
+                    // $detailUrl = route('admin.sekolah.show', $row->id); // jika ada detail
+
+                    return '
+                        <div class="row-action">
+                            <a href="'.$editUrl.'" class="btn btn-warning btn-action btn-sm mx-1" title="Edit">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                            <button type="button" class="btn btn-danger btn-action btn-sm mx-1 action-hapus" data-url="'.$destroyUrl.'" title="Hapus">
+                                <i class="fa fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    ';
+                })
+                ->rawColumns(['aksi'])
                 ->make(true);
         } catch (Exception $e) {
             \Log::error('SekolahController fetch error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Gagal memuat data sekolah: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function ajaxStore(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama_sekolah' => 'required|string|max:255|unique:sekolah,nama',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $logo = null;
+            if ($request->hasFile('logo')) {
+                $file = $request->file('logo');
+                $fileName = $file->hashName();
+                $file->move(public_path('uploads/sekolah_logo'), $fileName);
+                $logo = $fileName;
+            }
+
+            $sekolah = Sekolah::create([
+                'nama' => trim($request->nama_sekolah),
+                'logo' => $logo,
+            ]);
+
+            DB::commit();
+
+            // Kembalikan response sukses beserta data sekolah yang baru dibuat
+            return response()->json(['success' => true, 'sekolah' => $sekolah]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan data. ' . $e->getMessage()]);
         }
     }
 }

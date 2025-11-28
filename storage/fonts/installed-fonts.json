@@ -1,0 +1,16 @@
+{
+    "din1451": {
+        "normal": "din1451_normal_854ae018fc06221c8e23efe740b4b238"
+    },
+    "good vibrations": {
+        "normal": "good_vibrations_normal_ecd3e92cfe67c528d4fae46d6db0084e"
+    },
+    "good vibrations script": {
+        "normal": "good_vibrations_script_normal_ecd3e92cfe67c528d4fae46d6db0084e"
+    },
+    "din next": {
+        "normal": "C:\\laragon\\www\\simpra-pkl\\storage\\fonts\/din_next_normal_b9badf20b15f2412ddb48bebeede6b85",
+        "500": "C:\\laragon\\www\\simpra-pkl\\storage\\fonts\/din_next_500_e6f680b03ea567640e12087c1d2cc74e",
+        "900": "din_next_900_334afa3ca48e8939c58cc2c4e1a6258f"
+    }
+}

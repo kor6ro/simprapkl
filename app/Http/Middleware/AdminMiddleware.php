@@ -19,11 +19,6 @@ class AdminMiddleware
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        // Check if user is admin (group_id = 2)
-        if (Auth::user()->group_id !== 2) {
-            abort(403, 'Akses ditolak. Hanya admin yang dapat mengakses halaman ini.');
-        }
-
         return $next($request);
     }
 }

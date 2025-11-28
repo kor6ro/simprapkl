@@ -2,30 +2,30 @@
 
 namespace App\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Penilaian extends Model
 {
     use HasFactory;
 
-    /**
-     * TAMBAHKAN BARIS INI
-     * Beritahu Laravel untuk menggunakan tabel 'penilaian' (tanpa s).
-     */
     protected $table = 'penilaian';
 
-    protected $fillable = ['siswa_id', 'penilai_id', 'tanggal_penilaian', 'komentar'];
+    protected $fillable = [
+        'siswa_id',
+        'penilai_id',
+        'pkl_tanggal_mulai',
+        'pkl_tanggal_selesai',
+        'tanggal_penilaian',
+        'komentar_saran',
+        'nilai_rata_rata',
+    ];
 
-    // ... (sisa relasi biarkan seperti semula)
-
-    public function detailNilai(): HasMany
-    {
-        // Pastikan nama tabel di DetailNilai juga benar
-        return $this->hasMany(DetailNilai::class);
-    }
+    protected $casts = [
+        'pkl_tanggal_mulai' => 'date',
+        'pkl_tanggal_selesai' => 'date',
+        'tanggal_penilaian' => 'date',
+    ];
 
     public function siswa()
     {
@@ -35,5 +35,10 @@ class Penilaian extends Model
     public function penilai()
     {
         return $this->belongsTo(User::class, 'penilai_id');
+    }
+
+    public function detailPenilaian()
+    {
+        return $this->hasMany(DetailPenilaian::class);
     }
 }

@@ -88,7 +88,6 @@
             border-top: 1px solid #dee2e6;
         }
 
-        /* Compact row spacing */
         .row {
             margin-bottom: 0.5rem;
         }
@@ -97,7 +96,6 @@
             margin-bottom: 0;
         }
 
-        /* Mobile responsive */
         @media (max-width: 768px) {
             .card-body {
                 padding: 1rem;
@@ -110,7 +108,6 @@
             .form-control,
             .form-select {
                 font-size: 16px;
-                /* Prevent zoom on iOS */
             }
         }
     </style>
@@ -123,12 +120,8 @@
                 <h4 class="mb-sm-0 font-size-18">Tambah Collect Data</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('dashboard') }}">Home</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('admin.colect_data.index') }}">Collect Data</a>
-                        </li>
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.colect_data.index') }}">Collect Data</a></li>
                         <li class="breadcrumb-item active">Tambah</li>
                     </ol>
                 </div>
@@ -136,7 +129,6 @@
         </div>
     </div>
 
-    <!-- Error Messages -->
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fa fa-exclamation-triangle me-2"></i>
@@ -152,22 +144,17 @@
 
     <div class="card">
         <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="fa fa-plus-circle me-2"></i>Form Data Survey
-            </h5>
+            <h5 class="card-title mb-0"><i class="fa fa-plus-circle me-2"></i>Form Data Survey</h5>
         </div>
         <div class="card-body">
             <form action="{{ route('admin.colect_data.store') }}" method="post" enctype="multipart/form-data"
                 id="collectDataForm">
                 @csrf
 
-                <!-- Row 1: Tanggal & Nama Customer -->
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="tanggal" class="form-label">
-                                Tanggal <span class="required">*</span>
-                            </label>
+                            <label for="tanggal" class="form-label">Tanggal <span class="required">*</span></label>
                             <input class="form-control @error('tanggal') is-invalid @enderror" type="date" name="tanggal"
                                 id="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
                             @error('tanggal')
@@ -177,9 +164,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="nama_cus" class="form-label">
-                                Nama Customer <span class="required">*</span>
-                            </label>
+                            <label for="nama_cus" class="form-label">Nama Customer <span class="required">*</span></label>
                             <input class="form-control @error('nama_cus') is-invalid @enderror" type="text"
                                 name="nama_cus" id="nama_cus" value="{{ old('nama_cus') }}" placeholder="Nama customer"
                                 required>
@@ -200,13 +185,11 @@
                     </div>
                 </div>
 
-                <!-- Row 2: Alamat & Provider -->
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="alamat_cus" class="form-label">
-                                Alamat Customer <span class="required">*</span>
-                            </label>
+                            <label for="alamat_cus" class="form-label">Alamat Customer <span
+                                    class="required">*</span></label>
                             <textarea class="form-control @error('alamat_cus') is-invalid @enderror" name="alamat_cus" id="alamat_cus"
                                 rows="2" placeholder="Alamat lengkap customer" required>{{ old('alamat_cus') }}</textarea>
                             @error('alamat_cus')
@@ -216,9 +199,8 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="provider_sekarang" class="form-label">
-                                Provider <span class="required">*</span>
-                            </label>
+                            <label for="provider_sekarang" class="form-label">Provider <span
+                                    class="required">*</span></label>
                             <input class="form-control @error('provider_sekarang') is-invalid @enderror" type="text"
                                 name="provider_sekarang" id="provider_sekarang" value="{{ old('provider_sekarang') }}"
                                 placeholder="Telkom, Indihome, dll" required>
@@ -239,7 +221,6 @@
                     </div>
                 </div>
 
-                <!-- Row 3: Kelebihan & Kekurangan -->
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
@@ -267,7 +248,6 @@
                             <input class="form-control @error('gambar_foto') is-invalid @enderror" type="file"
                                 name="gambar_foto" id="gambar_foto" accept="image/*" style="margin-bottom: 0.5rem;">
 
-                            <!-- Preview Container -->
                             <div class="preview-container" id="preview-container">
                                 <i class="fa fa-image text-muted"></i>
                                 <small class="text-muted">Preview foto</small>
@@ -280,10 +260,9 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="btn-group-form">
                     <a href="{{ route('admin.colect_data.index') }}" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali
+                        <i class="fa fa-arrow-left me-1"></i> Batal
                     </a>
                     <button type="submit" class="btn btn-primary" id="submitBtn">
                         <i class="fa fa-save me-1"></i> Simpan Data
@@ -301,19 +280,15 @@
             const $previewContainer = $('#preview-container');
             const $submitBtn = $('#submitBtn');
 
-            // Handle file input change for photo preview
             $fileInput.on('change', function(e) {
                 handleFileSelect(e.target.files[0]);
             });
 
-            // Handle file selection and preview
             function handleFileSelect(file) {
                 if (!file) {
                     resetPreview();
                     return;
                 }
-
-                // Validate file type
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
                 if (!validTypes.includes(file.type)) {
                     alert('Format file tidak didukung. Gunakan JPG, PNG, atau GIF.');
@@ -321,16 +296,12 @@
                     resetPreview();
                     return;
                 }
-
-                // Validate file size (2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     alert('Ukuran file terlalu besar. Maksimal 2MB.');
                     $fileInput.val('');
                     resetPreview();
                     return;
                 }
-
-                // Create file reader
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     updatePreview(e.target.result, file);
@@ -338,18 +309,16 @@
                 reader.readAsDataURL(file);
             }
 
-            // Update preview display
             function updatePreview(imageSrc, file) {
                 $previewContainer.addClass('has-image').html(`
                     <img src="${imageSrc}" alt="Preview" class="preview-image">
                     <small class="text-success">${file.name}</small>
-                    <button type="button" class="remove-preview" onclick="removePreview()">
+                    <button type="button" class="remove-preview">
                         <i class="fa fa-times"></i>
                     </button>
                 `);
             }
 
-            // Reset preview to default state
             function resetPreview() {
                 $previewContainer.removeClass('has-image').html(`
                     <i class="fa fa-image text-muted"></i>
@@ -357,23 +326,24 @@
                 `);
             }
 
-            // Make functions available globally
-            window.removePreview = function() {
+            // **PERBAIKAN 1:** Menggunakan event listener, lebih modern dari `onclick`.
+            $previewContainer.on('click', '.remove-preview', function() {
                 $fileInput.val('');
                 resetPreview();
-            };
+            });
 
-            // Form submission with loading state
             $('#collectDataForm').on('submit', function() {
                 $submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...');
             });
 
-            // Auto-resize textareas
+            // **PERBAIKAN 2:** Menambahkan .trigger('input')
+            // agar ukuran textarea langsung disesuaikan saat halaman dimuat,
+            // terutama jika ada data dari `old()` setelah validasi gagal.
             $('textarea').on('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
-            });
+            }).trigger('input');
         });
     </script>
 @endsection

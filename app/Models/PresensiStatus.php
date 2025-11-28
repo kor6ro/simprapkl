@@ -8,23 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class PresensiStatus extends Model
 {
     use HasFactory;
-
     protected $table = 'presensi_status';
-
-    protected $fillable = [
-        'kode',
-        'status',
-        'color',
-        'deskripsi',
-    ];
+    protected $fillable = ['kode', 'status', 'kategori'];
 
     public function presensi()
     {
         return $this->hasMany(Presensi::class);
-    }
-
-    public static function getByKode($kode)
-    {
-        return self::where('kode', $kode)->first();
     }
 }

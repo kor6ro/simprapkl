@@ -9,42 +9,44 @@ class Laporan extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     */
-    protected $table = "laporan";
+    protected $table = 'laporan';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    // Izinkan kolom approver_id diisi secara massal
     protected $fillable = [
-        "jenis_kegiatan",
-        "lokasi",
-        "homepass",
-        "jml_orang_ditemui",
-        "detail_pekerjaan",
-        "hasil_capaian",
-        "user_id",
-        "jenis_laporan_id",
-        "laporan_gambar_id",
-        "created_at",
-        "updated_at",
+        'tim_id',
+        'user_id',
+        'jenis_kegiatan_id',
+        'deskripsi_kegiatan',
+        'bukti_foto',
+        'status',
+        'feedback',
+        'approver_id', // <-- Tambahkan ini
     ];
 
+    // Relasi ke Tim
+    public function tim()
+    {
+        return $this->belongsTo(Tim::class, 'tim_id');
+    }
+
+    // Relasi ke User (Siswa)
     public function user()
     {
-        return $this->belongsTo(User::class, "user_id");
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function jenislaporan()
+    // Relasi ke Jenis Kegiatan
+    public function jenisKegiatan()
     {
-        return $this->belongsTo(JenisLaporan::class, "jenis_laporan_id");
+        return $this->belongsTo(JenisKegiatan::class, 'jenis_kegiatan_id');
     }
 
-    public function laporangambar()
+    /**
+     * [UBAH] Ganti relasi rejecter() menjadi approver()
+     * Relasi ke User yang menyetujui/menolak laporan.
+     */
+    public function approver()
     {
-        return $this->belongsTo(LaporanGambar::class, "laporan_gambar_id");
+        return $this->belongsTo(User::class, 'approver_id');
     }
 }

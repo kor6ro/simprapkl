@@ -3,113 +3,128 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ResetPasswordMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+// --- TAMBAHKAN USE STATEMENT INI ---
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use App\Models\User;
-
+// --- SELESAI ---
+use Illuminate\Validation\Rules\Password as PasswordRules;
 
 class AuthController extends Controller
 {
+    /**
+     * Menampilkan halaman login.
+     * Jika pengguna sudah login, alihkan ke dashboard.
+     */
     public function index()
     {
         if (Auth::check()) {
-            return redirect()->to(route('dashboard'));
+            return redirect()->route('dashboard');
         }
 
         return view('auth.index');
     }
 
+    /**
+     * Memproses permintaan autentikasi (login).
+     */
     public function authenticate(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required',
-            'password' => 'required'
+        $credentials = $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('login'))
-                ->withErrors($validator)
-                ->withInput();
+        // --- KODE BARU DIMULAI ---
+
+        // 1. Buat 'throttle key' yang unik berdasarkan username dan alamat IP.
+        $throttleKey = Str::lower($request->input('username')) . '|' . $request->ip();
+
+        // 2. Cek apakah sudah terlalu banyak percobaan
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) { // 5 kali percobaan
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $errorMessage = 'Terlalu banyak percobaan login. Silakan coba lagi dalam ' . $seconds . ' detik.';
+            
+            // Kirim pesan error dan flag 'locked' ke view
+            return back()->with('error', $errorMessage)
+                         ->with('locked', true)
+                         ->withInput(['username' => $request->username]);
         }
 
-        $isAuth = Auth::attempt([
-            'username' => $request->input('username'),
-            'password' => $request->input('password')
-        ]);
+        // --- KODE BARU SELESAI ---
 
-        if (!$isAuth) {
-            return redirect(route('login'))
-                ->withErrors(['auth_failed' => true]);
+        // Mencoba untuk melakukan login
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            // Regenerasi session untuk mencegah serangan session fixation
+            $request->session()->regenerate();
+
+            // --- KODE BARU DIMULAI ---
+            // 4. Jika berhasil, hapus hitungan percobaan
+            RateLimiter::clear($throttleKey);
+            // --- KODE BARU SELESAI ---
+
+            // Arahkan ke halaman yang dituju sebelumnya atau ke dashboard
+            return redirect()->intended(route('dashboard'));
         }
 
-        return redirect()->to(route('dashboard'));
+        // --- KODE BARU DIMULAI ---
+        // 3. Jika gagal, tambahkan satu hitungan percobaan
+        RateLimiter::hit($throttleKey, 30); // Dibekukan selama 30 detik
+        // --- KODE BARU SELESAI ---
+
+        // Jika autentikasi gagal, kembali ke halaman login dengan pesan error
+        return back()->with('error', 'Username atau Password yang Anda masukkan salah.')
+                     ->withInput(['username' => $request->username]); // Kirim kembali input username
     }
+
+    // ... (sisa method lainnya tidak perlu diubah) ...
     public function showForgotPasswordForm()
     {
         return view('auth.forgotpass');
     }
 
-    public function sendResetLink(Request $request)
+    public function showResetForm(Request $request, $token)
     {
-        $request->validate(['email' => 'required|email|exists:user,email']);
-
-        $token = Str::random(60);
-
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
-            ['token' => $token, 'created_at' => now()]
-        );
-
-        $url = route('password_reset', ['token' => $token]);
-
-        Mail::to($request->email)->send(new ResetPasswordMail($url));
-
-
-        return back()->with('status', 'Link reset password telah dikirim keemail.');
-    }
-
-    public function showResetForm($token)
-    {
-        return view('auth.resetpass', ['token' => $token]);
+        return view('auth.resetpass', ['token' => $token, 'email' => $request->email]);
     }
 
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:user,email',
-            'password' => 'required|confirmed|min:8',
-            'token' => 'required'
+            'token' => 'required',
+            'email' => 'required|email|exists:users,email',
+            'password' => ['required', 'confirmed', PasswordRules::min(8)],
         ]);
 
-        $reset = DB::table('password_resets')
-            ->where('email', $request->email)
-            ->where('token', $request->token)
-            ->first();
+        $tokenData = DB::table('password_reset_tokens')
+            ->where('email', $request->email)->first();
 
-        if (!$reset) {
+        if (!$tokenData || !Hash::check($request->token, $tokenData->token)) {
             return back()->withErrors(['email' => 'Token tidak valid atau sudah kadaluarsa.']);
         }
-
+        
         User::where('email', $request->email)->update([
-            'password' => bcrypt($request->password)
+            'password' => Hash::make($request->password)
         ]);
 
-        DB::table('password_resets')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
-        return redirect('/login')->with('status', 'Password berhasil direset. Silakan login.');
+        return redirect()->route('login')->with('status', 'Password Anda berhasil direset. Silakan login kembali.');
     }
-
-
-    public function logout()
+    
+    public function logout(Request $request)
     {
         Auth::logout();
-        Session::flush();
 
-        return redirect()->to(route('login'));
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
     }
 }

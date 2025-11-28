@@ -7,23 +7,24 @@ use Illuminate\Support\Facades\DB;
 
 class PresensiStatusSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
+    public function run(): void
     {
-        // 1. Truncate table
-        DB::table('presensi_status')->truncate();
+        DB::table('presensi_status')->delete();
 
-        // 2. Insert default data
-        DB::table('presensi_status')->insert([
-            ['kode' => 'TEPAT', 'status' => 'Tepat Waktu', 'color' => 'success'],
-            ['kode' => 'TELAT', 'status' => 'Terlambat', 'color' => 'warning'],
-            ['kode' => 'IZIN', 'status' => 'Izin', 'color' => 'info'],
-            ['kode' => 'SAKIT', 'status' => 'Sakit', 'color' => 'secondary'],
-            ['kode' => 'ALPA', 'status' => 'Alpa', 'color' => 'danger'],
-        ]);
+        $statuses = [
+            ['status' => 'Tepat Waktu',       'kode' => 'TEPAT_WAKTU',       'kategori' => 'hadir'],
+            ['status' => 'Terlambat',         'kode' => 'TERLAMBAT',         'kategori' => 'hadir'],
+            ['status' => 'Sangat Terlambat',  'kode' => 'SANGAT_TERLAMBAT',  'kategori' => 'hadir'],
+            ['status' => 'Terlalu Awal',      'kode' => 'TERLALU_AWAL',      'kategori' => 'hadir'],
+            ['status' => 'Hadir (Hari Libur)','kode' => 'HADIR_LIBUR',       'kategori' => 'hadir'],
+            ['status' => 'Sakit',             'kode' => 'SAKIT',             'kategori' => 'sakit'],
+            ['status' => 'Izin',              'kode' => 'IZIN',              'kategori' => 'izin'],
+            ['status' => 'Izin Terencana',    'kode' => 'IZIN_TERENCANA',    'kategori' => 'izin'],
+            ['status' => 'Izin Mendesak',     'kode' => 'IZIN_MENDESAK',     'kategori' => 'izin'],
+            ['status' => 'Alpa',              'kode' => 'ALPA',              'kategori' => 'alpa'],
+        ];
+
+        DB::table('presensi_status')->insert($statuses);
+        $this->command->info('Tabel Presensi Status berhasil di-seed.');
     }
 }

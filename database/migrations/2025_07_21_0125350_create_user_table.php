@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 class CreateUserTable extends Migration
 {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      *
      * @return void
      */
@@ -20,9 +20,14 @@ class CreateUserTable extends Migration
             $table->string("username");
             $table->string("email");
             $table->string("password");
+            $table->string('photo_profile')->nullable(); // Menambahkan kolom foto profil
             $table->boolean("validasi")->default(0);
             $table->string("alamat");
-            $table->foreignId("sekolah_id")->references("id")->on("sekolah");
+            $table->foreignId("sekolah_id")->nullable()->constrained("sekolah")->onDelete('set null');
+            $table->foreignId("program_keahlian_id")
+                ->nullable()
+                ->constrained("program_keahlian")
+                ->onDelete('set null'); // Menambahkan relasi ke program keahlian
             $table->foreignId("group_id")->references("id")->on("group");
             $table->string("id_pkl")->nullable();
             $table->foreignId('penilai_id')
@@ -35,7 +40,7 @@ class CreateUserTable extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      *
      * @return void
      */

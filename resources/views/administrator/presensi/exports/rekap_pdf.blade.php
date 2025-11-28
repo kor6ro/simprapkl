@@ -3,204 +3,190 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Rekap Absensi Siswa {{ $bulanTeks }}</title>
+    <title>{{ $judul ?? 'Laporan Presensi' }}</title>
     <style>
         body {
-            font-family: 'Times New Roman', Times, serif,
-                font-size: 12px;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            color: #333;
             margin: 0;
             padding: 20px;
+            /* [DIHAPUS] padding-bottom: 50px; tidak lagi diperlukan */
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
         }
 
         .header h2 {
             margin: 5px 0 0 0;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         .info-table {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-collapse: collapse;
         }
 
         .info-table td {
-            padding: 4px 0;
+            padding: 2px 0;
             vertical-align: top;
         }
 
         .info-table .label {
-            width: 150px;
+            width: 100px;
             font-weight: bold;
         }
 
         .main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            table-layout: fixed;
+            font-size: 10px;
+            /* Izinkan tabel terpecah antar halaman */
+            page-break-inside: auto;
         }
 
         .main-table th,
         .main-table td {
-            border: 1px solid #000;
-            padding: 6px 8px;
-            text-align: center;
+            border: 1px solid #ccc;
+            padding: 5px;
+            word-wrap: break-word;
         }
 
         .main-table th {
-            background-color: #d9e1f2;
+            background-color: #f0f0f0;
             font-weight: bold;
-        }
-
-        .main-table .nama-column {
-            text-align: left;
-            width: 40%;
-        }
-
-        .main-table .number-column {
             text-align: center;
-            width: 15%;
         }
 
-        .main-table tfoot th {
-            background-color: #bdd7ee;
-            font-weight: bold;
+        .main-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
 
-        .summary-box {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #000;
-            background-color: #f8f9fa;
+        .main-table tbody tr {
+            /* Biarkan 'auto' agar data bisa masuk ke halaman 1 */
+            page-break-inside: auto;
+            page-break-after: auto;
         }
 
-        .summary-title {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 10px;
+        .text-center {
+            text-align: center;
         }
 
-        .summary-item {
-            display: inline-block;
-            margin-right: 30px;
-            margin-bottom: 5px;
-        }
-
+        /* [PERBAIKAN FOOTER] */
         .footer {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .signature-box {
+            /* Hapus position: fixed dan properti terkait (bottom, left, right, height) */
+            width: 100%;
             text-align: center;
-            width: 200px;
-        }
+            /* Beri jarak dari tabel di atasnya */
+            margin-top: 20px;
 
-        .signature-line {
-            border-top: 1px solid #000;
-            margin-top: 60px;
+            border-top: 1px solid #ccc;
             padding-top: 5px;
+            font-size: 9px;
+            color: #777;
         }
 
-        @page {
-            margin: 2cm 1.5cm;
-        }
-
-        /* Print styles */
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-
-            .page-break {
-                page-break-before: always;
-            }
-        }
+        /* Hapus .page-number dan .print-date karena tidak lagi 'float' */
+        /* Hapus .page-number:before karena paginasi tidak berfungsi tanpa fixed */
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>Rekap Absensi Siswa</h1>
-        <h2>{{ $bulanTeks }}</h2>
+        <h1>{{ $judul }}</h1>
+        <h2>Periode {{ $periode }}</h2>
     </div>
 
-    <!-- Info Table -->
     <table class="info-table">
         <tr>
-            <td class="label">Periode</td>
-            <td>: {{ $bulanTeks }}</td>
-        </tr>
-        <tr>
-            <td class="label">Tanggal Cetak</td>
-            <td>: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WIB</td>
-        </tr>
-        <tr>
-            <td class="label">Total Siswa</td>
-            <td>: {{ count($rekapData) }} orang</td>
+            <td class="label">Sekolah</td>
+            <td>: {{ $sekolah }}</td>
         </tr>
     </table>
 
-    <!-- Main Table -->
     <table class="main-table">
         <thead>
             <tr>
-                <th rowspan="2" class="nama-column">NAMA SISWA</th>
-                <th colspan="4">KETERANGAN</th>
-            </tr>
-            <tr>
-                <th class="number-column">Hadir</th>
-                <th class="number-column">Sakit</th>
-                <th class="number-column">Izin</th>
-                <th class="number-column">TK</th>
+                <th class="text-center" style="width: 5%;">#</th>
+                <th style="width: 20%;">Nama Siswa</th>
+                {{-- Loop untuk membuat header tabel secara dinamis --}}
+                @foreach ($selectedColumns as $label)
+                    <th class="text-center">{{ $label }}</th>
+                @endforeach
             </tr>
         </thead>
         <tbody>
-            @foreach ($rekapData as $index => $siswa)
+            @forelse ($data as $row)
                 <tr>
-                    <td class="nama-column">{{ $index + 1 }}. {{ $siswa['nama'] }}</td>
-                    <td class="number-column">{{ $siswa['hadir'] }}</td>
-                    <td class="number-column">{{ $siswa['sakit'] }}</td>
-                    <td class="number-column">{{ $siswa['izin'] }}</td>
-                    <td class="number-column">{{ $siswa['tidak_hadir'] }}</td>
+                    <td class="text-center">{{ $loop->iteration }}</td>
+                    <td>{{ $row->user->name ?? '-' }}</td>
+
+                    {{-- Loop untuk membuat isi tabel secara dinamis --}}
+                    @foreach ($selectedColumns as $key => $label)
+                        <td>
+                            @switch($key)
+                                @case('sekolah')
+                                    {{ $row->user->sekolah->nama ?? '-' }}
+                                @break
+
+                                @case('tanggal')
+                                    <span
+                                        style="white-space: nowrap;">{{ \Carbon\Carbon::parse($row->tanggal_presensi)->format('d/m/Y') }}</span>
+                                @break
+
+                                @case('sesi')
+                                    {{ ucfirst($row->sesi) }}
+                                @break
+
+                                @case('jam_presensi')
+                                    {{ $row->jam_presensi ? \Carbon\Carbon::parse($row->jam_presensi)->format('H:i') : '-' }}
+                                @break
+
+                                @case('status')
+                                    {{ $row->status_display }}
+                                @break
+
+                                @case('approval_status')
+                                    @if ($row->approval_status)
+                                        {{ ucfirst($row->approval_status) }}
+                                    @else
+                                        -
+                                    @endif
+                                @break
+
+                                @case('keterangan')
+                                    {{ $row->keterangan ?? '-' }}
+                                @break
+                            @endswitch
+                        </td>
+                    @endforeach
                 </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <th class="nama-column">TOTAL</th>
-                <th class="number-column">{{ $totalHadir }}</th>
-                <th class="number-column">{{ $totalSakit }}</th>
-                <th class="number-column">{{ $totalIzin }}</th>
-                <th class="number-column">{{ $totalTK }}</th>
-            </tr>
-        </tfoot>
-    </table>
+                @empty
+                    <tr>
+                        <td colspan="{{ count($selectedColumns) + 2 }}" class="text-center" style="padding: 15px;">
+                            Tidak ada data yang ditemukan untuk filter yang dipilih.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
 
-    <!-- Keterangan -->
-    <div style="margin-top: 20px; font-size: 11px;">
-        <strong>Keterangan:</strong><br>
-        - <strong>Hadir:</strong> Siswa hadir tepat waktu atau terlambat<br>
-        - <strong>Sakit:</strong> Siswa tidak hadir karena sakit dengan keterangan<br>
-        - <strong>Izin:</strong> Siswa tidak hadir dengan izin<br>
-        - <strong>TK (Tanpa Keterangan):</strong> Siswa tidak hadir dan tidak memberikan keterangan (Alpa)
-    </div>
+        <div class="footer">
+            Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WIB
+        </div>
 
-</body>
+    </body>
 
-</html>
+    </html>

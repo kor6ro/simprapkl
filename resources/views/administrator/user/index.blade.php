@@ -1,4 +1,7 @@
 @extends('layout.main')
+@section('css')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+@endsection
 
 @section('content')
     <div class="row">
@@ -7,27 +10,47 @@
                 <h4 class="mb-sm-0 font-size-18">User</h4>
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
                         <li class="breadcrumb-item active">User</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row mb-3">
-        <div class="col-auto">
-            <a href="{{ route('admin.user.create') }}" class="btn btn-success">
-                <i class="fa fa-plus me-1"></i> Tambah
-            </a>
+
+    <div class="row mb-3 align-items-end">
+        <div class="col-md-auto mb-2">
+            <label class="form-label fw-bold">Aksi User</label>
+            <div class="btn-group" role="group">
+                <a href="{{ route('admin.user.batch.create') }}" class="btn btn-success">
+                    <i class="fa fa-users me-2"></i>Tambah User
+                </a>
+            </div>
+        </div>
+        <div class="col-md-5 mb-2">
+            <label for="periode-export" class="form-label fw-bold">Reset & Ekspor Kredensial Siswa</label>
+            <div class="input-group">
+                <select class="form-select" id="periode-export">
+                    <option value="">-- Pilih Periode PKL --</option>
+                    @foreach ($periodePkl as $periode)
+                        <option value="{{ $periode->id }}">{{ $periode->nama }}
+                            ({{ \Carbon\Carbon::parse($periode->awal_periode)->format('d M Y') }})
+                        </option>
+                    @endforeach
+                </select>
+                <button class="btn btn-info" id="export-credentials-btn" disabled>
+                    <i class="fa fa-file-excel me-2"></i>Ekspor
+                </button>
+            </div>
         </div>
     </div>
+
     <div class="card">
         <div class="card-body">
-            {{-- Tambahkan id pada tabel agar lebih mudah diseleksi --}}
             <table id="user-table" class="table table-striped" style="width:100%">
                 <thead>
                     <tr>
-                        <th scope="col">#</th>
+                        <th scope="col">No</th>
                         <th scope="col">Name</th>
                         <th scope="col">Username</th>
                         <th scope="col">Email</th>
@@ -44,36 +67,45 @@
             </table>
         </div>
     </div>
-    <div class="d-none">
-        {{-- Form untuk hapus tetap digunakan sesuai struktur asli --}}
-        <form id="form-destroy" action="{{ route('admin.user.destroy', '') }}" method="post">
-            @csrf
-            @method('DELETE')
-        </form>
-    </div>
 @endsection
 
 @section('js')
     <script>
         $(document).ready(function() {
-            // Inisialisasi DataTables
-            $('#user-table').DataTable({
+            // 1. Inisialisasi Toast Notifikasi
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOut'
+                },
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+
+            // 2. Inisialisasi DataTable
+            var table = $('#user-table').DataTable({
                 fixedHeader: true,
                 processing: true,
                 serverSide: true,
-                autoWidth: false,
+                responsive: true, // Tetap true
                 ajax: {
-                    // 1. URL diperbaiki menggunakan route helper Laravel
                     url: "{{ route('admin.user.fetch') }}",
                     type: "POST",
-                    // Mengambil CSRF token dari meta tag (lebih standar dari getCookie)
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                 },
-                // 2. Order diperbaiki, mengurutkan berdasarkan 'created_at' (kolom ke-9)
                 order: [
-                    [9, 'desc']
+                    [9, 'desc'] // Kolom 'created_at'
                 ],
                 columns: [{
                         data: 'DT_RowIndex',
@@ -81,7 +113,6 @@
                         searchable: false,
                         orderable: false
                     },
-                    // 3. Menambahkan properti 'name' agar server-side search/sort berfungsi
                     {
                         data: 'name',
                         name: 'name'
@@ -93,7 +124,7 @@
                     {
                         data: 'email',
                         name: 'email',
-                        visible: false
+                        visible: false // Sembunyi di desktop, muncul di child row
                     },
                     {
                         data: 'validasi',
@@ -102,7 +133,6 @@
                             const isValid = data == 1;
                             const text = isValid ? "Validasi" : "Belum Validasi";
                             const color = isValid ? "success" : "danger";
-                            // Tampilan dibuat lebih rapi dengan badge
                             return `<span class="badge bg-${color}">${text}</span>`;
                         }
                     },
@@ -124,12 +154,12 @@
                     {
                         data: 'alamat',
                         name: 'alamat',
-                        visible: false
+                        visible: false // Sembunyi di desktop, muncul di child row
                     },
                     {
                         data: 'created_at',
                         name: 'created_at',
-                        visible: false
+                        visible: false // Sembunyi di desktop, muncul di child row
                     },
                     {
                         data: 'id',
@@ -138,13 +168,22 @@
                         searchable: false,
                         width: "100px",
                         render: function(data, type, row) {
-                            // 4. Render tombol dibuat lebih ringkas dengan template literals
+                            const editUrl = "{{ route('admin.user.edit', ':id') }}".replace(':id',
+                                data);
+                            const resetUrl = "{{ route('admin.user.resetpass', ':id') }}"
+                                .replace(':id', data);
+                            const destroyUrl = "{{ route('admin.user.destroy', ':id') }}".replace(
+                                ':id', data);
+                            // Tombol-tombol ini sekarang akan dirender di child row juga
                             return `
                                 <div class="d-flex justify-content-center">
-                                    <button type="button" class="btn btn-warning btn-sm mx-1 action-edit">
+                                    <a href="${editUrl}" class="btn btn-warning btn-sm mx-1 action-edit" title="Edit">
                                         <i class="fa fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-info btn-sm mx-1 action-reset" data-url="${resetUrl}" data-name="${row.name}" title="Reset Password">
+                                    <i class="fa fa-key"></i>
                                     </button>
-                                    <button type="button" class="btn btn-danger btn-sm mx-1 action-hapus">
+                                    <button type="button" class="btn btn-danger btn-sm mx-1 action-hapus" data-url="${destroyUrl}" data-name="${row.name}" title="Hapus">
                                         <i class="fa fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -152,47 +191,186 @@
                         }
                     },
                 ],
-                // 5. Struktur `createdRow` tetap dipertahankan
+                // KOSONGKAN 'createdRow' KARENA KITA PAKAI EVENT DELEGATION
                 createdRow: function(row, data) {
-                    // Event untuk tombol Edit
-                    $(".action-edit", row).click(function() {
-                        const editUrl = "{{ route('admin.user.edit', ':id') }}".replace(':id',
-                            data.id);
-                        window.location.href = editUrl;
-                    });
+                    // Tidak perlu event listener di sini lagi
+                },
 
-                    // Event untuk tombol Hapus (menggunakan form-destroy)
-                    $(".action-hapus", row).click(function(e) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: "warning",
-                            title: "Anda Yakin?",
-                            text: "Data yang akan dihapus tidak bisa dikembalikan.",
-                            showCancelButton: true,
-                            confirmButtonText: "Ya, Hapus!",
-                            cancelButtonText: "Batal",
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const baseUrl = "{{ route('admin.user.destroy', '') }}";
-                                $('#form-destroy').attr('action', baseUrl + '/' + data
-                                    .id);
-                                $('#form-destroy').trigger('submit');
+            });
+
+            // 3. [FIX] Paksa Hitung Ulang Lebar Tabel
+            // Memberi jeda 350ms agar animasi sidebar selesai
+            setTimeout(function() {
+                table.columns.adjust().responsive.recalc();
+            }, 350);
+
+            // Hitung ulang juga saat ukuran window berubah
+            $(window).on('resize', function() {
+                table.columns.adjust().responsive.recalc();
+            });
+
+
+            // 4. [FIX] Event Delegation untuk Tombol Aksi
+            // Listener ini akan menempel di TBODY dan berfungsi
+            // baik di desktop maupun di child row (mobile)
+
+            // Listener untuk HAPUS
+            $('#user-table tbody').on('click', '.action-hapus', function(e) {
+                e.preventDefault();
+                const url = $(this).data('url');
+                const name = $(this).data('name');
+
+                Swal.fire({
+                    icon: "warning",
+                    title: "Anda Yakin?",
+                    html: `Data user <strong>${name}</strong> akan dihapus.`,
+                    showCancelButton: true,
+                    confirmButtonText: "Ya, Hapus!",
+                    cancelButtonText: "Batal",
+                    confirmButtonColor: '#d33',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: 'POST',
+                            data: {
+                                '_token': '{{ csrf_token() }}',
+                                '_method': 'DELETE'
+                            },
+                            success: function(response) {
+                                Toast.fire({
+                                    icon: 'success',
+                                    title: response.success
+                                });
+                                table.ajax.reload(null,
+                                    false); // Reload tanpa reset paging
+                            },
+                            error: function(xhr) {
+                                Toast.fire({
+                                    icon: 'error',
+                                    title: xhr.responseJSON
+                                        .error ||
+                                        'Gagal menghapus data.'
+                                });
                             }
                         });
-                    });
-                },
+                    }
+                });
             });
+
+            // Listener untuk RESET PASSWORD
+            $('#user-table tbody').on('click', '.action-reset', function(e) {
+                e.preventDefault();
+                const url = $(this).data('url');
+                const name = $(this).data('name');
+
+                Swal.fire({
+                    icon: "warning",
+                    title: "Anda Yakin?",
+                    html: `Password untuk user <strong>${name}</strong> akan direset.`,
+                    showCancelButton: true,
+                    confirmButtonText: "Ya, Reset!",
+                    cancelButtonText: "Batal",
+                    confirmButtonColor: '#3085d6',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: 'POST',
+                            data: {
+                                '_token': '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    html: `${response.message}<br><br>Password Baru: <code style="background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">${response.new_password}</code><br><small>Mohon segera catat dan berikan password ini kepada user.</small>`
+                                });
+                            },
+                            error: function(xhr) {
+                                Toast.fire({
+                                    icon: 'error',
+                                    title: xhr.responseJSON
+                                        .error ||
+                                        'Gagal mereset password.'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            // 5. Logika untuk Ekspor Kredensial
+            const exportBtn = $('#export-credentials-btn');
+            const periodeSelect = $('#periode-export');
+
+            periodeSelect.on('change', function() {
+                exportBtn.prop('disabled', $(this).val() === '');
+            });
+
+            exportBtn.on('click', function(e) {
+                e.preventDefault();
+                const periodeId = periodeSelect.val();
+                if (!periodeId) {
+                    alert('Silakan pilih periode terlebih dahulu.');
+                    return;
+                }
+
+                let exportUrl =
+                    "{{ route('admin.user.export_credentials', ['periode' => ':periodeId']) }}";
+                exportUrl = exportUrl.replace(':periodeId', periodeId);
+
+                Swal.fire({
+                    title: 'Anda Yakin?',
+                    text: "Aksi ini akan me-reset password siswa pada periode yang dipilih dan membuat file Excel berisi kredensial baru. Aksi ini tidak bisa dibatalkan.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Reset & Ekspor!',
+                    cancelButtonText: '> Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Tampilkan loader
+                        $('#loaderOverlay').show();
+
+                        // Buat notifikasi Toast bahwa proses dimulai
+                        Toast.fire({
+                            icon: 'info',
+                            title: 'Sedang memproses reset & ekspor... Ini mungkin perlu waktu.'
+                        });
+
+                        // Arahkan untuk memulai proses (yang akan redirect kembali)
+                        window.location.href = exportUrl;
+                    }
+                });
+            });
+
+            // 6. Pemicu Notifikasi dari Session
+            @if (session('success'))
+                Toast.fire({
+                    icon: 'success',
+                    title: '{{ session('success') }}'
+                });
+            @elseif (session('error'))
+                Toast.fire({
+                    icon: 'error',
+                    title: '{{ session('error') }}'
+                });
+            @endif
+
+            // 7. Pemicu Download Otomatis (setelah redirect dari ekspor)
+            @if (session('download_url'))
+                // Sembunyikan loader
+                $('#loaderOverlay').hide();
+
+                // Beri jeda 1 detik agar user sempat melihat notifikasi sukses
+                setTimeout(function() {
+                    window.location.href = '{{ session('download_url') }}';
+                }, 1000);
+            @else
+                // Jika tidak ada download, pastikan loader tersembunyi
+                $('#loaderOverlay').hide();
+            @endif
         });
     </script>
-
-    {{-- 6. Notifikasi session dibuat lebih ringkas --}}
-    @if (session()->has('message'))
-        <script>
-            Swal.fire({
-                icon: '{{ session('dataSaved') ? 'success' : 'error' }}',
-                title: '{{ session('dataSaved') ? 'Berhasil' : 'Gagal' }}',
-                text: '{{ session('message') }}',
-            });
-        </script>
-    @endif
 @endsection

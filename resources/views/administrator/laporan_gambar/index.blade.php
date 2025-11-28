@@ -12,7 +12,7 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item">
-                            <a href="#">Home</a>
+                            <a href="{{ route('dashboard') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item active">Laporan Gambar</li>
                     </ol>

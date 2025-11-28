@@ -5,76 +5,91 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Tim;
 use App\Models\User;
-use App\Models\Divisi; // 1. TAMBAHKAN MODEL DIVISI
+use App\Models\Divisi;
+use App\Models\PeriodePkl;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TimSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        // 2. AMBIL SEMUA ID DARI TABEL DIVISI
-        $divisiIds = Divisi::pluck('id');
-        // Hentikan seeder jika tidak ada divisi
-        if ($divisiIds->isEmpty()) {
-            $this->command->info('Tidak ada data di tabel Divisi, TimSeeder dilewati.');
+        $this->command->info('Memulai TimSeeder...');
+        $periode = PeriodePkl::first();
+        if (!$periode) {
+            $this->command->info('Periode PKL tidak ditemukan, TimSeeder dilewati.');
             return;
         }
 
+        $divisi = Divisi::all();
         $ketuaIds = User::where('group_id', 5)->pluck('id');
         $anggotaIds = User::where('group_id', 4)->pluck('id');
 
-        // Hentikan jika tidak ada ketua atau anggota
-        if ($ketuaIds->isEmpty() || $anggotaIds->isEmpty()) {
-            $this->command->info('Tidak ada Karyawan (group 5) atau Siswa (group 4), TimSeeder dilewati.');
+        if ($divisi->isEmpty() || $ketuaIds->count() < 2 || $anggotaIds->isEmpty()) {
+            $this->command->error('Data master (Divisi, Karyawan, Siswa) tidak lengkap. Butuh minimal 2 karyawan. TimSeeder dibatalkan.');
             return;
         }
-    
-        $startDate = Carbon::create(2025, 5, 1);
-        $endDate = Carbon::create(2025, 7, 31);
-        
-        DB::transaction(function () use ($startDate, $endDate, $ketuaIds, $anggotaIds, $divisiIds) {
+
+        DB::transaction(function () use ($periode, $ketuaIds, $anggotaIds, $divisi) {
+            Tim::query()->delete();
+            DB::table('tim_anggota')->delete();
+            DB::table('tim_ketua')->delete(); // [PERBAIKAN] Hapus data di tabel pivot ketua juga
+
+            // --- 1. MEMBUAT DATA HISTORIS ---
+            $startDate = $periode->awal_periode;
+            $endDate = $periode->akhir_periode->isFuture() ? Carbon::now()->subDay() : $periode->akhir_periode;
             
             for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                
-                $jumlahTimPerHari = rand(2, 5);
+                if ($date->isWeekend()) continue;
 
+                $jumlahTimPerHari = rand(1, 2);
                 for ($i = 0; $i < $jumlahTimPerHari; $i++) {
-                    $randomKetuaId = $ketuaIds->random();
-                    
-                    // 3. AMBIL ID DIVISI SECARA ACAK
-                    $randomDivisiId = $divisiIds->random();
-                    // Ambil nama divisi untuk deskripsi
-                    $divisiInfo = Divisi::find($randomDivisiId);
-
-                    $jumlahAnggota = rand(2, 4);
-                    if ($anggotaIds->count() < $jumlahAnggota) {
-                        $jumlahAnggota = $anggotaIds->count();
-                    }
-                    $randomAnggotaIds = $anggotaIds->random($jumlahAnggota)->all();
-
-                    $jamAcak = rand(8, 16);
-                    $menitAcak = rand(0, 59);
-                    $detikAcak = rand(0, 59);
-                    $timestampPalsu = $date->copy()->setTime($jamAcak, $menitAcak, $detikAcak);
-
-                    // 4. GUNAKAN 'divisi_id' SAAT MEMBUAT TIM
+                    $ketua = $ketuaIds->random();
                     $tim = Tim::create([
-                        'ketua_id'   => $randomKetuaId,
-                        'divisi_id'  => $randomDivisiId, // <-- PERUBAHAN UTAMA
+                        // [PERBAIKAN] Hapus 'ketua_id' dari sini
+                        'divisi_id'  => $divisi->random()->id,
                         'tanggal'    => $date->toDateString(),
-                        'created_at' => $timestampPalsu,
-                        'updated_at' => $timestampPalsu,
+                        'status_approval' => 'tugas_selesai',
+                        'approver_id'     => $ketua,
+                        'feedback'        => 'Pekerjaan telah selesai dan disetujui.',
+                        'created_at' => $date,
+                        'updated_at' => $date,
                     ]);
-
-                    $tim->anggota()->sync($randomAnggotaIds);
+                    
+                    // [PERBAIKAN] Tambahkan ketua melalui relasi attach()
+                    $tim->ketua()->attach($ketua);
+                    $tim->anggota()->sync($anggotaIds->random(rand(1, $anggotaIds->count())));
                 }
             }
+            $this->command->info('Data tim historis berhasil dibuat.');
+
+            // --- 2. MEMBUAT TUGAS UNTUK HARI INI ---
+            if (!$periode->akhir_periode->isPast()) {
+                $this->command->info('Membuat tugas untuk hari ini...');
+                
+                // Tim 1 (1 Ketua)
+                $timHariIni1 = Tim::create([
+                    'divisi_id'  => $divisi->random()->id,
+                    'tanggal'    => Carbon::today()->toDateString(),
+                    'status_approval' => 'belum_selesai',
+                ]);
+                $timHariIni1->ketua()->attach($ketuaIds->random());
+                $timHariIni1->anggota()->sync($anggotaIds->random(rand(1, 2)));
+                
+                // [TAMBAHAN] Membuat 1 tim dengan DUA KETUA untuk testing
+                $timMultiKetua = Tim::create([
+                    'divisi_id'  => $divisi->random()->id,
+                    'tanggal'    => Carbon::today()->toDateString(),
+                    'status_approval' => 'belum_selesai',
+                ]);
+                $ketuaMulti = $ketuaIds->random(2); // Ambil 2 ID ketua secara acak
+                $timMultiKetua->ketua()->attach($ketuaMulti);
+                $timMultiKetua->anggota()->sync($anggotaIds->random(rand(1, 2)));
+
+                $this->command->info('Tugas hari ini (termasuk 1 tim multi-ketua) berhasil dibuat.');
+            }
         });
+
+        $this->command->info('TimSeeder selesai.');
     }
 }

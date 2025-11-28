@@ -2,144 +2,58 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TaskBreakDown;
+use App\Models\TaskBreakdown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Carbon;
-use Yajra\DataTables\Facades\DataTables;
 
-class TaskBreakDownController extends Controller
+class TaskBreakdownController extends Controller
 {
-    public function index()
-    {
+   public function store(Request $request)
+{
+     if (!in_array(auth()->user()->group_id, [2, 5])) {
+        abort(403, 'Anda tidak memiliki wewenang untuk mengupload task breakdown.');
+    }
+    // [PERBAIKAN] Validasi disatukan menjadi satu blok yang lebih pintar
+    $validated = $request->validate([
+        'applicable_date' => 'required|date',
+        'tipe' => 'required|in:file,teks',
+        'deskripsi_tugas' => 'required_if:tipe,teks|nullable|string',
+        'task_file' => 'required_if:tipe,file|nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
+    ], [
+        'deskripsi_tugas.required_if' => 'Deskripsi tugas wajib diisi jika Anda memilih tab Input Teks.',
+        'task_file.required_if' => 'File wajib diunggah jika Anda memilih tab Upload File.',
+    ]);
 
-        $tugasHariIni = TaskBreakDown::whereDate('created_at', Carbon::today())->get();
+    $taskData = [
+        'applicable_date' => $validated['applicable_date'],
+        'tipe' => $validated['tipe'],
+    ];
 
-        return view('administrator.task_break_down.index', compact('tugasHariIni'));
-
-        return view("administrator.task_break_down.index");
+    // Cek dan hapus file lama jika ada, terutama saat menimpa
+    $existingTask = TaskBreakdown::where('applicable_date', $taskData['applicable_date'])->first();
+    if ($existingTask && $existingTask->task_breakdown) {
+        File::delete(public_path('uploads/daily_tasks/' . $existingTask->task_breakdown));
     }
 
-    public function create()
-    {
-        return view("administrator.task_break_down.create");
+    if ($validated['tipe'] == 'teks') {
+        $taskData['deskripsi_tugas'] = $validated['deskripsi_tugas'];
+        $taskData['task_breakdown'] = null; // Pastikan kolom file kosong
+    
+    } else { // tipe == 'file'
+        $file = $validated['task_file'];
+        $fileName = $validated['applicable_date'] . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $folderTujuan = 'uploads/daily_tasks';
+        $file->move(public_path($folderTujuan), $fileName);
+        
+        $taskData['task_breakdown'] = $fileName;
+        $taskData['deskripsi_tugas'] = null; // Pastikan kolom teks kosong
     }
 
-    public function edit($id)
-    {
-        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
-        if (!$taskBreakDown) {
-            return abort(404);
-        }
-        return view("administrator.task_break_down.edit", [
-            "task_break_down" => $taskBreakDown,
-        ]);
-    }
+    TaskBreakdown::updateOrCreate(
+        ['applicable_date' => $taskData['applicable_date']],
+        $taskData
+    );
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "nama" => "required",
-            "file_upload" => "required",
-        ]);
-        if ($validator->fails()) {
-            return redirect(route("task_break_down.create"))
-                ->withErrors($validator)
-                ->withInput();
-        }
-        $dataSave = ["nama" => $request->input("nama")];
-        if ($request->file("file_upload") != null) {
-            $file = $request->file("file_upload");
-            $fileName = $file->hashName();
-            $file->move("uploads/task_break_down_file_upload", $fileName);
-            $dataSave["file_upload"] = $fileName;
-        }
-        try {
-            TaskBreakDown::create($dataSave);
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => true,
-                "message" => "Data berhasil disimpan",
-            ]);
-        } catch (\Throwable $th) {
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => false,
-                "message" => "Terjadi kesalahan saat menyimpan data",
-            ]);
-        }
-    }
-
-    public function fetch(Request $request)
-    {
-        $taskBreakDown = TaskBreakDown::query();
-        return DataTables::of($taskBreakDown)->addIndexColumn()->make(true);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
-        if (!$taskBreakDown) {
-            return abort(404);
-        }
-        $validator = Validator::make($request->all(), [
-            "nama" => "required",
-            "file_upload" => "required",
-        ]);
-        if ($validator->fails()) {
-            return redirect(route("task_break_down.edit", $id))
-                ->withErrors($validator)
-                ->withInput();
-        }
-        $dataSave = ["nama" => $request->input("nama")];
-        if ($request->file("file_upload") != null) {
-            File::delete(
-                public_path(
-                    "uploads/task_break_down_file_upload/" .
-                        @$taskBreakDown->file_upload
-                )
-            );
-            $file = $request->file("file_upload");
-            $fileName = $file->hashName();
-            $file->move("uploads/task_break_down_file_upload", $fileName);
-            $dataSave["file_upload"] = $fileName;
-        }
-        try {
-            $taskBreakDown->update($dataSave);
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => true,
-                "message" => "Data berhasil diupdate",
-            ]);
-        } catch (\Throwable $th) {
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => false,
-                "message" => "Terjadi kesalahan saat mengupdate data",
-            ]);
-        }
-    }
-
-    public function destroy($id)
-    {
-        $taskBreakDown = TaskBreakDown::where("id", $id)->first();
-        if (!$taskBreakDown) {
-            return abort(404);
-        }
-        File::delete(
-            public_path(
-                "uploads/task_break_down_file_upload/" .
-                    @$taskBreakDown->file_upload
-            )
-        );
-        try {
-            $taskBreakDown->delete();
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => true,
-                "message" => "Data berhasil dihapus",
-            ]);
-        } catch (\Throwable $th) {
-            return redirect(route("task_break_down.index"))->with([
-                "dataSaved" => false,
-                "message" => "Terjadi kesalahan saat menghapus data",
-            ]);
-        }
-    }
+    return redirect()->back()->with('success', 'Task breakdown harian berhasil disimpan!');
+}
 }

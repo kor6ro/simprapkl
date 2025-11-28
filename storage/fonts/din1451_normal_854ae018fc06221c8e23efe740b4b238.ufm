@@ -1,0 +1,753 @@
+StartFontMetrics 4.1
+Notice Converted by PHP-font-lib
+Comment https://github.com/dompdf/php-font-lib
+EncodingScheme FontSpecific
+Copyright Copyright \(c\) 1998 Elsner+Flake. All Rights Reserved.
+FontName DIN1451EF
+FontSubfamily Regular
+UniqueID FONTLAB30:TTEXPORT
+FullName DIN1451EF-MittelAlt
+Version 001.000
+PostScriptName DIN1451EF-MittelAlt
+Weight Medium
+ItalicAngle 0
+IsFixedPitch false
+UnderlineThickness 20
+UnderlinePosition -182
+FontHeightOffset 0
+Ascender 810
+Descender -196
+FontBBox 0 -196 780 810
+StartCharMetrics 94
+U 32 ; WX 476 ; N space ; G 3
+U 33 ; WX 202 ; N exclam ; G 4
+U 40 ; WX 220 ; N parenleft ; G 5
+U 41 ; WX 220 ; N parenright ; G 6
+U 43 ; WX 452 ; N plus ; G 7
+U 44 ; WX 179 ; N comma ; G 8
+U 45 ; WX 452 ; N hyphen ; G 9
+U 46 ; WX 179 ; N period ; G 10
+U 47 ; WX 315 ; N slash ; G 11
+U 48 ; WX 512 ; N zero ; G 12
+U 49 ; WX 345 ; N one ; G 13
+U 50 ; WX 512 ; N two ; G 14
+U 51 ; WX 487 ; N three ; G 15
+U 52 ; WX 536 ; N four ; G 16
+U 53 ; WX 500 ; N five ; G 17
+U 54 ; WX 500 ; N six ; G 18
+U 55 ; WX 476 ; N seven ; G 19
+U 56 ; WX 512 ; N eight ; G 20
+U 57 ; WX 488 ; N nine ; G 21
+U 58 ; WX 179 ; N colon ; G 22
+U 59 ; WX 179 ; N semicolon ; G 23
+U 63 ; WX 440 ; N question ; G 24
+U 65 ; WX 607 ; N A ; G 25
+U 66 ; WX 595 ; N B ; G 26
+U 67 ; WX 568 ; N C ; G 27
+U 68 ; WX 607 ; N D ; G 28
+U 69 ; WX 560 ; N E ; G 29
+U 70 ; WX 524 ; N F ; G 30
+U 71 ; WX 583 ; N G ; G 31
+U 72 ; WX 631 ; N H ; G 32
+U 73 ; WX 256 ; N I ; G 33
+U 74 ; WX 458 ; N J ; G 34
+U 75 ; WX 619 ; N K ; G 35
+U 76 ; WX 524 ; N L ; G 36
+U 77 ; WX 726 ; N M ; G 37
+U 78 ; WX 655 ; N N ; G 38
+U 79 ; WX 583 ; N O ; G 39
+U 80 ; WX 571 ; N P ; G 40
+U 81 ; WX 614 ; N Q ; G 41
+U 82 ; WX 607 ; N R ; G 42
+U 83 ; WX 560 ; N S ; G 43
+U 84 ; WX 506 ; N T ; G 44
+U 85 ; WX 607 ; N U ; G 45
+U 86 ; WX 536 ; N V ; G 46
+U 87 ; WX 798 ; N W ; G 47
+U 88 ; WX 560 ; N X ; G 48
+U 89 ; WX 536 ; N Y ; G 49
+U 90 ; WX 524 ; N Z ; G 50
+U 97 ; WX 500 ; N a ; G 51
+U 98 ; WX 512 ; N b ; G 52
+U 99 ; WX 451 ; N c ; G 53
+U 100 ; WX 512 ; N d ; G 54
+U 101 ; WX 512 ; N e ; G 55
+U 102 ; WX 333 ; N f ; G 56
+U 103 ; WX 512 ; N g ; G 57
+U 104 ; WX 524 ; N h ; G 58
+U 105 ; WX 238 ; N i ; G 59
+U 106 ; WX 250 ; N j ; G 60
+U 107 ; WX 500 ; N k ; G 61
+U 108 ; WX 274 ; N l ; G 62
+U 109 ; WX 810 ; N m ; G 63
+U 110 ; WX 524 ; N n ; G 64
+U 111 ; WX 512 ; N o ; G 65
+U 112 ; WX 512 ; N p ; G 66
+U 113 ; WX 512 ; N q ; G 67
+U 114 ; WX 393 ; N r ; G 68
+U 115 ; WX 500 ; N s ; G 69
+U 116 ; WX 333 ; N t ; G 70
+U 117 ; WX 524 ; N u ; G 71
+U 118 ; WX 500 ; N v ; G 72
+U 119 ; WX 738 ; N w ; G 73
+U 120 ; WX 500 ; N x ; G 74
+U 121 ; WX 500 ; N y ; G 75
+U 122 ; WX 452 ; N z ; G 76
+U 160 ; WX 476 ; N space ; G 3
+U 168 ; WX 446 ; N dieresis ; G 82
+U 171 ; WX 274 ; N guillemotleft ; G 83
+U 187 ; WX 274 ; N guillemotright ; G 84
+U 196 ; WX 607 ; N Adieresis ; G 85
+U 214 ; WX 583 ; N Odieresis ; G 86
+U 220 ; WX 607 ; N Udieresis ; G 87
+U 221 ; WX 280 ; N .notdef ; G 0
+U 222 ; WX 280 ; N .notdef ; G 0
+U 223 ; WX 524 ; N germandbls ; G 88
+U 228 ; WX 500 ; N adieresis ; G 89
+U 246 ; WX 512 ; N odieresis ; G 90
+U 252 ; WX 524 ; N udieresis ; G 91
+U 8212 ; WX 583 ; N emdash ; G 81
+U 8217 ; WX 179 ; N quoteright ; G 78
+U 8221 ; WX 321 ; N quotedblright ; G 79
+U 8222 ; WX 321 ; N quotedblbase ; G 77
+U 8226 ; WX 275 ; N bullet ; G 80
+EndCharMetrics
+StartKernData 
+StartKernPairs 1731
+
+KPX space three -6
+KPX space four 6
+KPX space five -6
+KPX space six -6
+KPX space seven -6
+KPX space eight -18
+KPX space nine -6
+KPX space colon 6
+KPX space semicolon 6
+KPX space question -6
+KPX space A -6
+KPX space B -6
+KPX space C -6
+KPX space D 6
+KPX space E -6
+KPX space F -6
+KPX space G -6
+KPX space H -6
+KPX space I -6
+KPX space J -6
+KPX space K -6
+KPX space L -6
+KPX space X 6
+
+KPX exclam three -6
+KPX exclam four 6
+KPX exclam five -6
+KPX exclam six -6
+KPX exclam seven -6
+KPX exclam eight -18
+KPX exclam nine -6
+KPX exclam colon 6
+KPX exclam semicolon 6
+KPX exclam question -6
+KPX exclam A -6
+KPX exclam B -6
+KPX exclam C -6
+KPX exclam D 6
+KPX exclam E -6
+KPX exclam F -6
+KPX exclam G -6
+KPX exclam H -6
+KPX exclam I -6
+KPX exclam J -6
+KPX exclam K -6
+KPX exclam L -6
+KPX exclam X 6
+
+KPX parenleft parenright 12
+KPX parenleft plus 12
+KPX parenleft hyphen 12
+KPX parenleft period 12
+KPX parenleft zero -12
+KPX parenleft two 12
+KPX parenleft three -18
+KPX parenleft four 6
+KPX parenleft five -6
+KPX parenleft six -6
+KPX parenleft seven -18
+KPX parenleft eight -6
+KPX parenleft nine -6
+KPX parenleft colon 6
+KPX parenleft semicolon 6
+KPX parenleft question 6
+KPX parenleft A -18
+KPX parenleft B 6
+KPX parenleft C -6
+KPX parenleft D 6
+KPX parenleft E -30
+KPX parenleft F -6
+KPX parenleft G 6
+KPX parenleft H 6
+KPX parenleft I 6
+KPX parenleft J 6
+KPX parenleft K 6
+KPX parenleft L 6
+KPX parenleft X 6
+
+KPX parenright parenright -12
+KPX parenright plus 24
+KPX parenright comma -48
+KPX parenright hyphen -24
+KPX parenright period -36
+KPX parenright slash -36
+KPX parenright one -48
+KPX parenright two 12
+KPX parenright three 6
+KPX parenright four 6
+KPX parenright five -6
+KPX parenright six -6
+KPX parenright seven -18
+KPX parenright eight -6
+KPX parenright nine -6
+KPX parenright colon 6
+KPX parenright semicolon 6
+KPX parenright question 6
+KPX parenright A -18
+KPX parenright B 18
+KPX parenright C -6
+KPX parenright D 6
+KPX parenright E -18
+KPX parenright F -6
+KPX parenright G -18
+KPX parenright H -6
+KPX parenright I -6
+KPX parenright J -6
+KPX parenright K -6
+KPX parenright L -6
+KPX parenright X 6
+
+KPX plus plus 12
+KPX plus comma -12
+KPX plus slash -12
+KPX plus one -12
+KPX plus three -6
+KPX plus four 6
+KPX plus five 6
+KPX plus six 6
+KPX plus seven 6
+KPX plus eight -18
+KPX plus nine 6
+KPX plus colon 6
+KPX plus semicolon 6
+KPX plus question 6
+KPX plus A 6
+KPX plus B 6
+KPX plus C 6
+KPX plus D 6
+KPX plus E -6
+KPX plus F -18
+KPX plus G -6
+KPX plus H -18
+KPX plus I -18
+KPX plus J -18
+KPX plus K -18
+KPX plus L -18
+KPX plus X 6
+
+KPX comma parenright -24
+KPX comma plus -12
+KPX comma comma 24
+KPX comma hyphen -12
+KPX comma period 24
+KPX comma slash 24
+KPX comma zero 24
+KPX comma one 12
+KPX comma two 24
+KPX comma three -54
+KPX comma four 6
+KPX comma five -54
+KPX comma six -54
+KPX comma seven -65
+KPX comma eight -30
+KPX comma nine -54
+KPX comma colon 6
+KPX comma semicolon 6
+KPX comma question -42
+KPX comma A -65
+KPX comma B -42
+KPX comma C -54
+KPX comma D -42
+KPX comma E -54
+KPX comma F -30
+KPX comma G -42
+KPX comma H -30
+KPX comma I -30
+KPX comma J -30
+KPX comma K -30
+KPX comma L -42
+KPX comma X -6
+
+KPX hyphen plus -12
+KPX hyphen comma -12
+KPX hyphen period -12
+KPX hyphen slash -12
+KPX hyphen zero -12
+KPX hyphen one -24
+KPX hyphen three -6
+KPX hyphen four 6
+KPX hyphen five -6
+KPX hyphen six -6
+KPX hyphen seven -6
+KPX hyphen eight -6
+KPX hyphen nine -6
+KPX hyphen colon 6
+KPX hyphen semicolon 6
+KPX hyphen question -6
+KPX hyphen A -6
+KPX hyphen B -6
+KPX hyphen C -6
+KPX hyphen D -6
+KPX hyphen E -18
+KPX hyphen F 6
+KPX hyphen G -18
+KPX hyphen H -6
+KPX hyphen I -6
+KPX hyphen J -6
+KPX hyphen K -6
+KPX hyphen L -6
+KPX hyphen X 6
+
+KPX period parenright -12
+KPX period plus -12
+KPX period comma 24
+KPX period hyphen -12
+KPX period period 36
+KPX period slash 24
+KPX period zero 24
+KPX period one 24
+KPX period two 24
+KPX period three -30
+KPX period four 6
+KPX period five -18
+KPX period six -18
+KPX period seven -30
+KPX period eight -6
+KPX period nine -18
+KPX period colon 6
+KPX period semicolon 6
+KPX period question -6
+KPX period A -30
+KPX period B -6
+KPX period C -18
+KPX period D -6
+KPX period E -42
+KPX period F -6
+KPX period G -6
+KPX period H -6
+KPX period I -6
+KPX period J -6
+KPX period K -6
+KPX period L -6
+KPX period X -6
+
+KPX slash parenright -12
+KPX slash plus -12
+KPX slash comma 24
+KPX slash hyphen -12
+KPX slash period 24
+KPX slash slash 12
+KPX slash zero 12
+KPX slash one 12
+KPX slash two 12
+KPX slash three -30
+KPX slash four 6
+KPX slash five -18
+KPX slash six -18
+KPX slash seven -30
+KPX slash eight -18
+KPX slash nine -18
+KPX slash colon 6
+KPX slash semicolon -6
+KPX slash question -18
+KPX slash A -30
+KPX slash B -18
+KPX slash C -18
+KPX slash D -18
+KPX slash E -42
+KPX slash F -18
+KPX slash G -18
+KPX slash H -18
+KPX slash I -18
+KPX slash J -18
+KPX slash K -18
+KPX slash L -18
+KPX slash X -6
+
+KPX zero parenright -12
+KPX zero comma 24
+KPX zero hyphen -12
+KPX zero period 24
+KPX zero slash 12
+KPX zero zero 24
+KPX zero one 12
+KPX zero two 24
+KPX zero three -18
+KPX zero four 6
+KPX zero five -18
+KPX zero six -18
+KPX zero seven -30
+KPX zero eight -30
+KPX zero nine -18
+KPX zero colon 6
+KPX zero semicolon -6
+KPX zero question -6
+KPX zero A -30
+KPX zero B -6
+KPX zero C -18
+KPX zero D -18
+KPX zero E -30
+KPX zero F -42
+KPX zero G -30
+KPX zero H -30
+KPX zero I -30
+KPX zero J -6
+KPX zero K -30
+KPX zero L -6
+KPX zero X 6
+
+KPX one parenright -24
+KPX one plus -24
+KPX one comma 12
+KPX one hyphen -24
+KPX one period 24
+KPX one slash 12
+KPX one zero 12
+KPX one one 12
+KPX one two 12
+KPX one three -54
+KPX one four 6
+KPX one five -54
+KPX one six -54
+KPX one seven -65
+KPX one eight -18
+KPX one nine -54
+KPX one colon 6
+KPX one semicolon -6
+KPX one question -30
+KPX one A -65
+KPX one B -30
+KPX one C -54
+KPX one D -30
+KPX one E -65
+KPX one F -18
+KPX one G -42
+KPX one H -30
+KPX one I -30
+KPX one J -30
+KPX one K -30
+KPX one L -30
+KPX one X -6
+
+KPX two parenright -12
+KPX two plus -12
+KPX two hyphen -36
+KPX two period 12
+KPX two zero -12
+KPX two two 12
+KPX two three -6
+KPX two four 6
+KPX two five -6
+KPX two six -6
+KPX two seven -18
+KPX two eight -18
+KPX two nine -6
+KPX two colon 6
+KPX two semicolon 6
+KPX two question -18
+KPX two A -18
+KPX two B -18
+KPX two C -6
+KPX two D -18
+KPX two E -6
+KPX two F -18
+KPX two G -18
+KPX two H -6
+KPX two I -6
+KPX two J -6
+KPX two K -6
+KPX two L -6
+KPX two X 6
+
+KPX three eight -24
+KPX three E -12
+KPX three F -24
+KPX three G -12
+KPX three H -12
+KPX three I -12
+KPX three J -12
+KPX three K -12
+KPX three L -12
+KPX three Q -18
+
+KPX four eight -24
+KPX four E -12
+KPX four F -24
+KPX four H -12
+KPX four I -12
+KPX four J -12
+KPX four K -12
+KPX four L -12
+KPX four Q -6
+
+KPX five eight -24
+KPX five F -24
+KPX five H -12
+KPX five I -12
+KPX five J -12
+KPX five K -12
+KPX five L -12
+KPX five Q -18
+
+KPX six four 12
+KPX six colon 12
+KPX six semicolon 12
+KPX six Q 6
+KPX six X 12
+
+KPX seven eight -24
+KPX seven E -12
+KPX seven F -12
+KPX seven H -24
+KPX seven I -24
+KPX seven J -24
+KPX seven K -24
+KPX seven L -24
+KPX seven Q -6
+
+KPX eight three -12
+KPX eight four 12
+KPX eight five -12
+KPX eight six -12
+KPX eight seven -12
+KPX eight eight -12
+KPX eight nine -12
+KPX eight colon 12
+KPX eight semicolon 12
+KPX eight A -12
+KPX eight C -12
+KPX eight E -12
+KPX eight F -12
+KPX eight G -12
+KPX eight Q -30
+
+KPX nine eight -12
+KPX nine F -12
+KPX nine Q -6
+
+KPX colon three -12
+KPX colon eight -24
+KPX colon E -12
+KPX colon F -24
+KPX colon G -12
+KPX colon H -12
+KPX colon I -12
+KPX colon J -12
+KPX colon K -12
+KPX colon L -12
+KPX colon Q -18
+
+KPX semicolon Q 6
+
+KPX question three -12
+KPX question eight -24
+KPX question E -12
+KPX question F -24
+KPX question G -12
+KPX question H -12
+KPX question I -12
+KPX question J -12
+KPX question K -12
+KPX question L -12
+KPX question Q -18
+
+KPX A eight -24
+KPX A E -12
+KPX A F -24
+KPX A H -24
+KPX A I -24
+KPX A J -24
+KPX A K -24
+KPX A L -24
+KPX A Q -6
+
+KPX B eight -24
+KPX B E -12
+KPX B F -24
+KPX B H -12
+KPX B I -12
+KPX B J -12
+KPX B K -12
+KPX B L -12
+KPX B Q -6
+
+KPX C eight -12
+KPX C F -12
+KPX C Q -6
+
+KPX D five -12
+KPX D six -12
+KPX D seven -12
+KPX D eight -12
+KPX D nine -12
+KPX D A -12
+KPX D C -12
+KPX D E -12
+KPX D F -12
+KPX D H 12
+KPX D I 12
+KPX D J 12
+KPX D K 12
+KPX D Q -18
+
+KPX E eight -24
+KPX E E -12
+KPX E F -24
+KPX E G -12
+KPX E H -12
+KPX E I -12
+KPX E J -12
+KPX E K -12
+KPX E L -12
+KPX E Q 6
+
+KPX F three -12
+KPX F five -12
+KPX F six -12
+KPX F seven -12
+KPX F eight -12
+KPX F nine -12
+KPX F A -12
+KPX F C -12
+KPX F E -24
+KPX F F -24
+KPX F G -24
+KPX F H -12
+KPX F I -12
+KPX F J -12
+KPX F K -12
+KPX F Q -30
+
+KPX G eight -12
+KPX G F -12
+KPX G Q -6
+
+KPX H three -12
+KPX H five -12
+KPX H six -12
+KPX H seven -24
+KPX H eight -12
+KPX H nine -12
+KPX H A -24
+KPX H C -12
+KPX H D -12
+KPX H E -24
+KPX H F -24
+KPX H G -12
+KPX H H -12
+KPX H I -12
+KPX H J -12
+KPX H K -12
+KPX H L -12
+KPX H Q -30
+
+KPX I three -12
+KPX I five -12
+KPX I six -12
+KPX I seven -24
+KPX I eight -12
+KPX I nine -12
+KPX I A -24
+KPX I C -12
+KPX I D -12
+KPX I E -24
+KPX I F -24
+KPX I G -12
+KPX I H -12
+KPX I I -12
+KPX I J -12
+KPX I K -12
+KPX I L -12
+KPX I Q -30
+
+KPX J three -12
+KPX J five -12
+KPX J six -12
+KPX J seven -24
+KPX J eight -12
+KPX J nine -12
+KPX J A -24
+KPX J C -12
+KPX J D -12
+KPX J E -24
+KPX J F -24
+KPX J G -12
+KPX J H -12
+KPX J I -12
+KPX J J -12
+KPX J K -12
+KPX J L -12
+KPX J Q -30
+
+KPX K three -12
+KPX K five -12
+KPX K six -12
+KPX K seven -24
+KPX K eight -12
+KPX K nine -12
+KPX K A -24
+KPX K C -12
+KPX K D -12
+KPX K E -24
+KPX K F -24
+KPX K G -12
+KPX K H -12
+KPX K I -12
+KPX K J -12
+KPX K K -12
+KPX K L -12
+KPX K Q -30
+
+KPX L three -12
+KPX L five -12
+KPX L six -12
+KPX L seven -12
+KPX L eight -12
+KPX L nine -12
+KPX L A -24
+KPX L C -12
+KPX L E -24
+KPX L F -24
+KPX L G -12
+KPX L Q -18
+
+KPX Q plus -12
+KPX Q comma -60
+KPX Q hyphen -12
+KPX Q period -24
+KPX Q slash -36
+KPX Q zero -36
+KPX Q one -48
+KPX Q two -12
+
+KPX X eight -24
+KPX X E -12
+KPX X F -24
+KPX X G -12
+KPX X H -12
+KPX X I -12
+KPX X J -12
+KPX X K -12
+KPX X L -12
+KPX X Q -6
+EndKernPairs
+EndKernData
+EndFontMetrics

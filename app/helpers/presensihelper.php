@@ -3,27 +3,53 @@
 namespace App\Helpers;
 
 use App\Models\Presensi;
+use App\Models\PresensiSetting;
+use App\Models\PresensiStatus;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class PresensiHelper
 {
-    /**
-     * Menghitung status harian dengan melakukan query ke database.
-     * Method ini tetap dipertahankan untuk penggunaan di luar proses rekap massal.
-     */
-    public static function hitungStatusHarian($userId, $tanggal)
-    {
-        $presensiHarian = Presensi::where('user_id', $userId)
-            ->whereDate('tanggal_presensi', $tanggal)
-            ->get();
 
-        // Memanggil method baru yang bekerja dengan koleksi data
-        return self::hitungStatusHarianFromCollection($presensiHarian);
+    public static function getCurrentSession(PresensiSetting $setting): ?string
+    {
+        $now = now();
+        $pagiMulai = Carbon::parse($setting->pagi_mulai);
+        $soreMulai = Carbon::parse($setting->sore_mulai);
+        $soreSelesai = Carbon::parse($setting->sore_selesai);
+
+        if ($now->isBetween($pagiMulai, $soreMulai->copy()->subSecond())) {
+            return 'pagi';
+        }
+        
+        if ($now->isBetween($soreMulai, $soreSelesai)) {
+            return 'sore';
+        }
+
+        return null;
     }
 
     /**
-     * METHOD BARU: Menghitung status harian dari koleksi data yang sudah di-query.
-     * Ini adalah kunci untuk performa ekspor yang cepat, karena tidak ada query baru di sini.
+     * Menyimpan gambar base64 ke storage.
+     * (Tidak ada perubahan di sini)
+     */
+    public static function storeBase64Image(string $imageData, int $userId): string
+    {
+        if (str_contains($imageData, ',')) {
+            $imageData = explode(',', $imageData, 2)[1];
+        }
+        $imageFile = base64_decode($imageData);
+        if ($imageFile === false) {
+            throw new \Exception('Data base64 tidak valid');
+        }
+        $fileName = 'camera_' . date('Y-m-d_H-i-s') . '_' . $userId . '_' . uniqid() . '.jpg';
+        $path = 'uploads/presensi/' . $fileName;
+        Storage::disk('public')->put($path, $imageFile);
+        return $path;
+    }
+    /**
+     * Menghitung status harian dari koleksi data.
+     * Logika ini menjadi jauh lebih sederhana berkat kolom 'kategori' di tabel status.
      */
     public static function hitungStatusHarianFromCollection($presensiHarian)
     {
@@ -31,106 +57,66 @@ class PresensiHelper
             return 'alpa';
         }
 
+        // Load relasi presensiStatus dengan kategori untuk efisiensi
+        $presensiHarian->load('presensiStatus:id,kategori');
+
+        // Cek apakah ada sesi dengan kategori izin atau sakit, itu menjadi prioritas.
+        foreach ($presensiHarian as $presensi) {
+            if (in_array($presensi->presensiStatus?->kategori, ['izin', 'sakit'])) {
+                return $presensi->presensiStatus->kategori;
+            }
+        }
+
+        // Jika tidak ada izin/sakit, cek kehadiran pagi dan sore
         $pagi = $presensiHarian->where('sesi', 'pagi')->first();
         $sore = $presensiHarian->where('sesi', 'sore')->first();
 
-        $pagiStatus = $pagi ? self::normalizeStatus($pagi->status) : null;
-        $soreStatus = $sore ? self::normalizeStatus($sore->status) : null;
-
-        // 1. Prioritaskan Izin atau Sakit jika ada
-        if (in_array($pagiStatus, ['IZIN', 'SAKIT'])) return strtolower($pagiStatus);
-        if (in_array($soreStatus, ['IZIN', 'SAKIT'])) return strtolower($soreStatus);
-
-        // 2. Keduanya hadir
-        $hadirStatuses = ['TEPAT', 'TELAT', 'SANGAT_TELAT', 'TERLALU_AWAL'];
-        if ($pagiStatus && $soreStatus && in_array($pagiStatus, $hadirStatuses) && in_array($soreStatus, $hadirStatuses)) {
-            // Jika salah satu atau keduanya telat, maka statusnya telat
-            if (in_array($pagiStatus, ['TELAT', 'SANGAT_TELAT']) || in_array($soreStatus, ['TELAT', 'SANGAT_TELAT'])) {
-                return 'telat';
-            }
-            // Jika keduanya hadir tanpa telat
-            return 'hadir';
+        // Jika salah satu sesi tidak ada (dan bukan karena izin/sakit), maka alpa.
+        if (!$pagi || !$sore) {
+            return 'alpa';
         }
-
-        // 3. Jika salah satu sesi tidak ada (dianggap Alpa) atau statusnya Alpa
-        if (!$pagiStatus || !$soreStatus || $pagiStatus === 'ALPA' || $soreStatus === 'ALPA') {
+        
+        // Jika kedua sesi kategori-nya bukan 'hadir' (misal: Alpa), maka alpa.
+        if ($pagi->presensiStatus?->kategori !== 'hadir' || $sore->presensiStatus?->kategori !== 'hadir') {
             return 'alpa';
         }
 
-        // Fallback default
-        return 'alpa';
-    }
+        // Jika salah satu sesi adalah terlambat, maka status hari itu terlambat.
+        if (in_array($pagi->status, ['Terlambat', 'Sangat Terlambat']) || in_array($sore->status, ['Terlambat', 'Sangat Terlambat'])) {
+            return 'telat';
+        }
 
-    /**
-     * Konversi berbagai format status ke format standar yang konsisten.
-     * Private method, tidak ada perubahan.
-     */
-    private static function normalizeStatus($status)
-    {
-        if (!$status) return null;
-        $statusMap = [
-            'Tepat Waktu'      => 'TEPAT',
-            'Terlambat' => 'TELAT',
-            'Sangat Terlambat' => 'SANGAT_TELAT',
-            'Terlalu Awal'     => 'TERLALU_AWAL',
-            'Izin' => 'IZIN',
-            'Sakit' => 'SAKIT',
-            'Alpa' => 'ALPA', // 'alpa' dari DB jadi 'ALPA'
-            'Tepat' => 'TEPAT',
-            'Telat' => 'TELAT',
-            'Hadir' => 'TEPAT',
-        ];
-        foreach ($statusMap as $key => $value) {
-            if (strcasecmp($key, $status) == 0) return $value;
-        }
-        return strtoupper($status);
-    }
-
-    /**
-     * Menentukan sesi saat ini berdasarkan waktu.
-     */
-    public static function getCurrentSession($setting, $currentTime)
-    {
-        if (!$setting) return null;
-        if ($currentTime >= $setting->pagi_mulai && $currentTime < $setting->sore_mulai) {
-            return 'pagi';
-        }
-        if ($currentTime >= $setting->sore_mulai && $currentTime <= $setting->sore_selesai) {
-            return 'sore';
-        }
-        return null;
+        // Jika semua kondisi terpenuhi, maka hadir.
+        return 'hadir';
     }
 
     /**
      * Mendapatkan status presensi berdasarkan waktu (Tepat Waktu, Terlambat, dll).
-     * Tidak ada perubahan.
+     * Tidak ada perubahan signifikan.
      */
     public static function getStatusByTime($jamPresensi, $sesi, $setting)
     {
-        if (!$setting) return 'Tepat Waktu';
-        $batasWaktu = $sesi === 'pagi' ? $setting->pagi_selesai : $setting->sore_selesai;
-        $waktuMulai = $sesi === 'pagi' ? $setting->pagi_mulai : $setting->sore_mulai;
-        if (!$batasWaktu || !$waktuMulai) return 'Tepat Waktu';
-        $toleransi = $setting->toleransi_telat ?? 15;
+        if (!$setting) return 'TEPAT_WAKTU';
         try {
-            $waktuPresensi = Carbon::createFromFormat('H:i:s', $jamPresensi);
-            $waktuMulaiCarbon = Carbon::createFromFormat('H:i:s', $waktuMulai);
-            $waktuBatasCarbon = Carbon::createFromFormat('H:i:s', $batasWaktu);
-            $waktuBatasToleransi = $waktuBatasCarbon->copy()->addMinutes($toleransi);
-            if ($waktuPresensi->lt($waktuMulaiCarbon)) return 'Terlalu Awal';
-            if ($waktuPresensi->betweenIncluded($waktuMulaiCarbon, $waktuBatasCarbon)) return 'Tepat Waktu';
-            if ($waktuPresensi->between($waktuBatasCarbon, $waktuBatasToleransi)) return 'Terlambat';
-            if ($waktuPresensi->gt($waktuBatasToleransi)) return 'Sangat Terlambat';
-            return 'Tepat Waktu';
+            $waktuPresensi = Carbon::parse($jamPresensi);
+            $waktuMulai = Carbon::parse($sesi === 'pagi' ? $setting->pagi_mulai : $setting->sore_mulai);
+            $waktuSelesai = Carbon::parse($sesi === 'pagi' ? $setting->pagi_selesai : $setting->sore_selesai);
+            $toleransi = $setting->toleransi_telat ?? 15;
+
+            if ($waktuPresensi->lt($waktuMulai)) return 'TERLALU_AWAL';
+            if ($waktuPresensi->lte($waktuSelesai)) return 'TEPAT_WAKTU';
+            if ($waktuPresensi->lte($waktuSelesai->copy()->addMinutes($toleransi))) return 'TERLAMBAT';
+            
+            return 'SANGAT_TERLAMBAT';
         } catch (\Exception $e) {
-            Log::error('Error in getStatusByTime: ' . $e->getMessage());
-            return 'Tepat Waktu';
+            \Log::error('Error in getStatusByTime: ' . $e->getMessage());
+            return 'TEPAT_WAKTU';
         }
     }
 
     /**
-     * METHOD BARU: Membuat HTML badge untuk status presensi.
-     * Dipanggil oleh Controller.
+     * Membuat HTML badge untuk status presensi.
+     * Sedikit disederhanakan.
      */
     public static function renderStatusBadge($row): string
     {
@@ -138,78 +124,36 @@ class PresensiHelper
             return '<span class="badge bg-warning">' . e($row->requested_status) . ' (Menunggu)</span>';
         }
         $status = $row->status ?? '-';
+        $kategori = $row->presensiStatus?->kategori ?? 'alpa';
+
         $map = [
-            'Tepat Waktu' => 'success',
-            'Terlambat' => 'warning',
-            'Sangat Terlambat' => 'danger',
-            'Terlalu Awal' => 'secondary',
-            'Izin' => 'info',
-            'Sakit' => 'primary',
-            'Alpa' => 'danger',
+            'hadir' => 'success',
+            'izin' => 'info',
+            'sakit' => 'primary',
+            'alpa' => 'danger',
         ];
-        $class = $map[$status] ?? 'light';
+        $class = $map[$kategori] ?? 'light';
+
+        if ($status === 'Terlambat' || $status === 'Sangat Terlambat') {
+            $class = 'warning';
+        }
+        
         return '<span class="badge bg-' . $class . '">' . e($status) . '</span>';
     }
 
     /**
-     * METHOD BARU: Membuat HTML badge untuk status approval.
-     * Dipanggil oleh Controller.
+     * Membuat HTML badge untuk status approval.
+     * Tidak ada perubahan, sudah bagus.
      */
     public static function renderApprovalBadge($row): string
     {
-        if (!$row->approval_status) {
-            return '<span class="badge bg-light text-muted">-</span>';
-        }
+        if (!$row->approval_status) return '<span class="badge bg-light text-muted">-</span>';
         $map = [
             'pending' => ['class' => 'warning', 'text' => 'Menunggu'],
             'approved' => ['class' => 'success', 'text' => 'Disetujui'],
-            'rejected' => ['class' => 'danger', 'text' => 'Ditolak'],
+            'rejected' => ['class' => 'danger', 'text' => 'Ditolak']
         ];
         $config = $map[$row->approval_status] ?? ['class' => 'secondary', 'text' => ucfirst($row->approval_status)];
         return '<span class="badge bg-' . $config['class'] . '">' . e($config['text']) . '</span>';
-    }
-
-    /**
-     * Menyimpan gambar base64 ke storage.
-     * METHOD BARU untuk merapikan Controller.
-     */
-    public static function storeBase64Image(string $imageData, $userId): string
-    {
-        if (str_contains($imageData, ',')) {
-            $imageData = explode(',', $imageData, 2)[1];
-        }
-        $imageFile = base64_decode($imageData);
-        if ($imageFile === false) {
-            throw new \Exception('Invalid base64 data');
-        }
-        $fileName = 'camera_' . date('Y-m-d_H-i-s') . '_' . $userId . '_' . uniqid() . '.jpg';
-        $path = 'uploads/presensi/' . $fileName;
-        \Illuminate\Support\Facades\Storage::disk('public')->put($path, $imageFile);
-        return $path;
-    }
-
-    // ===================================================================
-    // Method original Anda yang tidak disentuh (tetap ada untuk jaga-jaga)
-    // ===================================================================
-    public static function getStatusColor($status)
-    {
-        $colors = ['hadir' => 'success', 'telat' => 'warning', 'izin' => 'info', 'sakit' => 'secondary', 'alpa' => 'danger'];
-        return $colors[strtolower($status)] ?? 'light';
-    }
-    public static function getStatusLabel($status)
-    {
-        $labels = ['hadir' => 'Hadir', 'telat' => 'Terlambat', 'izin' => 'Izin', 'sakit' => 'Sakit', 'alpa' => 'Alpa'];
-        return $labels[strtolower($status)] ?? ucfirst($status);
-    }
-    public static function hitungStatistikHarian($tanggal = null)
-    {
-        $tanggal = $tanggal ?? now()->toDateString();
-        $users = \App\Models\User::where('group_id', 4)->get();
-        $statistik = ['total' => $users->count(), 'hadir' => 0, 'telat' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0];
-        foreach ($users as $user) {
-            $status = self::hitungStatusHarian($user->id, $tanggal);
-            if (isset($statistik[$status])) $statistik[$status]++;
-        }
-        return $statistik;
     }
 }

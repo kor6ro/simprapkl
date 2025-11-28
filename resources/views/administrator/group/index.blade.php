@@ -12,7 +12,7 @@
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item">
-                            <a href="#">Home</a>
+                            <a href="{{ route('dashboard') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item active">Group</li>
                     </ol>
@@ -21,18 +21,20 @@
         </div>
     </div>
     <div class="row mb-3">
-        <div class="col-auto">
-            <a href="{{ route('admin.group.create') }}" class="btn btn-success">
-                <i class="fa fa-plus me-1"></i> Tambah
-            </a>
-        </div>
+        @if (auth()->user()->group_id == 1)
+            <div class="col-auto">
+                <a href="{{ route('admin.group.create') }}" class="btn btn-success">
+                    <i class="fa fa-plus me-1"></i> Tambah
+                </a>
+            </div>
+        @endif
     </div>
     <div class="card">
         <div class="card-body">
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th scope="col">#</th>
+                        <th scope="col">No</th>
                         <th scope="col">Nama</th>
                         <th scope="col">Created At</th>
                         <th scope="col">Aksi</th>
@@ -53,113 +55,132 @@
 @endsection
 @section('js')
     <script>
-        $('table').DataTable({
-            fixedHeader: true,
-            processing: true,
-            serverSide: true,
-            autoWidth: false,
-            ajax: {
-                url: baseUrl('/group/fetch'),
+        $(document).ready(function() {
+            // Setup AJAX untuk otomatis mengirim CSRF token di setiap request
+            $.ajaxSetup({
                 headers: {
-                    'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            // Inisialisasi DataTables
+            var dataTable = $('table').DataTable({
+                fixedHeader: true,
+                processing: true,
+                serverSide: true,
+                autoWidth: false,
+                responsive: true,
+                ajax: {
+                    // Gunakan route() helper Laravel yang lebih aman
+                    url: "{{ route('admin.group.fetch') }}",
+                    type: "POST"
+                    // dataSrc tidak perlu karena default-nya sudah "data"
                 },
-                dataSrc: "data",
-                type: "POST"
-            },
-            order: [
-                [2, 'desc']
-            ],
-            columns: [{
-                    data: 'DT_RowIndex',
-                    sClass: 'text-center',
-                    width: '50px',
-                    searchable: false,
-                    orderable: false,
-                },
-
-                {
-                    data: 'nama',
-                    searchable: true,
-                    orderable: true,
-                    visible: true,
-                },
-                {
-                    data: 'created_at',
-                    visible: false,
-                    render: function(data) {
-                        if (!data) return "";
-
-                        const date = new Date(data);
-                        return date.toLocaleString();
-                    }
-                },
-                {
-                    data: 'id',
-                    name: 'id',
-                    render: function(data, i, row) {
-                        var div = document.createElement("div");
-                        div.className = "row-action";
-
-                        // Edit
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-warning btn-action mx-1 action-edit";
-                        btn.innerHTML = '<i class="icon fa fa-edit"></i>';
-                        div.append(btn);
-
-                        // Delete
-                        var btn = document.createElement("button");
-                        btn.className = "btn btn-danger btn-action mx-1 action-hapus";
-                        btn.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
-                        div.append(btn);
-
-                        return div.outerHTML;
+                order: [
+                    [2, 'desc'] // Mengurutkan berdasarkan kolom 'created_at'
+                ],
+                columns: [{
+                        data: 'DT_RowIndex',
+                        sClass: 'text-center',
+                        width: '50px',
+                        searchable: false,
+                        orderable: false,
                     },
-                    width: "150px",
-                    orderable: false,
-                },
-            ],
-            createdRow: function(row, data) {
-                $(".action-edit", row).click(function(e) {
-                    const url = baseUrl('/group/' + data.id + '/edit');
-                    window.location.replace(url);
-                });
-
-                $(".action-hapus", row).click(function(e) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Warning",
-                        text: "Anda yakin akan menghapus data ini ??",
-                        showCancelButton: true,
-                        confirmButtonText: "Hapus",
-                        cancelButtonText: "Batal",
-                    }).then((result) => {
-                        if (result.value) {
-                            const url = $('#form-destroy').attr('action');
-                            $('#form-destroy').attr('action', url + '/' + data.id)
-                                .trigger('submit');
+                    {
+                        data: 'nama',
+                        name: 'nama', // Tambahkan 'name' untuk server-side searching/ordering
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'created_at',
+                        visible: true, // Ubah menjadi true agar bisa di-sort
+                        render: function(data) {
+                            if (!data) return "-";
+                            // Format tanggal yang lebih rapi
+                            const date = new Date(data);
+                            return date.toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                            });
                         }
+                    },
+                    {
+                        data: 'id',
+                        name: 'id',
+                        render: function(data, type, row) {
+                            var editUrl = "{{ route('admin.group.edit', ':id') }}".replace(':id',
+                                data);
+                            var div = document.createElement("div");
+                            div.className = "row-action";
+
+                            // Tombol Edit
+                            var btnEdit = document.createElement("a");
+                            btnEdit.href = editUrl;
+                            btnEdit.className = "btn btn-warning btn-action mx-1 action-edit";
+                            btnEdit.innerHTML = '<i class="icon fa fa-edit"></i>';
+                            div.append(btnEdit);
+
+                            // Tombol Delete
+                            var btnDelete = document.createElement("button");
+                            btnDelete.className = "btn btn-danger btn-action mx-1 action-hapus";
+                            btnDelete.innerHTML = '<i class="icon fa fa-trash-alt"></i>';
+                            div.append(btnDelete);
+
+                            return div.outerHTML;
+                        },
+                        width: "120px",
+                        orderable: false,
+                        searchable: false,
+                        sClass: 'text-center'
+                    },
+                ],
+                createdRow: function(row, data) {
+                    // Hapus listener 'action-edit' karena kita sudah menggunakan <a> tag
+
+                    // Listener untuk tombol hapus
+                    $(row).on('click', '.action-hapus', function(e) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Konfirmasi Hapus",
+                            text: `Anda yakin akan menghapus grup "${data.nama}"?`,
+                            showCancelButton: true,
+                            confirmButtonText: "Ya, Hapus!",
+                            cancelButtonText: "Batal",
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Arahkan form ke URL yang benar untuk destroy
+                                const destroyUrl =
+                                    "{{ route('admin.group.destroy', ':id') }}".replace(
+                                        ':id', data.id);
+                                $('#form-destroy').attr('action', destroyUrl).trigger(
+                                    'submit');
+                            }
+                        });
                     });
+                },
+            });
+
+            // SweetAlert untuk notifikasi session
+            @if (session()->has('dataSaved') && session()->get('dataSaved') == true)
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '{{ session()->get('message') }}',
                 });
-            },
+            @endif
+            @if (session()->has('dataSaved') && session()->get('dataSaved') == false)
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: '{{ session()->get('message') }}',
+                });
+            @endif
         });
     </script>
-    @if (session()->has('dataSaved') && session()->get('dataSaved') == true)
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: '{{ session()->get('message') }}',
-            });
-        </script>
-    @endif
-    @if (session()->has('dataSaved') && session()->get('dataSaved') == false)
-        <script>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: '{{ session()->get('message') }}',
-            });
-        </script>
-    @endif
 @endsection

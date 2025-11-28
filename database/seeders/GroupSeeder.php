@@ -20,6 +20,8 @@ class GroupSeeder extends Seeder
             ["nama" => "Pembimbing"],
             ["nama" => "Siswa"],
             ["nama" => "Karyawan"],
+            ["nama" => "Kepala Kantor Layanan Pacitan"],
+            ["nama" => "Wakil Kepala Kantor Layanan Pacitan"],
         ];
 
         Group::insert($data);
